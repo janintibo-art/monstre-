@@ -141,13 +141,41 @@ suivre détaillée : [docs/IA-GRATUITE.md](docs/IA-GRATUITE.md).
 > application publiée avec une clé partagée, utilise l'option *Mon propre
 > proxy* et `tools/proxy-example.mjs`.
 
+## Identité visuelle
+
+```
+assets/                 sources, utilisées au moment du build
+├── icon-only.png       icône carrée 1024
+├── icon-foreground.png sujet réduit à 66 % pour l'icône adaptative Android
+├── icon-background.png fond uni de l'icône adaptative
+└── splash.png          écran de démarrage natif 2732
+build/icon.ico          icône de l'exécutable Windows
+public/favicon.png      onglet du navigateur
+public/assets/ui/logo.png  écran de démarrage dans le jeu
+```
+
+Les icônes Android sont générées automatiquement par le workflow, via
+`npx capacitor-assets generate --android`. Pour les régénérer en local après
+avoir modifié un visuel :
+
+```bash
+npm run android:sync && npm run assets
+```
+
+> L'icône adaptative d'Android est recadrée en cercle ou en carré arrondi selon
+> le lanceur. Le sujet doit donc tenir dans les 66 % centraux, sinon les oreilles
+> et la queue se font rogner — c'est pourquoi `icon-foreground.png` est une
+> version réduite et centrée, pas l'image d'origine.
+
 ## Arborescence
 
 ```
 .
 ├── .github/workflows/     build.yml (APK + EXE) et release.yml
 ├── electron/              fenêtre Windows (main + preload)
-├── public/assets/models/  Monstre.glb et Oeuf.glb
+├── assets/                icônes et écran de démarrage (sources)
+├── build/                 icône Windows
+├── public/assets/models/  un dossier par espèce
 ├── public/assets/         tes images et sons
 ├── src/
 │   ├── core/              rng déterministe, boucle, chargement des textures

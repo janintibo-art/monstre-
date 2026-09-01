@@ -23,6 +23,8 @@ import { createPanels } from './ui/panels.js';
 // Affiche l'erreur a l'ecran plutot que de laisser l'application figee en
 // silence, et propose la seule action qui debloque a coup sur.
 function showFatal(error) {
+  const boot = document.getElementById('boot');
+  if (boot) boot.remove(); // sinon l'erreur resterait cachee derriere le logo
   if (document.getElementById('fatal')) return;
   const box = document.createElement('div');
   box.id = 'fatal';
@@ -453,6 +455,15 @@ async function boot() {
 
   autosave(() => pet);
   loop.start();
+
+  // On efface l'ecran de demarrage seulement une fois la premiere image rendue,
+  // sinon on decouvrirait une scene vide pendant une fraction de seconde.
+  requestAnimationFrame(() => {
+    const boot = document.getElementById('boot');
+    if (!boot) return;
+    boot.classList.add('boot--done');
+    setTimeout(() => boot.remove(), 600);
+  });
 
   // Message de retour apres une absence
   if (offlineSeconds > 900 && pet.hatched) {

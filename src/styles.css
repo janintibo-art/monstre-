@@ -498,3 +498,65 @@ select {
   font-weight: 700;
   cursor: pointer;
 }
+
+
+/* --------------------------- Écran de démarrage -------------------------- */
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 24px;
+  background: radial-gradient(circle at 50% 42%, #1b2450 0%, var(--ink) 68%);
+  transition: opacity 520ms ease;
+}
+
+.boot--done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.boot__logo {
+  width: min(78vw, 420px);
+  height: auto;
+  animation: breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+/* Barre indéterminée : la durée de chargement dépend du modèle à télécharger,
+   on ne peut pas afficher un pourcentage honnête. */
+.boot__bar {
+  width: min(60vw, 220px);
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(233, 238, 245, 0.12);
+  overflow: hidden;
+}
+
+.boot__bar span {
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--glow);
+  animation: slide-bar 1.4s ease-in-out infinite;
+}
+
+@keyframes slide-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}

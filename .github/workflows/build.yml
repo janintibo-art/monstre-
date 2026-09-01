@@ -51,6 +51,8 @@ jobs:
         run: |
           if [ ! -d android ]; then npx cap add android; fi
           npx cap sync android
+          # Icone et ecran de demarrage generes depuis assets/
+          npx capacitor-assets generate --android
 
       - name: Compiler l'APK de debug
         run: |

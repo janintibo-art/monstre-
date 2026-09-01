@@ -7,10 +7,18 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
     />
     <meta name="theme-color" content="#0B0F1E" />
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <link rel="apple-touch-icon" href="./icon-512.png" />
     <title>Monstre de Compagnie</title>
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
+    <!-- Ecran de demarrage : masque le temps de charger le modele -->
+    <div id="boot" class="boot">
+      <img src="./assets/ui/logo.png" alt="Monstre de Compagnie" class="boot__logo" />
+      <div class="boot__bar"><span></span></div>
+    </div>
+
     <!-- Rendu 3D -->
     <canvas id="scene"></canvas>
 
