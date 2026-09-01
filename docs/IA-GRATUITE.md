@@ -14,10 +14,16 @@ monstre*.
 | Fournisseur | Où prendre la clé | Carte bancaire | Remarque |
 | --- | --- | --- | --- |
 | **Google Gemini** | https://aistudio.google.com/apikey | Non | Le plus simple. Quota gratuit large, fonctionne bien depuis un téléphone. |
-| **Groq** | https://console.groq.com/keys | Non | Très rapide. Modèles Llama gratuits. |
+| **Groq** | https://console.groq.com/keys | Non | Très rapide. Modèles `openai/gpt-oss-*`. |
 | **OpenRouter** | https://openrouter.ai/keys | Non | Plusieurs modèles ; ceux dont le nom finit par `:free` sont gratuits. |
 
 Commence par **Gemini** : c'est celui qui demande le moins d'étapes.
+
+> Les catalogues de modèles changent souvent, et un nom valide aujourd'hui peut
+> disparaître dans six mois. C'est pourquoi le bouton **Charger les modèles
+> disponibles** interroge directement le fournisseur : fie-toi à cette liste
+> plutôt qu'à la valeur pré-remplie. Groq a par exemple retiré ses modèles
+> Llama au profit de `openai/gpt-oss-20b` et `openai/gpt-oss-120b`.
 
 > Au sujet de Grok : l'API de xAI (grok.com) est payante, il n'y a pas d'offre
 > gratuite. C'est pour ça qu'elle n'est pas dans la liste. Groq, sans « k », est
@@ -34,8 +40,9 @@ Commence par **Gemini** : c'est celui qui demande le moins d'étapes.
 4. Colle la clé dans *Clé d'API*.
 5. Appuie sur **Tester la connexion**. Si le monstre répond, c'est branché.
 
-Le champ *Modèle* est déjà rempli (`gemini-2.0-flash`). Tu peux le laisser tel
-quel.
+Le champ *Modèle* est pré-rempli. S'il est refusé, appuie sur **Charger les
+modèles disponibles** : le jeu interroge le fournisseur et te propose la liste
+réelle, à jour.
 
 ---
 
@@ -64,7 +71,7 @@ Le bouton **Tester la connexion** affiche le message d'erreur exact.
 | --- | --- |
 | `API key not valid` | Clé mal copiée : un espace ou un caractère manquant au collage. |
 | `Failed to fetch` | Pas de réseau, ou le fournisseur refuse les appels directs depuis un navigateur. Essaie un autre fournisseur, ou passe par le proxy. |
-| `model not found` | Le nom du modèle a changé. Va sur le site du fournisseur pour lire la liste à jour et corrige le champ *Modèle*. |
+| `does not exist or you do not have access` | Le modèle a été retiré du catalogue. Appuie sur **Charger les modèles disponibles** et choisis-en un dans la liste. |
 | `429` ou `quota` | Quota gratuit atteint. Il se réinitialise après un délai. |
 
 Quoi qu'il arrive, le monstre continue de parler avec son cerveau local : une

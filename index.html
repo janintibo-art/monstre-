@@ -86,6 +86,12 @@
             <input id="field-model" type="text" autocomplete="off" />
           </label>
 
+          <div class="field" id="row-model-list" hidden>
+            <button id="btn-models" type="button">Charger les modèles disponibles</button>
+            <select id="field-model-list" hidden></select>
+            <p id="models-status" class="hint"></p>
+          </div>
+
           <label class="field" id="row-endpoint" hidden>
             <span>Adresse du proxy</span>
             <input id="field-endpoint" type="url" placeholder="https://mon-proxy.exemple/chat" />

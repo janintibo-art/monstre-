@@ -1,4 +1,4 @@
-import { PROVIDERS, loadConfig, saveConfig, testConnection } from '../ai/dialogue/index.js';
+import { PROVIDERS, loadConfig, saveConfig, testConnection, listModels } from '../ai/dialogue/index.js';
 import { VOICE_MODES, voiceProfile } from '../audio/voice.js';
 
 // Reglages et bapteme. Regle de base : un seul panneau ouvert a la fois,
@@ -20,6 +20,10 @@ export function createPanels({ onRename, onReset, onNamed, getPet, voice }) {
   const keyLink = document.getElementById('key-link');
   const modelRow = document.getElementById('row-model');
   const modelField = document.getElementById('field-model');
+  const modelListRow = document.getElementById('row-model-list');
+  const modelListSelect = document.getElementById('field-model-list');
+  const modelsBtn = document.getElementById('btn-models');
+  const modelsStatus = document.getElementById('models-status');
   const endpointRow = document.getElementById('row-endpoint');
   const endpointField = document.getElementById('field-endpoint');
   const testBtn = document.getElementById('btn-test');
@@ -67,6 +71,9 @@ export function createPanels({ onRename, onReset, onNamed, getPet, voice }) {
 
     keyRow.hidden = !info.needsKey;
     modelRow.hidden = !info.needsKey;
+    modelListRow.hidden = !info.needsKey;
+    modelListSelect.hidden = true;
+    modelsStatus.textContent = '';
     endpointRow.hidden = !info.needsEndpoint;
     keyLink.hidden = !info.keyUrl;
     testBtn.hidden = config.provider === 'local';
@@ -97,6 +104,37 @@ export function createPanels({ onRename, onReset, onNamed, getPet, voice }) {
   [keyField, modelField, endpointField].forEach((field) => {
     field.addEventListener('change', persist);
     field.addEventListener('blur', persist);
+  });
+
+  // Le catalogue de chaque fournisseur bouge : on va chercher la vraie liste
+  // plutot que de proposer un nom code en dur qui finira par disparaitre.
+  modelsBtn.addEventListener('click', async () => {
+    persist();
+    modelsBtn.disabled = true;
+    modelsStatus.textContent = 'Chargement…';
+    try {
+      const models = await listModels(loadConfig());
+      modelListSelect.innerHTML = '';
+      models.forEach((id) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = id;
+        modelListSelect.appendChild(option);
+      });
+      if (models.includes(modelField.value)) modelListSelect.value = modelField.value;
+      modelListSelect.hidden = false;
+      modelsStatus.textContent = `${models.length} modèles disponibles. Choisis-en un.`;
+    } catch (error) {
+      modelsStatus.textContent = `Impossible de charger la liste : ${error.message}`;
+    } finally {
+      modelsBtn.disabled = false;
+    }
+  });
+
+  modelListSelect.addEventListener('change', () => {
+    modelField.value = modelListSelect.value;
+    persist();
+    testStatus.textContent = '';
   });
 
   testBtn.addEventListener('click', async () => {

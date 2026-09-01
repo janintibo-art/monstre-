@@ -19,7 +19,7 @@ export const PROVIDERS = {
   groq: {
     label: 'Groq — gratuit',
     needsKey: true,
-    defaultModel: 'llama-3.3-70b-versatile',
+    defaultModel: 'openai/gpt-oss-20b',
     keyUrl: 'https://console.groq.com/keys',
     help: 'Très rapide. Quota gratuit généreux, sans carte bancaire.'
   },
@@ -39,6 +39,56 @@ export const PROVIDERS = {
 };
 
 const STORE_KEY = 'monstre.ai';
+
+// Les catalogues de modeles changent souvent : un nom code en dur finit
+// toujours par etre retire. Chaque fournisseur expose la liste a jour, on va
+// donc la chercher plutot que de la deviner.
+const MODEL_LISTS = {
+  gemini: {
+    url: (c) =>
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(c.apiKey)}`,
+    headers: () => ({}),
+    parse: (data) =>
+      (data.models || [])
+        .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
+        .map((m) => String(m.name).replace(/^models\//, ''))
+  },
+  groq: {
+    url: () => 'https://api.groq.com/openai/v1/models',
+    headers: (c) => ({ Authorization: `Bearer ${c.apiKey}` }),
+    parse: (data) => (data.data || []).map((m) => m.id)
+  },
+  openrouter: {
+    url: () => 'https://openrouter.ai/api/v1/models',
+    headers: () => ({}),
+    parse: (data) => (data.data || []).map((m) => m.id)
+  }
+};
+
+// On ecarte ce qui ne sait pas tenir une conversation : transcription, synthese
+// vocale, moderation, plongements.
+const NOT_CHAT = /whisper|tts|audio|embed|guard|moderation|rerank|vision-ocr/i;
+
+export async function listModels(config) {
+  const spec = MODEL_LISTS[config.provider];
+  if (!spec) throw new Error('Ce fournisseur ne publie pas de catalogue.');
+
+  const response = await fetch(spec.url(config), { headers: spec.headers(config) });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error((data && (data.error?.message || data.message)) || `Réponse ${response.status}`);
+  }
+
+  let models = spec.parse(data).filter((id) => id && !NOT_CHAT.test(id));
+
+  // Sur OpenRouter, seuls les modeles suffixes « :free » sont gratuits.
+  if (config.provider === 'openrouter') {
+    const free = models.filter((id) => id.endsWith(':free'));
+    if (free.length) models = free;
+  }
+
+  return models.sort();
+}
 
 export function loadConfig() {
   try {

@@ -1,6 +1,6 @@
 import { replyTo, spontaneousLine } from './local.js';
 import { buildContext } from './remote.js';
-import { PROVIDERS, loadConfig, saveConfig, ask } from './providers.js';
+import { PROVIDERS, loadConfig, saveConfig, ask, listModels } from './providers.js';
 
 // Le moteur local repond toujours. Si un fournisseur distant est configure,
 // sa reponse remplace celle du local — et s'il echoue, on garde le local.
@@ -48,4 +48,4 @@ export async function testConnection(pet) {
   }
 }
 
-export { spontaneousLine, PROVIDERS, loadConfig, saveConfig };
+export { spontaneousLine, PROVIDERS, loadConfig, saveConfig, listModels };
