@@ -281,8 +281,17 @@ rendu quel qu'en soit le nombre.
 
 ## Ce qui est déjà là
 
-- Œuf avec fissures progressives dessinées en canvas, secousses, éclosion en
-  éclats de coquille et gerbe de particules.
+- **Effets visuels** (`src/game/vfx.js`) : chaque type de particule a sa forme
+  dessinée au canvas — halo, étincelle à quatre branches, cœur, bulle de savon
+  avec reflet, éclat, miette irrégulière, Z de sommeil — avec rotation propre,
+  courbe de taille et dégradé de couleur sur la durée de vie. S'y ajoutent des
+  ondes de choc au sol, un faisceau de lumière, un voile plein écran et une
+  secousse de caméra.
+- L'éclosion est une mise en scène en trois temps : la lumière cède d'abord,
+  la matière ensuite, puis un second souffle pendant que les éclats retombent.
+  L'inverse se lirait comme une explosion, pas comme une naissance.
+- Œuf avec fissures progressives dessinées en canvas, qui laissent échapper de
+  la lumière à mesure que l'éclosion approche.
 - Monstre 3D entièrement généré par code depuis un génome : couleur, cornes,
   oreilles, longueur de queue, taches bioluminescentes, silhouette trapue ou non.
 - **Animation procédurale du squelette** (`src/game/rig.js`) : les modèles

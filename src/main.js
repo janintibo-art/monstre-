@@ -6,7 +6,7 @@ import { createEgg } from './game/egg.js';
 import { createMonster } from './game/monster.js';
 import { loadModel, createModelMonster, createModelEgg } from './game/gltf.js';
 import { speciesById, pickSpecies, eggUrl, stageUrl } from './game/species.js';
-import { createParticles } from './game/particles.js';
+import { createVfx } from './game/vfx.js';
 import { createDecor } from './game/decor.js';
 import { resolveBiome } from './game/biomes.js';
 import { createDaylight } from './game/daylight.js';
@@ -75,7 +75,7 @@ async function boot() {
 
   const daylight = createDaylight(world);
   daylight.setBiome(biome);
-  const particles = createParticles(world.scene);
+  const vfx = createVfx(world.scene);
   const hud = createHud();
   const voice = createVoice();
 
@@ -102,6 +102,7 @@ async function boot() {
   let thinkTimer = 0;
   let hudTimer = 0;
   let forgetTimer = 30;
+  let ambientTimer = 0;
   let chatterTimer = 12 + Math.random() * 14;
   let decision = { action: 'idle', emotion: 'calme', urgency: 0 };
   let hatching = 0;
@@ -149,7 +150,12 @@ async function boot() {
       if (at) monster.group.position.copy(at);
       world.scene.add(monster.group);
       currentModelUrl = url;
-      particles.burst(monster.headWorldPosition(), 26, 0xa98bff, 2);
+      const at = monster.group.position.clone();
+      vfx.lightBeam(at, { color: 0xd8c4ff, duration: 1.3 });
+      vfx.emit('growth', at);
+      vfx.shockwave(at, { color: 0xa98bff, size: 3.2, duration: 0.9 });
+      vfx.flash('#e6d9ff', 0.35, 500);
+      world.shake(0.2);
       recordMoment(pet.memory, 'croissance', `J'ai grandi et changé de corps.`);
       say('Je me sens... différent.', 4000);
     } finally {
@@ -321,8 +327,25 @@ async function boot() {
     if (care.reaction && monster) monster.react(care.reaction);
     if (monster) {
       const head = monster.headWorldPosition();
-      const color = care.id === 'pet' ? 0xff8fb1 : care.id === 'wash' ? 0x8fd4ff : 0x6fe3c4;
-      particles.burst(head, 18, color, 1.6);
+      const mouth = head.clone();
+      mouth.y -= 0.18 * monster.scale;
+
+      if (care.id === 'feed') {
+        // Miettes qui tombent, eclat de croc, puis les cœurs : trois temps,
+        // comme une bouchee.
+        vfx.emit('chomp', mouth);
+        vfx.emit('eat', mouth);
+        setTimeout(() => vfx.emit('eat', mouth, { count: 8 }), 260);
+        setTimeout(() => vfx.emit('hearts', head, { count: 4 }), 700);
+      } else if (care.id === 'pet') {
+        vfx.emit('hearts', head);
+      } else if (care.id === 'wash') {
+        vfx.emit('bubbles', head, { radius: 0.4 });
+        setTimeout(() => vfx.emit('bubbles', head, { count: 12, radius: 0.5 }), 380);
+      } else if (care.id === 'play') {
+        vfx.emit('sparkleTrail', head, { count: 14, speedScale: 2 });
+        vfx.shockwave(monster.group.position, { color: 0x9dffd0, size: 1.8, duration: 0.5 });
+      }
     }
     if (care.line) say(care.line, 2600);
     save(pet);
@@ -354,12 +377,8 @@ async function boot() {
       egg.poke();
       pet.taps += 1;
       pet.hatchProgress = Math.min(1, pet.hatchProgress + gain);
-      particles.burst(
-        new THREE.Vector3(0, 1.1, 0),
-        hits.length ? 10 : 5,
-        0xffe9c2,
-        hits.length ? 1.4 : 1
-      );
+      vfx.emit('eggGlow', new THREE.Vector3(0, 1, 0), { count: hits.length ? 5 : 2 });
+      if (hits.length) world.shake(0.06);
       return;
     }
 
@@ -370,7 +389,7 @@ async function boot() {
         applyEffects(pet.needs, { affection: 6, fun: 2 });
         remember(pet.memory, 'pet');
         monster.react('pet', 1);
-        particles.burst(monster.headWorldPosition(), 10, 0xff8fb1, 1.3);
+        vfx.emit('hearts', monster.headWorldPosition(), { count: 4 });
         return;
       }
     }
@@ -405,9 +424,24 @@ async function boot() {
   // ---------------------------------------------------------------- eclosion
   function triggerHatch() {
     if (hatching || pet.hatched) return;
-    hatching = 1.1;
+    hatching = 1.4;
+    const center = new THREE.Vector3(0, 1, 0);
+
+    // La coquille cede : lumiere d'abord, matiere ensuite. L'inverse se lirait
+    // comme une explosion, pas comme une naissance.
+    vfx.lightBeam(center, { duration: 1.5 });
+    vfx.flash('#fff3d0', 0.85, 520);
+    world.shake(0.45);
     egg.burst();
-    particles.burst(new THREE.Vector3(0, 1, 0), 60, 0xfff0c4, 3.2);
+    vfx.emit('hatchBurst', center);
+    vfx.emit('shards', center);
+    vfx.shockwave(center, { color: 0xffe9b0, size: 4.2, duration: 0.85 });
+
+    // Deuxieme souffle, plus doux, pendant que les eclats retombent.
+    setTimeout(() => {
+      vfx.emit('hatchDust', new THREE.Vector3(0, 0.5, 0), { radius: 0.6 });
+      vfx.shockwave(center, { color: 0x6fe3c4, size: 5.5, duration: 1.1 });
+    }, 320);
   }
 
   function finishHatch() {
@@ -417,7 +451,10 @@ async function boot() {
     egg = null;
     spawnMonster().then(() => {
       if (monster && monster.playBirth) monster.playBirth();
-      particles.burst(new THREE.Vector3(0, 0.8, 0), 30, 0x6fe3c4, 2);
+      const at = new THREE.Vector3(0, 0.4, 0);
+      vfx.emit('growth', at, { count: 26 });
+      vfx.emit('sparkleTrail', new THREE.Vector3(0, 0.9, 0), { count: 16, speedScale: 1.6 });
+      vfx.shockwave(at, { color: 0x9dffd0, size: 2.6, duration: 0.8 });
     });
     panels.askName(pet.name);
     save(pet);
@@ -516,6 +553,16 @@ async function boot() {
     if (!pet.hatched && egg) {
       egg.setProgress(pet.hatchProgress);
       egg.update(dt, time);
+
+      // Passe un certain stade, l'oeuf laisse echapper de la lumiere par ses
+      // fissures : le joueur voit que ca approche.
+      if (pet.hatchProgress > 0.45 && !hatching) {
+        ambientTimer -= dt;
+        if (ambientTimer <= 0) {
+          ambientTimer = 1.1 - pet.hatchProgress * 0.8;
+          vfx.emit('eggGlow', new THREE.Vector3(0, 0.9, 0), { count: 1, radius: 0.35 });
+        }
+      }
       if (hatching > 0) {
         hatching -= dt;
         if (hatching <= 0) finishHatch();
@@ -553,6 +600,24 @@ async function boot() {
         speaking: voice.level()
       });
 
+      // Effets continus, cadences par un minuteur : emettre a chaque image
+      // saturerait la reserve de particules en une seconde.
+      ambientTimer -= dt;
+      if (ambientTimer <= 0) {
+        const head = monster.headWorldPosition();
+        if (sleeping) {
+          ambientTimer = 1.6;
+          vfx.emit('sleep', head);
+        } else if (decision.action === 'play' || decision.action === 'dance') {
+          ambientTimer = 0.16;
+          const foot = monster.group.position.clone();
+          foot.y += 0.08;
+          vfx.emit('sparkleTrail', foot, { count: 2 });
+        } else {
+          ambientTimer = 0.4;
+        }
+      }
+
       world.setFocus(monster.group.position);
       hud.placeBubble(world.toScreen(monster.headWorldPosition()));
 
@@ -565,7 +630,7 @@ async function boot() {
     }
 
     daylight.update(dt);
-    particles.update(dt);
+    vfx.update(dt);
     decor.update(dt, time);
     actionBar.update(dt, { hatched: pet.hatched });
 

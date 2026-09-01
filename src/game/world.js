@@ -102,6 +102,13 @@ export function createWorld(canvas, textures = {}, biome = null) {
     focusTarget.set(vec.x, 0, vec.z);
   }
 
+  // Secousse de camera. Elle retombe vite : au-dela d'une demi-seconde, ce n'est
+  // plus un impact, c'est un tremblement de terre.
+  let shakeAmount = 0;
+  function shake(amount = 0.25) {
+    shakeAmount = Math.min(0.6, shakeAmount + amount);
+  }
+
   // --- Lumieres ---
   const hemi = new THREE.HemisphereLight(0x8fb6ff, 0x2a1f3d, 0.55);
   scene.add(hemi);
@@ -242,6 +249,13 @@ export function createWorld(canvas, textures = {}, biome = null) {
     camera.position.x += (wantedX - camera.position.x) * Math.min(dt * 2.2, 1);
     camera.position.y += (wantedY - camera.position.y) * Math.min(dt * 1.6, 1);
 
+    if (shakeAmount > 0.001) {
+      shakeAmount = Math.max(0, shakeAmount - dt * 1.8);
+      const k = shakeAmount * shakeAmount; // decroissance perçue plus naturelle
+      camera.position.x += (Math.random() - 0.5) * k * 2;
+      camera.position.y += (Math.random() - 0.5) * k * 2;
+    }
+
     cameraTarget.set(focus.x * 0.85, 1, focus.z * 0.35);
     camera.lookAt(cameraTarget);
   }
@@ -261,6 +275,7 @@ export function createWorld(canvas, textures = {}, biome = null) {
     env,
     playBounds,
     setFocus,
+    shake,
     applyBiome,
     update,
     render,

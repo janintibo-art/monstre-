@@ -628,3 +628,15 @@ select {
   border-color: rgba(169, 139, 255, 0.25);
   font-style: italic;
 }
+
+
+/* Voile plein écran des flashs d'effet. Au-dessus de tout, sans capter le
+   moindre clic. */
+.flash {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
