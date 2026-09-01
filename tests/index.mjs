@@ -12,3 +12,4 @@ import './pet.test.mjs';
 import './memory.test.mjs';
 import './games.test.mjs';
 import './profiles.test.mjs';
+import './food.test.mjs';

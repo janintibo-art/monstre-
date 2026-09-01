@@ -9,6 +9,7 @@ import { loadModel, createModelMonster, createModelEgg } from './game/gltf.js';
 import { speciesById, pickSpecies, eggUrl, stageUrl } from './game/species.js';
 import { createVfx } from './game/vfx.js';
 import { createDecor } from './game/decor.js';
+import { createKitchen } from './game/food.js';
 import { resolveBiome } from './game/biomes.js';
 import { createDaylight } from './game/daylight.js';
 import { createBrain } from './ai/brain.js';
@@ -143,6 +144,47 @@ async function boot() {
   const daylight = createDaylight(world);
   daylight.setBiome(biome);
   const vfx = createVfx(world.scene, { reducedMotion: REDUCED_MOTION });
+
+  // Les repas. La jauge de faim ne monte qu'une fois le plat termine : c'est ce
+  // qui donne au geste une duree, et donc quelque chose a regarder.
+  const kitchen = createKitchen(world.scene, {
+    onArrive: (food, at, how) => {
+      if (how === 'landed') {
+        vfx.shockwave(at, { color: 0xffd9a0, size: 1.4, duration: 0.5 });
+        vfx.emit('eat', at, { count: 8 });
+        world.shake(0.08);
+        say(`Oh ! ${food.line}`, 4200);
+      } else if (monster) {
+        monster.react('eat', 2.4);
+      }
+    },
+    onBite: (food, at) => {
+      const mouth = at.clone();
+      mouth.y += 0.25;
+      vfx.emit('chomp', mouth, { count: 5 });
+      vfx.emit('eat', mouth);
+      if (monster) monster.react('eat', 0.8);
+    },
+    onFinish: (food, at) => {
+      applyEffects(pet.needs, food.effects);
+      remember(pet.memory, 'feed', { food: food.id });
+      nudge(pet.personality, 'greed', 0.012);
+      vfx.emit('hearts', at.clone().setY(at.y + 0.4), { count: 5 });
+      vfx.shockwave(at, { color: 0x9dffd0, size: 1.6, duration: 0.6 });
+      say(pickLine(food), 3200);
+      save(pet);
+    }
+  });
+
+  // Le commentaire d'apres-repas depend du plat : un soda ne se commente pas
+  // comme une soupe.
+  function pickLine(food) {
+    const generiques = ['Miam.', 'C’était bon.', 'Encore ?', 'Merci.'];
+    if (food.effects.energy && food.effects.energy > 4) return 'Oh là. Je me sens tout électrique.';
+    if (food.effects.hygiene && food.effects.hygiene < 0) return 'J’en ai partout. Ça valait le coup.';
+    if (food.effects.hunger >= 34) return 'Je crois que je ne bougerai plus pendant un moment.';
+    return generiques[Math.floor(Math.random() * generiques.length)];
+  }
   if (REDUCED_MOTION) world.shake = () => {};
   const hud = createHud();
   const voice = createVoice();
@@ -291,6 +333,7 @@ async function boot() {
     },
     onReset: () => {
       generation += 1; // tout chargement en cours devient caduc
+      kitchen.clear();
       reset();
       pet = createPet();
       brain = createBrain(pet.seed);
@@ -466,6 +509,12 @@ async function boot() {
       actionBar.setSleepLabel(false);
     }
 
+    if (care.id === 'feed') {
+      // On sert, on ne remplit pas : la jauge montera quand le plat sera mange.
+      kitchen.serve(monster ? monster.group.position : null);
+      return;
+    }
+
     applyEffects(pet.needs, care.effects);
     remember(pet.memory, care.id);
     Object.keys(care.drift).forEach((trait) => nudge(pet.personality, trait, care.drift[trait]));
@@ -475,14 +524,7 @@ async function boot() {
       const mouth = head.clone();
       mouth.y -= 0.18 * monster.scale;
 
-      if (care.id === 'feed') {
-        // Miettes qui tombent, eclat de croc, puis les cœurs : trois temps,
-        // comme une bouchee.
-        vfx.emit('chomp', mouth);
-        vfx.emit('eat', mouth);
-        setTimeout(() => vfx.emit('eat', mouth, { count: 8 }), 260);
-        setTimeout(() => vfx.emit('hearts', head, { count: 4 }), 700);
-      } else if (care.id === 'pet') {
+      if (care.id === 'pet') {
         vfx.emit('hearts', head);
       } else if (care.id === 'wash') {
         vfx.emit('bubbles', head, { radius: 0.4 });
@@ -652,6 +694,19 @@ async function boot() {
 
   function updateTarget(action, dt) {
     wanderTimer -= dt;
+
+    // Un plat pose au sol passe avant tout le reste : c'est le seul evenement
+    // du jeu qui detourne la creature de ce qu'elle etait en train de faire.
+    if (kitchen.busy) {
+      moveTarget.copy(monster.group.position);
+      return;
+    }
+    if (kitchen.target) {
+      moveTarget.copy(kitchen.target);
+      world.clampToArena(moveTarget);
+      return;
+    }
+
     switch (action) {
       case 'follow':
         moveTarget.copy(pointerTarget);
@@ -755,8 +810,13 @@ async function boot() {
       if (pointerActive > 0) lookTarget.set(pointerTarget.x, 1, pointerTarget.z);
       else lookTarget.set(0, 1.1, 3);
 
+      // Elle marche vers son plat et le regarde : sans ca, elle s'en approcherait
+      // en regardant ailleurs, ce qui est exactement ce qu'on ne veut pas voir.
+      const foodAt = kitchen.target;
+      if (foodAt) lookTarget.set(foodAt.x, 0.4, foodAt.z);
+
       monster.update(dt, time, {
-        action: decision.action,
+        action: foodAt ? 'follow' : decision.action,
         emotion: decision.emotion,
         target: moveTarget,
         lookAt: lookTarget,
@@ -802,7 +862,7 @@ async function boot() {
         chatterTimer = 18 + Math.random() * 26;
         // Pas de bavardage pendant un jeu ou la lecture du guide : deux voix
         // qui se chevauchent rendent la consigne incomprehensible.
-        if (!chat.isOpen && !games.isOpen && !guide.isOpen && !sleeping) {
+        if (!chat.isOpen && !games.isOpen && !guide.isOpen && !sleeping && !kitchen.hasFood) {
           say(spontaneousLine(pet, decision.emotion));
         }
       }
@@ -810,6 +870,7 @@ async function boot() {
 
     daylight.update(dt);
     vfx.update(dt);
+    kitchen.update(dt, time, monster ? monster.group.position : null);
     decor.update(dt, time);
     actionBar.update(dt, { hatched: pet.hatched });
 

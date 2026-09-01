@@ -443,6 +443,25 @@ L'heure du cycle pilote aussi le comportement : en mode accéléré, la créatur
 s'endort vraiment quand la nuit tombe. Changer de mode ne provoque pas de flash,
 la transition se fait comme un lever de soleil accéléré.
 
+## Les repas
+
+Nourrir la créature ne remplit plus une jauge : **le plat tombe du ciel, se pose
+au sol, et la créature va le chercher.** Elle le regarde, s'en approche, le mange
+en trois bouchées — le plat rétrécit à chaque fois — et la faim ne monte qu'une
+fois le repas terminé.
+
+C'est ce qui donne au geste une durée, donc quelque chose à regarder. Sept plats,
+jamais deux fois le même d'affilée, avec des effets différents : le soda réveille,
+le burger salit, la pile de monstres cale pour un moment.
+
+Les plats sont eux-mêmes de petits monstres, avec des yeux et des cornes. Ils
+gigotent en attendant et se débattent pendant qu'on les mange, et les répliques
+jouent là-dessus — on ne mange pas un gâteau, on mange quelque chose qui vous
+regarde.
+
+Pour en ajouter un : le `.glb` dans `public/assets/models/food/`, une entrée dans
+`src/game/food.js`. La mise à l'échelle est automatique.
+
 ## Le décor
 
 Quatre paysages — prairie, sous-bois, éboulis, terre sèche — tirés de la graine
@@ -498,6 +517,21 @@ appel de rendu quel qu'en soit le nombre.
   laisser s'appliquer par-dessus l'état courant.
 - Mouvements réduits (`prefers-reduced-motion`) respectés jusque dans la 3D :
   plus de secousse, de flash ni de parallaxe, moitié moins de particules.
+
+## Contribuer des ressources
+
+La liste de ce qui manque, classée par gain visuel réel, avec les contraintes
+techniques et les noms de fichiers attendus :
+[docs/RESSOURCES-A-PRODUIRE.md](docs/RESSOURCES-A-PRODUIRE.md).
+
+Les invites prêtes à coller dans un générateur d'images, écrites pour que le
+résultat passe correctement dans Meshy — pose en A, fond neutre, membres
+dégagés — sont dans [docs/INVITES-CHATGPT.md](docs/INVITES-CHATGPT.md). Elles
+couvrent trois nouvelles espèces, les objets de soin, le décor, les horizons et
+les icônes.
+
+Les fichiers bruts conviennent, même très lourds : `tools/decimate_glb.py`
+simplifie le maillage et `tools/optimize_glb.py` recompresse les textures.
 
 ## Prochaines étapes possibles
 
