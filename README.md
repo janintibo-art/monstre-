@@ -1,6 +1,6 @@
 # Monstre de Compagnie
 
-Un œuf éclot, une créature en sort. Elle a un caractère tiré de son génome, des
+**Un compagnon virtuel pour apprendre en jouant.** Un œuf éclot, une créature en sort. Elle a un caractère tiré de son génome, des
 besoins qui se dégradent en temps réel, une mémoire de ce que tu fais et une IA
 qui décide seule de ce qu'elle veut faire. Le tout en 3D, sur une seule base de
 code, exportée en **APK Android** et en **.exe Windows** par GitHub Actions.
@@ -283,6 +283,54 @@ npm run android:sync && npm run assets
 ├── capacitor.config.json
 └── vite.config.js
 ```
+
+## Les jeux éducatifs
+
+Le bouton **🎓 Jeux** ouvre neuf jeux, chacun avec sa propre mécanique :
+
+| Jeu | Compétence | Âges |
+| --- | --- | --- |
+| Les couleurs | Observation | 3 à 7 |
+| Compter | Nombres | 3 à 8 |
+| Les formes | Observation | 4 à 8 |
+| La première lettre | Lecture | 4 à 8 |
+| Plus ou moins | Nombres | 4 à 10 |
+| Le calcul | Mathématiques | 5 et + |
+| Que vient après ? | Logique | 5 et + |
+| Répète après moi | Mémoire | 4 et + |
+| Quelle heure est-il ? | Temps | 6 et + |
+
+L'âge indiqué dans les réglages choisit les jeux **et** leur difficulté : le
+calcul va des additions jusqu'à dix aux divisions, l'horloge des heures pleines
+aux cinq minutes, la suite mémorisée de deux à six couleurs.
+
+Trois principes de conception :
+
+1. **Tout ce qui est écrit est aussi dit.** Les consignes sont prononcées pour
+   de vrai, même si la créature parle en babil le reste du temps — un enfant qui
+   ne lit pas encore doit pouvoir jouer seul. Un bouton « Relire » les répète.
+2. **Jamais de sanction.** Ni chronomètre, ni vies, ni son d'échec. Une erreur
+   donne un encouragement, la deuxième un indice, la troisième la réponse et on
+   passe. Une réponse fausse ne disparaît pas : la faire disparaître empêcherait
+   de comprendre pourquoi elle était fausse.
+3. **On joue avec la créature.** Elle se réjouit d'une bonne réponse, danse
+   quand la partie est bien réussie, et son besoin de jeu se remplit.
+
+L'aide vient des indices écrits dans chaque jeu, donc **hors ligne**. Si une IA
+distante est configurée, elle reformule l'indice — sans jamais donner la
+réponse — et le bouton « Pourquoi ? » développe l'explication. Une réponse
+distante qui arrive après que l'enfant a répondu est jetée.
+
+Pour ajouter un jeu : un fichier dans `src/games/list/`, un import dans
+`src/games/index.js`. Sa tranche d'âge suffit à le faire apparaître.
+
+## Le guide intégré
+
+**··· → Comment ça marche ?** ouvre dix sections, dont une entière sur la clé
+d'API : ce que c'est (un mot de passe, pas un logiciel), si c'est payant (non),
+où elle va, et pourquoi tout fonctionne sans. Chaque section se fait lire à voix
+haute. La dernière, « Pour les parents », dit exactement ce qui sort de
+l'appareil et dans quel cas.
 
 ## Le cadrage : paysage verrouillé
 

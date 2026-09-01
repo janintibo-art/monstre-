@@ -15,7 +15,7 @@ export const CARES = [
   {
     id: 'play',
     icon: '🎾',
-    label: 'Jouer',
+    label: 'Balle',
     cooldown: 12,
     effects: { fun: 28, affection: 8, energy: -9 },
     reaction: 'play',
@@ -51,6 +51,16 @@ export const CARES = [
     reaction: null,
     drift: {},
     line: 'Bonne nuit…'
+  },
+  {
+    id: 'games',
+    icon: '🎓',
+    label: 'Jeux',
+    cooldown: 0,
+    effects: {},
+    reaction: null,
+    drift: {},
+    line: null
   },
   {
     id: 'listen',

@@ -190,6 +190,32 @@ export function createVoice() {
     else babble(text, profile);
   }
 
+  // Lecture d'une consigne de jeu.
+  //
+  // Le babil ne peut pas dire « combien font trois plus quatre » : il ne
+  // prononce rien, il rythme. Pour les jeux educatifs, on force donc la
+  // synthese vocale meme si la creature parle en babil le reste du temps —
+  // c'est le seul moyen qu'un enfant qui ne lit pas encore puisse jouer. Le
+  // babil accompagne quand aucun moteur vocal n'est disponible, et l'interface
+  // affiche alors la consigne en grand.
+  function narrate(text, profile = { pitch: 1.3, rate: 0.95, timbre: 'triangle' }) {
+    if (!text) return { spoken: false };
+    stop();
+    if (mode === 'off') return { spoken: false };
+    if (window.speechSynthesis && window.SpeechSynthesisUtterance) {
+      // Un peu plus lent que la parole ordinaire : une consigne doit etre
+      // comprise du premier coup, pas seulement entendue.
+      tts(text, { ...profile, rate: Math.max(0.6, profile.rate * 0.9) });
+      return { spoken: true };
+    }
+    babble(text, profile);
+    return { spoken: false };
+  }
+
+  function hasSpeech() {
+    return Boolean(window.speechSynthesis && window.SpeechSynthesisUtterance);
+  }
+
   // Niveau approximatif entre 0 et 1, pour animer la tete.
   function level() {
     const now = performance.now();
@@ -211,6 +237,8 @@ export function createVoice() {
 
   return {
     speak,
+    narrate,
+    hasSpeech,
     stop,
     unlock,
     level,
@@ -230,14 +258,17 @@ export function createVoice() {
 
 // La voix decoule de la creature : un nouveau-ne parle haut et vite, un adulte
 // plus bas et plus lentement. Le timbre vient du genome, comme la couleur.
-export function voiceProfile(pet) {
+export function voiceProfile(pet, band = null) {
   const stagePitch = { baby: 1.85, child: 1.55, teen: 1.25, adult: 1.02 };
   const stageRate = { baby: 1.3, child: 1.2, teen: 1.05, adult: 0.95 };
   const hue = (pet.genome && pet.genome.hue) || 0.5;
   const shy = (pet.personality && pet.personality.shyness) || 0.5;
+  // Le debit suit l'age de l'enfant : a quatre ans, on a besoin qu'on parle
+  // nettement plus lentement qu'a dix.
+  const childRate = band && band.rate ? band.rate : 1;
   return {
     pitch: (stagePitch[pet.stage] || 1.4) * (0.92 + hue * 0.16),
-    rate: (stageRate[pet.stage] || 1.1) * (1.08 - shy * 0.16),
+    rate: (stageRate[pet.stage] || 1.1) * (1.08 - shy * 0.16) * childRate,
     timbre: hue > 0.5 ? 'triangle' : 'square'
   };
 }

@@ -66,6 +66,14 @@
             <input id="field-name" type="text" maxlength="16" />
           </label>
 
+          <button id="btn-guide">📖 Comment ça marche ?</button>
+
+          <label class="field">
+            <span>Âge de l'enfant</span>
+            <select id="field-age"></select>
+          </label>
+          <p id="age-help" class="hint"></p>
+
           <label class="field">
             <span>Cycle jour / nuit</span>
             <select id="field-cycle"></select>
@@ -137,6 +145,42 @@
           </div>
 
           <button id="btn-reset" class="danger">Recommencer avec un nouvel œuf</button>
+        </div>
+      </div>
+
+      <!-- Jeux educatifs -->
+      <div id="games" role="dialog" aria-modal="true" aria-label="Jeux" class="panel panel--wide" hidden>
+        <div class="panel__head">
+          <h2 id="game-title">Jeux</h2>
+          <button id="games-close" class="icon-button" aria-label="Fermer">×</button>
+        </div>
+        <div class="panel__body">
+          <p id="games-intro" class="hint"></p>
+          <div id="games-list" class="games-list"></div>
+
+          <div id="games-play" hidden>
+            <p id="game-progress" class="game-progress" aria-live="polite"></p>
+            <p id="game-prompt" class="game-prompt"></p>
+            <div id="game-display" class="game-display" hidden></div>
+            <div id="game-choices" class="game-choices"></div>
+            <p id="game-feedback" class="game-feedback" aria-live="polite"></p>
+            <div class="row">
+              <button id="game-repeat" type="button">🔊 Relire</button>
+              <button id="game-why" type="button" hidden>Pourquoi ?</button>
+              <button id="game-quit" type="button">Changer de jeu</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guide -->
+      <div id="guide" role="dialog" aria-modal="true" aria-label="Comment ça marche" class="panel panel--wide" hidden>
+        <div class="panel__head">
+          <h2>Comment ça marche</h2>
+          <button id="guide-close" class="icon-button" aria-label="Fermer">×</button>
+        </div>
+        <div class="panel__body">
+          <div id="guide-list" class="guide-list"></div>
         </div>
       </div>
 

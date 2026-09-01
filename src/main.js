@@ -27,6 +27,9 @@ import { load, save, reset, autosave, SAVE_KEY } from './state/save.js';
 import { advance, hatch, createPet } from './state/pet.js';
 import { createVoice, voiceProfile } from './audio/voice.js';
 import { createListener } from './audio/listen.js';
+import { createGamesUi } from './ui/games.js';
+import { createGuide } from './ui/guide.js';
+import { currentBand } from './state/child.js';
 import { createHud } from './ui/hud.js';
 import { createActionBar } from './ui/actions.js';
 import { createChat } from './ui/chat.js';
@@ -97,7 +100,7 @@ async function boot() {
   // Tout ce que la creature dit passe par ici : bulle a l'ecran ET voix.
   function say(text, duration) {
     hud.showBubble(text, duration);
-    if (pet.hatched) voice.speak(text, voiceProfile(pet));
+    if (pet.hatched) voice.speak(text, voiceProfile(pet, currentBand()));
   }
 
   let egg = null;
@@ -198,6 +201,12 @@ async function boot() {
     getPet: () => pet,
     voice,
     onMemoryChange: () => save(pet),
+    onGuide: () => guide.open(),
+    onAgeChange: () => {
+      // Les jeux proposes changent avec l'age : on rafraichit si le panneau est
+      // deja ouvert, sinon la liste resterait celle de l'ancienne tranche.
+      if (games.isOpen) games.open();
+    },
     onImport: (imported) => {
       reset(); // l'actuel devient la copie de secours
       save(imported);
@@ -357,6 +366,12 @@ async function boot() {
       return;
     }
 
+    if (care.id === 'games') {
+      voice.unlock();
+      games.open();
+      return;
+    }
+
     if (care.id === 'listen') {
       voice.unlock();
       listener.toggle();
@@ -407,6 +422,33 @@ async function boot() {
     if (care.line) say(care.line, 2600);
     save(pet);
   });
+
+  // ----------------------------------------------------------- jeux et guide
+  // La creature reagit a ce qui se passe dans les jeux : elle se rejouit d'une
+  // bonne reponse et encourage apres une erreur. C'est ce qui fait qu'on joue
+  // AVEC elle, et pas juste sur un questionnaire pose devant elle.
+  const games = createGamesUi({
+    getPet: () => pet,
+    voice,
+    voiceProfile,
+    onCelebrate: (big = false) => {
+      if (!monster) return;
+      monster.react('pet', 1.2);
+      brain.forceAction(big ? 'dance' : 'play', big ? 6 : 3);
+      const head = monster.headWorldPosition();
+      vfx.emit(big ? 'growth' : 'sparkleTrail', head, { count: big ? 24 : 10 });
+      vfx.emit('hearts', head, { count: big ? 8 : 3 });
+      applyEffects(pet.needs, { fun: big ? 6 : 2, affection: 1 });
+    },
+    onEncourage: () => {
+      if (monster) monster.react('pet', 0.6);
+    }
+  });
+
+  const guide = createGuide({ voice, voiceProfile, getPet: () => pet });
+
+  games.setToggleHandler((open) => panels.setExternalOpen(open));
+  guide.setToggleHandler((open) => panels.setExternalOpen(open));
 
   // -------------------------------------------------------------- pointeur
   function onPointerDown(event) {
@@ -678,7 +720,11 @@ async function boot() {
       chatterTimer -= dt;
       if (chatterTimer <= 0) {
         chatterTimer = 18 + Math.random() * 26;
-        if (!chat.isOpen && !sleeping) say(spontaneousLine(pet, decision.emotion));
+        // Pas de bavardage pendant un jeu ou la lecture du guide : deux voix
+        // qui se chevauchent rendent la consigne incomprehensible.
+        if (!chat.isOpen && !games.isOpen && !guide.isOpen && !sleeping) {
+          say(spontaneousLine(pet, decision.emotion));
+        }
       }
     }
 

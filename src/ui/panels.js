@@ -4,6 +4,7 @@ import { BIOMES, biomeById, loadBiomePreference, saveBiomePreference, pickBiome 
 import { CYCLE_MODES } from '../game/daylight.js';
 import { knownFacts, forget, daysTogether, playerName } from '../ai/memory.js';
 import { exportSave, parseImport } from '../state/save.js';
+import { AGE_BANDS, bandById, loadChild, saveChild } from '../state/child.js';
 
 // Reglages et bapteme. Regle de base : un seul panneau ouvert a la fois,
 // et tout panneau doit pouvoir se fermer. Un ecran bloque est un bug.
@@ -16,6 +17,8 @@ export function createPanels({
   onMemoryChange,
   onPanelToggle,
   onImport,
+  onGuide,
+  onAgeChange,
   getPet,
   voice,
   daylight
@@ -26,6 +29,9 @@ export function createPanels({
   const nameField = document.getElementById('field-name');
   const resetBtn = document.getElementById('btn-reset');
 
+  const guideBtn = document.getElementById('btn-guide');
+  const ageSelect = document.getElementById('field-age');
+  const ageHelp = document.getElementById('age-help');
   const cycleSelect = document.getElementById('field-cycle');
   const biomeSelect = document.getElementById('field-biome');
   const voiceSelect = document.getElementById('field-voice');
@@ -62,6 +68,34 @@ export function createPanels({
   const namingField = document.getElementById('naming-field');
   const namingConfirm = document.getElementById('naming-confirm');
   const namingLater = document.getElementById('naming-later');
+
+  // --------------------------------------------------------------------- age
+  // L'age pilote trois choses : quels jeux apparaissent, a quelle difficulte,
+  // et comment le monstre parle — vocabulaire et debit.
+  AGE_BANDS.forEach((band) => {
+    const option = document.createElement('option');
+    option.value = band.id;
+    option.textContent = band.label;
+    ageSelect.appendChild(option);
+  });
+
+  function refreshAge() {
+    const band = bandById(loadChild().age);
+    ageSelect.value = band.id;
+    ageHelp.textContent = band.description;
+  }
+
+  ageSelect.addEventListener('change', () => {
+    saveChild({ age: ageSelect.value });
+    refreshAge();
+    if (onAgeChange) onAgeChange(bandById(ageSelect.value));
+  });
+  refreshAge();
+
+  guideBtn.addEventListener('click', () => {
+    closeAll();
+    if (onGuide) onGuide();
+  });
 
   // ------------------------------------------------------------------- cycle
   Object.keys(CYCLE_MODES).forEach((id) => {
@@ -209,10 +243,19 @@ export function createPanels({
   // ----------------------------------------------------------------- panneaux
   // Un panneau ouvert libere l'orientation : ces ecrans sont des listes et des
   // formulaires, ils se lisent mieux a la verticale.
+  // Les jeux et le guide vivent hors de ce module mais partagent le meme verrou
+  // d'orientation : on leur laisse signaler leur etat.
+  let externalOpen = false;
+
   function notify() {
     if (onPanelToggle) {
-      onPanelToggle(!menu.hidden || !naming.hidden || !memories.hidden);
+      onPanelToggle(!menu.hidden || !naming.hidden || !memories.hidden || externalOpen);
     }
+  }
+
+  function setExternalOpen(open) {
+    externalOpen = open;
+    notify();
   }
 
   function closeAll() {
@@ -375,6 +418,8 @@ export function createPanels({
   });
 
   return {
+    setExternalOpen,
+    refreshAge,
     askName(currentName) {
       // Le bapteme ne doit jamais s'empiler sur un autre panneau.
       menu.hidden = true;
