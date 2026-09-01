@@ -8,9 +8,15 @@ import { STAGE_SCALE } from './monster.js';
 // renvoie null et le jeu retombe sur la creature generee par code.
 
 const loader = new GLTFLoader();
+const cache = new Map();
 
+// Chargement paresseux et mis en cache : on ne telecharge le modele d'un stade
+// que le jour ou la creature l'atteint. Un echec renvoie null, et le jeu
+// retombe sur la creature generee par code.
 export function loadModel(url) {
-  return new Promise((resolve) => {
+  if (!url) return Promise.resolve(null);
+  if (cache.has(url)) return cache.get(url);
+  const promise = new Promise((resolve) => {
     loader.load(
       url,
       (gltf) => resolve(gltf),
@@ -18,14 +24,8 @@ export function loadModel(url) {
       () => resolve(null)
     );
   });
-}
-
-export async function loadModels(base = import.meta.env.BASE_URL || './') {
-  const [monster, egg] = await Promise.all([
-    loadModel(`${base}assets/models/Monstre.glb`),
-    loadModel(`${base}assets/models/Oeuf.glb`)
-  ]);
-  return { monster, egg };
+  cache.set(url, promise);
+  return promise;
 }
 
 // Mesure la boite englobante REELLE, apres skinning.

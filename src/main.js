@@ -4,14 +4,15 @@ import { createLoop } from './core/loop.js';
 import { createWorld } from './game/world.js';
 import { createEgg } from './game/egg.js';
 import { createMonster } from './game/monster.js';
-import { loadModels, createModelMonster, createModelEgg } from './game/gltf.js';
+import { loadModel, createModelMonster, createModelEgg } from './game/gltf.js';
+import { speciesById, pickSpecies, eggUrl, stageUrl } from './game/species.js';
 import { createParticles } from './game/particles.js';
 import { createBrain } from './ai/brain.js';
 import { applyEffects, wellbeing } from './ai/needs.js';
 import { nudge } from './ai/personality.js';
 import { remember } from './ai/memory.js';
 import { speak, spontaneousLine } from './ai/dialogue/index.js';
-import { load, save, reset, autosave } from './state/save.js';
+import { load, save, reset, autosave, SAVE_KEY } from './state/save.js';
 import { advance, hatch, createPet } from './state/pet.js';
 import { createHud } from './ui/hud.js';
 import { createActionBar } from './ui/actions.js';
@@ -32,7 +33,7 @@ function showFatal(error) {
   `;
   box.querySelector('button').addEventListener('click', () => {
     try {
-      localStorage.removeItem('monstre.save.v2');
+      localStorage.removeItem(SAVE_KEY);
     } catch {
       /* rien a faire */
     }
@@ -43,9 +44,9 @@ function showFatal(error) {
 
 async function boot() {
   const canvas = document.getElementById('scene');
-  // Textures et modeles sont facultatifs : tout ce qui manque est remplace
-  // par la version generee par code.
-  const [textures, models] = await Promise.all([loadTextures(), loadModels()]);
+  // Les textures sont facultatives ; les modeles se chargent a la demande,
+  // stade par stade. Ce qui manque est remplace par la version generee par code.
+  const textures = await loadTextures();
 
   let { pet, offlineSeconds } = load();
 
@@ -56,6 +57,9 @@ async function boot() {
   let egg = null;
   let monster = null;
   let brain = createBrain(pet.seed);
+  let species = speciesById(pet.species || pickSpecies(pet.seed).id);
+  let currentModelUrl = null;
+  let swapping = false;
 
   // --- Etat de session (non sauvegarde) ---
   let asleep = false;
@@ -71,23 +75,57 @@ async function boot() {
   let hatching = 0;
 
   // ------------------------------------------------------------- entites 3D
-  function spawnEgg() {
-    egg = models.egg ? createModelEgg(models.egg, pet.seed) : createEgg(pet.seed, textures);
+  async function spawnEgg() {
+    const gltf = await loadModel(eggUrl(species));
+    egg = gltf ? createModelEgg(gltf, pet.seed) : createEgg(pet.seed, textures);
     world.scene.add(egg.group);
     hud.showVials(false);
   }
 
-  function spawnMonster() {
-    monster = models.monster
-      ? createModelMonster(models.monster, pet.genome)
+  async function spawnMonster(at = null) {
+    const url = stageUrl(species, pet.stage);
+    const gltf = await loadModel(url);
+    currentModelUrl = url;
+    monster = gltf
+      ? createModelMonster(gltf, pet.genome)
       : createMonster(pet.genome, textures);
     monster.setStage(pet.stage);
+    if (at) monster.group.position.copy(at);
     world.scene.add(monster.group);
     hud.showVials(true);
   }
 
-  if (pet.hatched) spawnMonster();
-  else spawnEgg();
+  // La creature change de corps en grandissant. On garde sa position pour que
+  // la transformation se voie sur place, sans teleportation.
+  async function swapModel() {
+    const url = stageUrl(species, pet.stage);
+    if (!url || url === currentModelUrl || swapping) return;
+    swapping = true;
+    const at = monster ? monster.group.position.clone() : null;
+    try {
+      const gltf = await loadModel(url);
+      if (!gltf) {
+        currentModelUrl = url;
+        return;
+      }
+      if (monster) {
+        world.scene.remove(monster.group);
+        monster.dispose();
+      }
+      monster = createModelMonster(gltf, pet.genome);
+      monster.setStage(pet.stage);
+      if (at) monster.group.position.copy(at);
+      world.scene.add(monster.group);
+      currentModelUrl = url;
+      particles.burst(monster.headWorldPosition(), 26, 0xa98bff, 2);
+      hud.showBubble('Je me sens... différent.', 4000);
+    } finally {
+      swapping = false;
+    }
+  }
+
+  if (pet.hatched) await spawnMonster();
+  else await spawnEgg();
 
   // ------------------------------------------------------------- interface
   const panels = createPanels({
@@ -100,6 +138,8 @@ async function boot() {
       reset();
       pet = createPet();
       brain = createBrain(pet.seed);
+      species = speciesById(pet.species);
+      currentModelUrl = null;
       if (monster) {
         world.scene.remove(monster.group);
         monster.dispose();
@@ -235,9 +275,10 @@ async function boot() {
     world.scene.remove(egg.group);
     egg.dispose();
     egg = null;
-    spawnMonster();
-    if (monster.playBirth) monster.playBirth();
-    particles.burst(new THREE.Vector3(0, 0.8, 0), 30, 0x6fe3c4, 2);
+    spawnMonster().then(() => {
+      if (monster && monster.playBirth) monster.playBirth();
+      particles.burst(new THREE.Vector3(0, 0.8, 0), 30, 0x6fe3c4, 2);
+    });
     panels.askName(pet.name);
     save(pet);
   }
@@ -286,7 +327,7 @@ async function boot() {
     const sleeping = asleep || decision.action === 'sleep';
     advance(pet, dt, { asleep: sleeping });
 
-    if (!pet.hatched) {
+    if (!pet.hatched && egg) {
       egg.setProgress(pet.hatchProgress);
       egg.update(dt, time);
       if (hatching > 0) {
@@ -312,6 +353,7 @@ async function boot() {
       }
 
       monster.setStage(pet.stage);
+      swapModel();
       updateTarget(decision.action, dt);
 
       if (pointerActive > 0) lookTarget.set(pointerTarget.x, 1, pointerTarget.z);

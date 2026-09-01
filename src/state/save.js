@@ -1,6 +1,7 @@
 import { createPet, advance, SAVE_VERSION } from './pet.js';
 
-const KEY = 'monstre.save.v2';
+export const SAVE_KEY = 'monstre.save.v3';
+const KEY = SAVE_KEY;
 
 // Plafond de rattrapage : meme absent trois semaines, le joueur ne retrouve
 // pas un monstre a zero partout. Douze heures de degradation maximum.
