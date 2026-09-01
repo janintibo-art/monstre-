@@ -1,17 +1,19 @@
 import { PROVIDERS, loadConfig, saveConfig, testConnection, listModels } from '../ai/dialogue/index.js';
 import { VOICE_MODES, voiceProfile } from '../audio/voice.js';
 import { BIOMES, biomeById, loadBiomePreference, saveBiomePreference, pickBiome } from '../game/biomes.js';
+import { CYCLE_MODES } from '../game/daylight.js';
 
 // Reglages et bapteme. Regle de base : un seul panneau ouvert a la fois,
 // et tout panneau doit pouvoir se fermer. Un ecran bloque est un bug.
 
-export function createPanels({ onRename, onReset, onNamed, onBiome, getPet, voice }) {
+export function createPanels({ onRename, onReset, onNamed, onBiome, getPet, voice, daylight }) {
   const menu = document.getElementById('menu');
   const menuBtn = document.getElementById('btn-menu');
   const menuClose = document.getElementById('menu-close');
   const nameField = document.getElementById('field-name');
   const resetBtn = document.getElementById('btn-reset');
 
+  const cycleSelect = document.getElementById('field-cycle');
   const biomeSelect = document.getElementById('field-biome');
   const voiceSelect = document.getElementById('field-voice');
   const voiceTest = document.getElementById('btn-voice-test');
@@ -35,6 +37,16 @@ export function createPanels({ onRename, onReset, onNamed, onBiome, getPet, voic
   const namingField = document.getElementById('naming-field');
   const namingConfirm = document.getElementById('naming-confirm');
   const namingLater = document.getElementById('naming-later');
+
+  // ------------------------------------------------------------------- cycle
+  Object.keys(CYCLE_MODES).forEach((id) => {
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = CYCLE_MODES[id];
+    cycleSelect.appendChild(option);
+  });
+  cycleSelect.value = daylight.mode;
+  cycleSelect.addEventListener('change', () => daylight.setMode(cycleSelect.value));
 
   // ------------------------------------------------------------------- decor
   // « Automatique » laisse le paysage decouler de la graine de l'oeuf : chaque

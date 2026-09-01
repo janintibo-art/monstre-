@@ -9,6 +9,7 @@ import { speciesById, pickSpecies, eggUrl, stageUrl } from './game/species.js';
 import { createParticles } from './game/particles.js';
 import { createDecor } from './game/decor.js';
 import { resolveBiome } from './game/biomes.js';
+import { createDaylight } from './game/daylight.js';
 import { createBrain } from './ai/brain.js';
 import { applyEffects, wellbeing } from './ai/needs.js';
 import { nudge } from './ai/personality.js';
@@ -63,6 +64,9 @@ async function boot() {
   const world = createWorld(canvas, { ...textures, ground: groundTexture }, biome);
   const decor = createDecor(world.scene);
   decor.build(biome, pet.seed);
+
+  const daylight = createDaylight(world);
+  daylight.setBiome(biome);
   const particles = createParticles(world.scene);
   const hud = createHud();
   const voice = createVoice();
@@ -154,8 +158,10 @@ async function boot() {
       biome = next;
       const texture = await loadTexture(base + biome.ground);
       world.applyBiome(biome, texture);
+      daylight.setBiome(biome);
       decor.build(biome, pet.seed);
     },
+    daylight,
     onRename: (name) => {
       pet.name = name;
       save(pet);
@@ -169,6 +175,7 @@ async function boot() {
       biome = resolveBiome(pet.seed);
       loadTexture(base + biome.ground).then((texture) => {
         world.applyBiome(biome, texture);
+        daylight.setBiome(biome);
         decor.build(biome, pet.seed);
       });
       if (monster) {
@@ -415,7 +422,7 @@ async function boot() {
         decision = brain.think(
           pet,
           {
-            hourOfDay: new Date().getHours(),
+            hourOfDay: daylight.hourOfDay,
             pointerActive: pointerActive > 0,
             wellbeing: wellbeing(pet.needs)
           },
@@ -449,6 +456,7 @@ async function boot() {
       }
     }
 
+    daylight.update(dt);
     particles.update(dt);
     decor.update(dt, time);
     actionBar.update(dt, { hatched: pet.hatched });

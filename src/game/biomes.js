@@ -1,11 +1,13 @@
 import { createRng } from '../core/rng.js';
 
-// Les décors. Chacun definit son sol, l'ambiance lumineuse qui va avec et le
-// nombre d'arbres plantes autour de l'aire de jeu.
+// Les décors. Chacun definit son sol, sa couleur d'accent, la teinte qu'il
+// donne a l'atmosphere et le nombre d'arbres plantes autour de l'aire de jeu.
 //
-// La lumiere compte autant que la texture : une prairie verte sous la meme
-// lumiere bleutee qu'un sol rocheux violet paraitrait fausse. Chaque decor
-// reteinte donc le ciel, le brouillard et la lampe d'appoint.
+// Le decor ne fixe PAS la lumiere : c'est le cycle jour/nuit qui la calcule.
+// Un decor qui imposerait son ambiance donnerait un sous-bois nocturne en plein
+// midi. Il ne fait que teinter le ciel et le brouillard de sa `mood`, a hauteur
+// de `moodMix` — assez pour qu'on reconnaisse le lieu, pas assez pour nier
+// l'heure qu'il est.
 
 export const BIOMES = [
   {
@@ -13,13 +15,9 @@ export const BIOMES = [
     name: 'Prairie',
     ground: 'assets/textures/ground/prairie.jpg',
     repeat: 3,
-    sky: ['#20406a', '#0a1620'],
-    fog: 0x0c1a20,
-    hemiSky: 0xbfe9ff,
-    hemiGround: 0x2f5a34,
-    key: 0xfff3dc,
-    rim: 0x6fe3c4,
-    ring: 0x9dffd0,
+    accent: 0x6fe3c4,
+    mood: 0x2f7a4a,
+    moodMix: 0.16,
     trees: 7
   },
   {
@@ -27,13 +25,9 @@ export const BIOMES = [
     name: 'Sous-bois',
     ground: 'assets/textures/ground/mousse.jpg',
     repeat: 3,
-    sky: ['#123a4a', '#06131c'],
-    fog: 0x08171f,
-    hemiSky: 0x8ff0e0,
-    hemiGround: 0x1d4a48,
-    key: 0xe8fff6,
-    rim: 0x59f0d6,
-    ring: 0x7dffe8,
+    accent: 0x59f0d6,
+    mood: 0x1d6a68,
+    moodMix: 0.26,
     trees: 9
   },
   {
@@ -41,13 +35,9 @@ export const BIOMES = [
     name: 'Éboulis',
     ground: 'assets/textures/ground/roche.jpg',
     repeat: 2.5,
-    sky: ['#2a2350', '#0d0a1c'],
-    fog: 0x120e26,
-    hemiSky: 0xd0b6ff,
-    hemiGround: 0x4a3358,
-    key: 0xffe6f2,
-    rim: 0xa98bff,
-    ring: 0xc9a8ff,
+    accent: 0xa98bff,
+    mood: 0x5a3f7a,
+    moodMix: 0.22,
     trees: 3
   },
   {
@@ -55,13 +45,9 @@ export const BIOMES = [
     name: 'Terre sèche',
     ground: 'assets/textures/ground/terre.jpg',
     repeat: 3,
-    sky: ['#3a3050', '#14101c'],
-    fog: 0x1a1420,
-    hemiSky: 0xffe0b0,
-    hemiGround: 0x5a4028,
-    key: 0xfff0d0,
-    rim: 0x6fe3c4,
-    ring: 0x9fe8d0,
+    accent: 0xffc48a,
+    mood: 0x8a5a30,
+    moodMix: 0.18,
     trees: 4
   }
 ];

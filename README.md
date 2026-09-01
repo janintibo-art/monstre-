@@ -190,14 +190,41 @@ npm run android:sync && npm run assets
 └── vite.config.js
 ```
 
+## Le cycle jour / nuit
+
+Sept moments — nuit, aube, matin, midi, après-midi, crépuscule, nuit —
+interpolés en continu. Chacun définit sa palette complète : ciel, brouillard et
+sa portée, lumières, étoiles. La lumière ne saute jamais d'un état à l'autre.
+
+La course du soleil est calculée, pas scriptée : son élévation suit une
+sinusoïde sur la journée, donc les ombres s'allongent le soir. L'astre visible
+est au bout de l'axe de la lumière — soleil le jour, lune la nuit. Le ciel est
+un dôme en dégradé piloté par deux uniformes, ce qui permet de le faire évoluer
+image par image sans rien redessiner.
+
+Quatre modes dans **··· → Cycle jour / nuit** :
+
+| Mode | Effet |
+| --- | --- |
+| Heure réelle | La créature vit à ton heure. C'est le défaut. |
+| Accéléré | Un tour complet en 24 minutes, pour voir le cycle. |
+| Toujours jour | Figé à midi. |
+| Toujours nuit | Figé à minuit. |
+
+L'heure du cycle pilote aussi le comportement : en mode accéléré, la créature
+s'endort vraiment quand la nuit tombe. Changer de mode ne provoque pas de flash,
+la transition se fait comme un lever de soleil accéléré.
+
 ## Le décor
 
 Quatre paysages — prairie, sous-bois, éboulis, terre sèche — tirés de la graine
 de l'œuf, donc chaque créature a le sien. Le joueur peut en forcer un dans
 **··· → Décor**, sans recharger.
 
-Chaque décor change **le sol et la lumière ensemble** : ciel, brouillard, lampe
-principale et lampe d'appoint. Autour de l'aire de jeu, des arbres sont plantés
+Un décor ne fixe **pas** la lumière — sinon un sous-bois resterait nocturne en
+plein midi. Il fournit son sol, sa couleur d'accent et une teinte d'atmosphère
+mélangée au ciel à hauteur de 16 à 26 % : assez pour reconnaître le lieu, pas
+assez pour nier l'heure qu'il est. Autour de l'aire de jeu, des arbres sont plantés
 sur un anneau, avec une trouée côté caméra pour ne jamais masquer la créature.
 Ils se balancent au vent et passent par un `InstancedMesh` : un seul appel de
 rendu quel qu'en soit le nombre.
