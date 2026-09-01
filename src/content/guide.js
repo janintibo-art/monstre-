@@ -71,6 +71,18 @@ export const GUIDE = [
     ]
   },
   {
+    id: 'profils',
+    icon: '👤',
+    title: 'Un profil par personne',
+    body: [
+      'Au premier lancement, l’application demande qui joue. Chaque personne crée son profil : un prénom, une image, son âge, et ce qu’elle aime.',
+      '**Chaque profil a son propre monstre**, ses propres souvenirs, son propre décor. C’est essentiel : une mémoire partagée entre une grand-mère et un enfant de six ans ne serait la mémoire de personne. La complicité ne se crée que si la créature sait à qui elle parle.',
+      'Ce que vous cochez à la création — les animaux, le jardin, la cuisine — devient tout de suite un souvenir. La créature vous connaît donc un peu dès la première phrase, au lieu de vous demander votre prénom que vous venez d’écrire.',
+      'On ne demande jamais de nom de famille, ni d’adresse, ni de date de naissance exacte : le jeu n’en a pas besoin. Une tranche d’âge suffit à adapter les jeux et le ton.',
+      'Pour changer de personne : **Réglages → Changer de profil**. Vous pouvez aussi modifier un profil ou en supprimer un — une copie de secours du monstre est conservée dans ce cas.'
+    ]
+  },
+  {
     id: 'papoter',
     icon: '💬',
     title: 'Discuter avec elle',

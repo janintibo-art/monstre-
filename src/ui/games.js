@@ -1,7 +1,7 @@
 import { GAMES, gamesForBand } from '../games/index.js';
 import { createSession } from '../games/session.js';
 import { createTutor } from '../games/tutor.js';
-import { currentBand } from '../state/profile.js';
+import { currentBand } from '../state/profiles.js';
 import { topicsFor, personalTopic } from '../games/topics.js';
 
 // Interface des jeux educatifs.

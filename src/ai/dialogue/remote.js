@@ -1,7 +1,8 @@
 import { describe } from '../personality.js';
 import { NEED_LABELS } from '../needs.js';
 import { favouriteCare, digest, lastExchanges, playerName } from '../memory.js';
-import { currentBand, audienceInstruction } from '../../state/profile.js';
+import { audienceInstruction } from '../../state/profile.js';
+import { currentBand } from '../../state/profiles.js';
 
 // Branchement facultatif vers un vrai modele de langage.
 //

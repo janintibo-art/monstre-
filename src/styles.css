@@ -1223,3 +1223,150 @@ select {
   border-color: rgba(111, 227, 196, 0.4);
   background: linear-gradient(180deg, rgba(111, 227, 196, 0.1), var(--ink-2));
 }
+
+/* ------------------------------- Profils --------------------------------- */
+
+.profiles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.profile-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 72px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(233, 238, 245, 0.12);
+  background: var(--ink-2);
+  color: var(--bone);
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-card:hover {
+  border-color: var(--glow);
+}
+
+.profile-card--active {
+  border-color: var(--glow);
+  box-shadow: 0 0 0 1px var(--glow-soft);
+}
+
+.profile-card__avatar {
+  font-size: 32px;
+  line-height: 1;
+  flex: none;
+}
+
+.profile-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.profile-card__body strong {
+  font-family: var(--display);
+  font-size: 18px;
+}
+
+.profile-card__detail {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.profile-edit {
+  width: 48px;
+  border-radius: 16px;
+  border: 1px solid rgba(233, 238, 245, 0.12);
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.profile-edit:hover {
+  color: var(--glow);
+  border-color: var(--glow);
+}
+
+.profile-add {
+  min-height: 56px;
+  border-radius: 16px;
+  border: 1px dashed rgba(111, 227, 196, 0.5);
+  background: transparent;
+  color: var(--glow);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.avatar-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.avatar-choice {
+  aspect-ratio: 1;
+  min-height: 46px;
+  border-radius: 12px;
+  border: 1px solid rgba(233, 238, 245, 0.12);
+  background: var(--ink-2);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.avatar-choice--on {
+  border-color: var(--glow);
+  background: rgba(111, 227, 196, 0.14);
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(233, 238, 245, 0.14);
+  background: var(--ink-2);
+  color: var(--bone);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.chip--on {
+  border-color: var(--glow);
+  background: rgba(111, 227, 196, 0.16);
+  color: var(--glow);
+}
+
+.confort .profile-card {
+  min-height: 92px;
+}
+
+.confort .profile-card__body strong {
+  font-size: 22px;
+}
+
+.confort .chip {
+  min-height: 52px;
+  font-size: 16px;
+}
+
+.confort .avatar-choice {
+  min-height: 58px;
+  font-size: 30px;
+}

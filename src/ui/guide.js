@@ -1,5 +1,5 @@
 import { GUIDE } from '../content/guide.js';
-import { currentBand } from '../state/profile.js';
+import { currentBand } from '../state/profiles.js';
 
 // Le guide. Un accordeon : une section ouverte a la fois, pour ne pas noyer.
 //

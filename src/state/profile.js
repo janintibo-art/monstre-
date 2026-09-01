@@ -12,9 +12,6 @@
 // et ca evite de collecter une donnee personnelle precise — sur un enfant comme
 // sur une personne agee.
 
-const KEY = 'monstre.profil';
-const LEGACY_KEY = 'monstre.enfant';
-
 export const AGE_BANDS = [
   {
     id: 'none',
@@ -113,35 +110,10 @@ export function bandById(id) {
   return AGE_BANDS.find((b) => b.id === id) || AGE_BANDS[0];
 }
 
-export function loadProfile() {
-  try {
-    const raw = localStorage.getItem(KEY) || localStorage.getItem(LEGACY_KEY);
-    if (!raw) return { age: 'none' };
-    const data = JSON.parse(raw);
-    // L'ancienne tranche « 12+ » devient « 12 à 17 ans ».
-    const id = data.age === '12+' ? '12-17' : data.age;
-    return { age: bandById(id).id };
-  } catch {
-    return { age: 'none' };
-  }
-}
-
-export function saveProfile(profile) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify({ age: bandById(profile.age).id }));
-  } catch {
-    /* stockage indisponible */
-  }
-}
-
-export function currentBand() {
-  return bandById(loadProfile().age);
-}
-
 // Consigne inseree dans le prompt du modele distant. Elle encadre le ton autant
 // que le contenu : on ne parle pas de la meme facon a un enfant de quatre ans,
 // a un adolescent et a une personne de quatre-vingts ans.
-export function audienceInstruction(band = currentBand()) {
+export function audienceInstruction(band) {
   const commun =
     "N'aborde jamais de sujet effrayant, violent, ni destine aux adultes avertis. Ne demande jamais d'informations personnelles precises : ni adresse, ni coordonnees bancaires, ni mot de passe.";
 
@@ -176,38 +148,16 @@ export function audienceInstruction(band = currentBand()) {
   return `Tu parles peut-etre a un enfant ou a une personne agee : reste simple, doux et clair. ${commun}`;
 }
 
-// Le mode confort peut etre force independamment de l'age : quelqu'un de
-// cinquante ans peut avoir besoin de gros caracteres.
-const COMFORT_KEY = 'monstre.confort';
-
-export function loadComfort() {
-  try {
-    const raw = localStorage.getItem(COMFORT_KEY);
-    if (raw === null) return null; // null = suivre la tranche d'age
-    return raw === '1';
-  } catch {
-    return null;
-  }
+// Le mode confort. Il est enregistre dans le profil : chacun le sien, puisque
+// la meme famille peut compter un enfant de quatre ans et une arriere-grand-mere.
+// `null` signifie « suivre la tranche d'age ».
+export function comfortEnabled(band, override = null) {
+  return override === null || override === undefined ? Boolean(band.comfort) : override;
 }
 
-export function saveComfort(value) {
-  try {
-    if (value === null) localStorage.removeItem(COMFORT_KEY);
-    else localStorage.setItem(COMFORT_KEY, value ? '1' : '0');
-  } catch {
-    /* stockage indisponible */
-  }
-}
-
-export function comfortEnabled(band = currentBand()) {
-  const forced = loadComfort();
-  return forced === null ? Boolean(band.comfort) : forced;
-}
-
-// Applique le mode confort au document. Une classe sur <html> suffit : tout le
-// reste est du CSS, donc rien a recalculer image par image.
-export function applyComfort(band = currentBand()) {
-  const on = comfortEnabled(band);
-  document.documentElement.classList.toggle('confort', on);
-  return on;
+// Une classe sur <html> suffit : tout le reste est du CSS, donc rien a
+// recalculer image par image.
+export function applyComfortClass(on) {
+  document.documentElement.classList.toggle('confort', Boolean(on));
+  return Boolean(on);
 }

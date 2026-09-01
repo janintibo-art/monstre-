@@ -16,6 +16,7 @@ import { applyEffects, wellbeing } from './ai/needs.js';
 import { nudge } from './ai/personality.js';
 import {
   remember,
+  learn,
   learnFrom,
   recordSpeech,
   recordMoment,
@@ -23,13 +24,21 @@ import {
   consolidate
 } from './ai/memory.js';
 import { speak, spontaneousLine, getLastError } from './ai/dialogue/index.js';
-import { load, save, reset, autosave, SAVE_KEY } from './state/save.js';
+import { load, save, reset, autosave } from './state/save.js';
 import { advance, hatch, createPet } from './state/pet.js';
 import { createVoice, voiceProfile } from './audio/voice.js';
 import { createListener } from './audio/listen.js';
 import { createGamesUi } from './ui/games.js';
 import { createGuide } from './ui/guide.js';
-import { currentBand, applyComfort } from './state/profile.js';
+import { comfortEnabled, applyComfortClass } from './state/profile.js';
+import {
+  currentBand,
+  getActiveProfile,
+  migrateLegacy,
+  listProfiles,
+  seedFacts
+} from './state/profiles.js';
+import { createProfilePicker } from './ui/profiles.js';
 import { createHud } from './ui/hud.js';
 import { createActionBar } from './ui/actions.js';
 import { createChat } from './ui/chat.js';
@@ -72,15 +81,55 @@ const REDUCED_MOTION =
   window.matchMedia &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+function applyProfileComfort() {
+  const profile = getActiveProfile();
+  return applyComfortClass(comfortEnabled(currentBand(), profile ? profile.comfort : null));
+}
+
+// Choix du profil avant tout le reste : la sauvegarde chargee depend de qui
+// joue, donc rien ne peut demarrer tant que la question n'est pas tranchee.
+function askProfile() {
+  return new Promise((resolve) => {
+    const picker = createProfilePicker({
+      onChoose: (profile, info) => {
+        picker.close();
+        resolve({ profile, ...info });
+      }
+    });
+    picker.open({ closable: false });
+  });
+}
+
 async function boot() {
   lockLandscape();
-  applyComfort();
+
+  // Une installation anterieure aux profils devient le premier profil : sa
+  // creature et ses souvenirs sont conserves.
+  migrateLegacy();
+
+  let seeded = false;
+  if (!getActiveProfile() || !listProfiles().length) {
+    const chosen = await askProfile();
+    seeded = Boolean(chosen.isNew);
+  }
+  applyProfileComfort();
   const canvas = document.getElementById('scene');
   // Les textures sont facultatives ; les modeles se chargent a la demande,
   // stade par stade. Ce qui manque est remplace par la version generee par code.
   const textures = await loadTextures();
 
   let { pet, offlineSeconds } = load();
+
+  // Profil tout juste cree : ce que la personne a coche devient des souvenirs.
+  // La creature la connait donc un peu des la premiere phrase, au lieu de
+  // demander son prenom a quelqu'un qui vient de l'ecrire.
+  if (seeded) {
+    const profile = getActiveProfile();
+    if (profile) {
+      seedFacts(profile).forEach((fact) => learn(pet.memory, fact));
+      save(pet);
+    }
+  }
 
   // Le decor decoule de la graine, sauf si le joueur en a choisi un.
   let biome = resolveBiome(pet.seed);
@@ -203,8 +252,17 @@ async function boot() {
     voice,
     onMemoryChange: () => save(pet),
     onGuide: () => guide.open(),
+    onProfiles: () => {
+      // Changer de profil change la sauvegarde a charger : on repart proprement
+      // plutot que de recabler le monde a chaud.
+      save(pet);
+      const picker = createProfilePicker({
+        onChoose: () => window.location.reload()
+      });
+      picker.open({ closable: true });
+    },
     onAgeChange: () => {
-      applyComfort();
+      applyProfileComfort();
       // Les jeux proposes changent avec l'age : on rafraichit si le panneau est
       // deja ouvert, sinon la liste resterait celle de l'ancienne tranche.
       if (games.isOpen) games.open();

@@ -284,9 +284,34 @@ npm run android:sync && npm run assets
 └── vite.config.js
 ```
 
+## Un profil par personne
+
+Au premier lancement, l'application demande qui joue. Chaque personne crée son
+profil — prénom, image, âge, centres d'intérêt — et **chaque profil a sa propre
+créature, ses propres souvenirs, son propre décor**.
+
+C'est le point central : une mémoire partagée entre une grand-mère et un enfant
+de six ans ne serait la mémoire de personne. La complicité ne se crée que si la
+créature sait à qui elle parle.
+
+Ce qui est coché à la création devient immédiatement un souvenir : la créature
+connaît déjà un peu la personne dès la première phrase, au lieu de lui demander
+le prénom qu'elle vient d'écrire.
+
+Ce qui suit le profil : la créature, les souvenirs, la tranche d'âge, le mode
+confort. Ce qui reste commun à l'appareil : la voix, le fournisseur d'IA et sa
+clé, le cycle jour/nuit — ce sont des réglages de matériel, pas de personne.
+
+Aucun nom de famille, aucune adresse, aucune date de naissance exacte n'est
+demandé : une tranche d'âge suffit à adapter les jeux et le ton. Tout reste sur
+l'appareil, et c'est écrit sur l'écran de création.
+
+Une installation antérieure aux profils est reprise automatiquement : la
+créature existante devient le premier profil.
+
 ## Pour qui
 
-Le **profil du joueur**, dans les réglages, va de 3 ans à « Confort ». Il règle
+La **tranche d'âge du profil** va de 3 ans à « Confort ». Il règle
 les jeux proposés, leur difficulté, le débit de la voix, la taille du texte et
 des boutons, et le ton de la créature quand une IA est branchée — avec une
 consigne qui lui interdit explicitement d'être infantilisante avec une personne
@@ -294,7 +319,7 @@ consigne qui lui interdit explicitement d'être infantilisante avec une personne
 
 Le mode **confort** (texte et cibles agrandis, deux colonnes au lieu de trois)
 s'active automatiquement pour les tout-petits et le profil senior, et se force à
-la main pour tout le monde.
+la main profil par profil.
 
 ## Discuter, pas seulement jouer
 

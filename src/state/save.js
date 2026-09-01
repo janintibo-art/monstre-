@@ -14,9 +14,12 @@ import { SPECIES } from '../game/species.js';
 //   3. Pouvoir exporter et importer. Un fichier JSON que le joueur garde chez
 //      lui, c'est la seule vraie assurance contre un telephone perdu.
 
-export const SAVE_KEY = 'monstre.save';
-export const BACKUP_KEY = 'monstre.save.secours';
-const LEGACY_KEYS = ['monstre.save.v3', 'monstre.save.v2'];
+import { saveKeyFor, backupKeyFor } from './profiles.js';
+
+// La cle depend du profil actif : chaque personne a sa creature et ses
+// souvenirs. Sans profil, on retombe sur l'ancienne cle unique, ce qui permet
+// de lire une installation anterieure aux profils.
+const LEGACY_KEYS = ['monstre.save', 'monstre.save.v3', 'monstre.save.v2'];
 
 const MAX_CATCHUP_SECONDS = 12 * 3600;
 const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000; // tolerance d'horloge dereglee
@@ -151,10 +154,13 @@ function write(key, value) {
 export function load() {
   // On cherche d'abord la cle courante, puis les anciennes : un joueur qui met
   // a jour ne doit pas se retrouver avec un oeuf vierge.
-  let stored = read(SAVE_KEY);
+  const KEY = saveKeyFor();
+  const BACKUP_KEY = backupKeyFor();
+  let stored = read(KEY);
   let fromLegacy = false;
   if (!stored) {
     for (const key of LEGACY_KEYS) {
+      if (key === KEY) continue;
       stored = read(key);
       if (stored) {
         fromLegacy = true;
@@ -185,23 +191,23 @@ export function load() {
   advance(pet, applied, { asleep: applied > 3600 });
   pet.lastSeen = Date.now();
 
-  if (needsMigration) write(SAVE_KEY, pet);
+  if (needsMigration) write(KEY, pet);
   return { pet, offlineSeconds: elapsed, fresh: false, migrated: needsMigration };
 }
 
 export function save(pet) {
   pet.lastSeen = Date.now();
-  return write(SAVE_KEY, pet);
+  return write(saveKeyFor(), pet);
 }
 
 export function reset() {
   try {
     // La sauvegarde courante devient la copie de secours : un reset par erreur
-    // reste rattrapable via l'import.
-    const current = localStorage.getItem(SAVE_KEY);
-    if (current) localStorage.setItem(BACKUP_KEY, current);
-    localStorage.removeItem(SAVE_KEY);
-    LEGACY_KEYS.forEach((key) => localStorage.removeItem(key));
+    // reste rattrapable via l'import. On ne touche qu'au profil actif.
+    const key = saveKeyFor();
+    const current = localStorage.getItem(key);
+    if (current) localStorage.setItem(backupKeyFor(), current);
+    localStorage.removeItem(key);
   } catch {
     /* rien a faire */
   }
@@ -234,7 +240,7 @@ export function parseImport(text) {
 }
 
 export function restoreBackup() {
-  const backup = read(BACKUP_KEY);
+  const backup = read(backupKeyFor());
   if (!backup) return null;
   try {
     return migrate({ version: num(backup.version, 1, 1, 99), ...backup });

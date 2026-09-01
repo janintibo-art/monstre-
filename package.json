@@ -18,7 +18,7 @@
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
     "assets": "npx --yes @capacitor/assets@3 generate --android",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --test tests/index.mjs",
     "check": "python3 tools/check_scope.py && npm test"
   },
   "dependencies": {

@@ -1,5 +1,6 @@
 import { loadConfig, ask } from '../ai/dialogue/providers.js';
-import { currentBand, audienceInstruction } from '../state/profile.js';
+import { audienceInstruction } from '../state/profile.js';
+import { currentBand } from '../state/profiles.js';
 
 // Le coup de pouce du monstre pendant un jeu.
 //

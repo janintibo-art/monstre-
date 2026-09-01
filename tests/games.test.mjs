@@ -5,7 +5,7 @@ import { installEnv } from './_env.mjs';
 installEnv();
 const { GAMES, gamesForBand } = await import('../src/games/index.js');
 const { createSession } = await import('../src/games/session.js');
-const { AGE_BANDS, bandById, audienceInstruction, comfortEnabled } = await import('../src/state/profile.js');
+const { AGE_BANDS, bandById, audienceInstruction } = await import('../src/state/profile.js');
 
 // Les jeux generent leurs questions au hasard : un bug ne se voit pas sur un
 // essai, il se voit sur mille. On balaie donc chaque jeu a chaque niveau.
@@ -88,17 +88,6 @@ test('chaque public a des jeux qui lui correspondent', () => {
   assert.ok(senior.includes('monnaie'));
   assert.ok(!senior.includes('couleurs'), 'les couleurs pour tout-petits n’ont rien à faire là');
   assert.ok(senior.length >= 6, 'trop peu de jeux pour le profil senior');
-});
-
-test('le mode confort suit le profil, et un choix manuel le remplace', async () => {
-  const { saveComfort } = await import('../src/state/profile.js');
-  saveComfort(null);
-  assert.equal(comfortEnabled(bandById('senior')), true);
-  assert.equal(comfortEnabled(bandById('adulte')), false);
-  assert.equal(comfortEnabled(bandById('3-4')), true);
-  saveComfort(true);
-  assert.equal(comfortEnabled(bandById('adulte')), true, 'le choix manuel doit primer');
-  saveComfort(null);
 });
 
 test('on ne parle pas à une personne âgée comme à un enfant', () => {

@@ -66,13 +66,9 @@
             <input id="field-name" type="text" maxlength="16" />
           </label>
 
-          <button id="btn-guide">📖 Comment ça marche ?</button>
+          <button id="btn-profiles">👤 Changer de profil</button>
 
-          <label class="field">
-            <span>Profil du joueur</span>
-            <select id="field-age"></select>
-          </label>
-          <p id="age-help" class="hint"></p>
+          <button id="btn-guide">📖 Comment ça marche ?</button>
 
           <label class="switch">
             <input id="field-comfort" type="checkbox" />
@@ -151,6 +147,55 @@
           </div>
 
           <button id="btn-reset" class="danger">Recommencer avec un nouvel œuf</button>
+        </div>
+      </div>
+
+      <!-- Choix du profil : premier ecran a l'installation -->
+      <div id="profiles" role="dialog" aria-modal="true" aria-label="Profils" class="panel panel--center panel--wide" hidden>
+        <div class="panel__head">
+          <h2 id="profiles-title">Qui joue ?</h2>
+          <button id="profiles-close" class="icon-button" aria-label="Fermer">×</button>
+        </div>
+        <div class="panel__body">
+          <div id="profiles-list" class="profiles-list"></div>
+
+          <div id="profiles-form" hidden>
+            <label class="field">
+              <span>Ton prénom (ou le surnom que tu veux)</span>
+              <input id="profile-name" type="text" maxlength="20" autocomplete="off" />
+            </label>
+
+            <div class="field">
+              <span>Ton image</span>
+              <div id="profile-avatars" class="avatar-row"></div>
+            </div>
+
+            <label class="field">
+              <span>Âge</span>
+              <select id="profile-band"></select>
+            </label>
+            <p id="profile-band-help" class="hint"></p>
+
+            <div class="field">
+              <span>Ce que tu aimes — il s’en souviendra</span>
+              <div id="profile-interests" class="chip-row"></div>
+            </div>
+
+            <label class="field">
+              <span>Quelque chose à lui dire sur toi (facultatif)</span>
+              <input id="profile-note" type="text" maxlength="120" placeholder="J’ai un chat qui s’appelle…" autocomplete="off" />
+            </label>
+
+            <p class="hint">
+              Pas de nom de famille, pas d’adresse : il n’en a pas besoin. Tout reste sur cet
+              appareil.
+            </p>
+
+            <div class="row">
+              <button id="profile-save">Enregistrer</button>
+              <button id="profile-cancel" type="button">Annuler</button>
+            </div>
+          </div>
         </div>
       </div>
 

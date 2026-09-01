@@ -4,16 +4,8 @@ import { BIOMES, biomeById, loadBiomePreference, saveBiomePreference, pickBiome 
 import { CYCLE_MODES } from '../game/daylight.js';
 import { knownFacts, forget, daysTogether, playerName } from '../ai/memory.js';
 import { exportSave, parseImport } from '../state/save.js';
-import {
-  AGE_BANDS,
-  bandById,
-  loadProfile,
-  saveProfile,
-  loadComfort,
-  saveComfort,
-  comfortEnabled,
-  applyComfort
-} from '../state/profile.js';
+import { bandById, comfortEnabled, applyComfortClass } from '../state/profile.js';
+import { currentBand, getActiveProfile, updateProfile } from '../state/profiles.js';
 
 // Reglages et bapteme. Regle de base : un seul panneau ouvert a la fois,
 // et tout panneau doit pouvoir se fermer. Un ecran bloque est un bug.
@@ -27,6 +19,7 @@ export function createPanels({
   onPanelToggle,
   onImport,
   onGuide,
+  onProfiles,
   onAgeChange,
   getPet,
   voice,
@@ -39,8 +32,7 @@ export function createPanels({
   const resetBtn = document.getElementById('btn-reset');
 
   const guideBtn = document.getElementById('btn-guide');
-  const ageSelect = document.getElementById('field-age');
-  const ageHelp = document.getElementById('age-help');
+  const profilesBtn = document.getElementById('btn-profiles');
   const comfortToggle = document.getElementById('field-comfort');
   const comfortHelp = document.getElementById('comfort-help');
   const cycleSelect = document.getElementById('field-cycle');
@@ -80,50 +72,36 @@ export function createPanels({
   const namingConfirm = document.getElementById('naming-confirm');
   const namingLater = document.getElementById('naming-later');
 
-  // --------------------------------------------------------------------- age
-  // L'age pilote trois choses : quels jeux apparaissent, a quelle difficulte,
-  // et comment le monstre parle — vocabulaire et debit.
-  AGE_BANDS.forEach((band) => {
-    const option = document.createElement('option');
-    option.value = band.id;
-    option.textContent = band.label;
-    ageSelect.appendChild(option);
-  });
-
-  function refreshAge() {
-    const band = bandById(loadProfile().age);
-    ageSelect.value = band.id;
-    ageHelp.textContent = band.description;
-    comfortToggle.checked = comfortEnabled(band);
+  // ----------------------------------------------------------------- profil
+  // L'age et les gouts se reglent dans la fiche du profil, pas ici : ce sont
+  // des informations sur la personne, elles suivent le profil et non l'appareil.
+  function refreshProfile() {
+    const profile = getActiveProfile();
+    const band = currentBand();
+    profilesBtn.textContent = profile
+      ? `👤 ${profile.avatar} ${profile.name} — changer de profil`
+      : '👤 Choisir un profil';
+    comfortToggle.checked = comfortEnabled(band, profile ? profile.comfort : null);
     comfortHelp.textContent =
-      loadComfort() === null
-        ? 'Réglé automatiquement selon l’âge choisi.'
-        : 'Réglage manuel : il ne suivra plus l’âge.';
+      profile && profile.comfort !== null
+        ? 'Réglage manuel : il ne suivra plus l’âge du profil.'
+        : `Réglé automatiquement d’après le profil (${band.label}).`;
   }
 
-  ageSelect.addEventListener('change', () => {
-    saveProfile({ age: ageSelect.value });
-    // Changer de tranche remet le confort sur « automatique » : sinon un
-    // reglage pris pour un enfant resterait accroche a un profil adulte.
-    saveComfort(null);
-    refreshAge();
-    applyComfort();
-    if (onAgeChange) onAgeChange(bandById(ageSelect.value));
+  profilesBtn.addEventListener('click', () => {
+    closeAll();
+    if (onProfiles) onProfiles();
   });
 
   comfortToggle.addEventListener('change', () => {
-    // On enregistre un choix explicite : il prend le pas sur la tranche d'age.
-    saveComfort(comfortToggle.checked);
-    applyComfort();
-    refreshAge();
+    const profile = getActiveProfile();
+    if (profile) updateProfile(profile.id, { comfort: comfortToggle.checked });
+    applyComfortClass(comfortToggle.checked);
+    refreshProfile();
+    if (onAgeChange) onAgeChange(currentBand());
   });
 
-  refreshAge();
-
-  guideBtn.addEventListener('click', () => {
-    closeAll();
-    if (onGuide) onGuide();
-  });
+  refreshProfile();
 
   // ------------------------------------------------------------------- cycle
   Object.keys(CYCLE_MODES).forEach((id) => {
@@ -407,6 +385,7 @@ export function createPanels({
     if (!wasOpen) {
       config = loadConfig();
       refreshProviderUI();
+      refreshProfile();
       menu.hidden = false;
     }
     notify();
@@ -447,7 +426,7 @@ export function createPanels({
 
   return {
     setExternalOpen,
-    refreshAge,
+    refreshProfile,
     askName(currentName) {
       // Le bapteme ne doit jamais s'empiler sur un autre panneau.
       menu.hidden = true;
