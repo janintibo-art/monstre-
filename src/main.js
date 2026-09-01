@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { loadTextures } from './core/assets.js';
+import { loadTextures, loadTexture } from './core/assets.js';
 import { createLoop } from './core/loop.js';
 import { createWorld } from './game/world.js';
 import { createEgg } from './game/egg.js';
@@ -7,6 +7,8 @@ import { createMonster } from './game/monster.js';
 import { loadModel, createModelMonster, createModelEgg } from './game/gltf.js';
 import { speciesById, pickSpecies, eggUrl, stageUrl } from './game/species.js';
 import { createParticles } from './game/particles.js';
+import { createDecor } from './game/decor.js';
+import { resolveBiome } from './game/biomes.js';
 import { createBrain } from './ai/brain.js';
 import { applyEffects, wellbeing } from './ai/needs.js';
 import { nudge } from './ai/personality.js';
@@ -53,7 +55,14 @@ async function boot() {
 
   let { pet, offlineSeconds } = load();
 
-  const world = createWorld(canvas, textures);
+  // Le decor decoule de la graine, sauf si le joueur en a choisi un.
+  let biome = resolveBiome(pet.seed);
+  const base = import.meta.env.BASE_URL || './';
+  const groundTexture = await loadTexture(base + biome.ground);
+
+  const world = createWorld(canvas, { ...textures, ground: groundTexture }, biome);
+  const decor = createDecor(world.scene);
+  decor.build(biome, pet.seed);
   const particles = createParticles(world.scene);
   const hud = createHud();
   const voice = createVoice();
@@ -141,6 +150,12 @@ async function boot() {
   const panels = createPanels({
     getPet: () => pet,
     voice,
+    onBiome: async (next) => {
+      biome = next;
+      const texture = await loadTexture(base + biome.ground);
+      world.applyBiome(biome, texture);
+      decor.build(biome, pet.seed);
+    },
     onRename: (name) => {
       pet.name = name;
       save(pet);
@@ -151,6 +166,11 @@ async function boot() {
       brain = createBrain(pet.seed);
       species = speciesById(pet.species);
       currentModelUrl = null;
+      biome = resolveBiome(pet.seed);
+      loadTexture(base + biome.ground).then((texture) => {
+        world.applyBiome(biome, texture);
+        decor.build(biome, pet.seed);
+      });
       if (monster) {
         world.scene.remove(monster.group);
         monster.dispose();
@@ -430,6 +450,7 @@ async function boot() {
     }
 
     particles.update(dt);
+    decor.update(dt, time);
     actionBar.update(dt, { hatched: pet.hatched });
 
     hudTimer -= dt;

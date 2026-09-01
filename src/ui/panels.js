@@ -1,16 +1,18 @@
 import { PROVIDERS, loadConfig, saveConfig, testConnection, listModels } from '../ai/dialogue/index.js';
 import { VOICE_MODES, voiceProfile } from '../audio/voice.js';
+import { BIOMES, biomeById, loadBiomePreference, saveBiomePreference, pickBiome } from '../game/biomes.js';
 
 // Reglages et bapteme. Regle de base : un seul panneau ouvert a la fois,
 // et tout panneau doit pouvoir se fermer. Un ecran bloque est un bug.
 
-export function createPanels({ onRename, onReset, onNamed, getPet, voice }) {
+export function createPanels({ onRename, onReset, onNamed, onBiome, getPet, voice }) {
   const menu = document.getElementById('menu');
   const menuBtn = document.getElementById('btn-menu');
   const menuClose = document.getElementById('menu-close');
   const nameField = document.getElementById('field-name');
   const resetBtn = document.getElementById('btn-reset');
 
+  const biomeSelect = document.getElementById('field-biome');
   const voiceSelect = document.getElementById('field-voice');
   const voiceTest = document.getElementById('btn-voice-test');
   const providerSelect = document.getElementById('field-provider');
@@ -33,6 +35,25 @@ export function createPanels({ onRename, onReset, onNamed, getPet, voice }) {
   const namingField = document.getElementById('naming-field');
   const namingConfirm = document.getElementById('naming-confirm');
   const namingLater = document.getElementById('naming-later');
+
+  // ------------------------------------------------------------------- decor
+  // « Automatique » laisse le paysage decouler de la graine de l'oeuf : chaque
+  // creature garde ainsi son propre pays.
+  const biomeOptions = [{ id: 'auto', name: 'Automatique' }, ...BIOMES];
+  biomeOptions.forEach((b) => {
+    const option = document.createElement('option');
+    option.value = b.id;
+    option.textContent = b.name;
+    biomeSelect.appendChild(option);
+  });
+  biomeSelect.value = loadBiomePreference();
+
+  biomeSelect.addEventListener('change', () => {
+    const value = biomeSelect.value;
+    saveBiomePreference(value);
+    const pet = getPet();
+    onBiome(value === 'auto' ? pickBiome(pet.seed) : biomeById(value));
+  });
 
   // -------------------------------------------------------------------- voix
   Object.keys(VOICE_MODES).forEach((id) => {

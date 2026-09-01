@@ -4,7 +4,7 @@ import { makeGradientTexture } from '../core/assets.js';
 // Le monde : un petit terrarium nocturne. Une seule lumiere directionnelle
 // porte les ombres, le reste n'est que remplissage colore.
 
-export function createWorld(canvas, textures = {}) {
+export function createWorld(canvas, textures = {}, biome = null) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
@@ -22,7 +22,8 @@ export function createWorld(canvas, textures = {}) {
   camera.lookAt(cameraTarget);
 
   // --- Lumieres ---
-  scene.add(new THREE.HemisphereLight(0x8fb6ff, 0x2a1f3d, 0.55));
+  const hemi = new THREE.HemisphereLight(0x8fb6ff, 0x2a1f3d, 0.55);
+  scene.add(hemi);
 
   const key = new THREE.DirectionalLight(0xfff1d8, 1.9);
   key.position.set(4, 7, 4);
@@ -60,13 +61,44 @@ export function createWorld(canvas, textures = {}) {
   scene.add(ground);
 
   // Anneau lumineux qui delimite l'aire de jeu
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(6.2, 6.5, 64),
-    new THREE.MeshBasicMaterial({ color: 0x6fe3c4, transparent: true, opacity: 0.28 })
-  );
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: 0x6fe3c4,
+    transparent: true,
+    opacity: 0.28
+  });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(6.2, 6.5, 64), ringMat);
   ring.rotation.x = -Math.PI / 2;
   ring.position.y = 0.01;
   scene.add(ring);
+
+  // Applique un decor : sol, ciel, brouillard et lumieres d'un coup. Une
+  // texture de prairie sous une lumiere violette sonnerait faux, les deux
+  // doivent changer ensemble.
+  function applyBiome(next, groundTexture) {
+    if (!next) return;
+    if (groundTexture) {
+      groundTexture.wrapS = THREE.RepeatWrapping;
+      groundTexture.wrapT = THREE.RepeatWrapping;
+      groundTexture.repeat.set(next.repeat || 3, next.repeat || 3);
+      groundTexture.colorSpace = THREE.SRGBColorSpace;
+      if (groundMat.map) groundMat.map.dispose();
+      groundMat.map = groundTexture;
+      groundMat.color.set(0xffffff);
+      groundMat.needsUpdate = true;
+    }
+    if (next.sky) {
+      if (scene.background && scene.background.dispose) scene.background.dispose();
+      scene.background = makeGradientTexture(next.sky[0], next.sky[1]);
+    }
+    scene.fog.color.setHex(next.fog);
+    hemi.color.setHex(next.hemiSky);
+    hemi.groundColor.setHex(next.hemiGround);
+    key.color.setHex(next.key);
+    rim.color.setHex(next.rim);
+    ringMat.color.setHex(next.ring);
+  }
+
+  if (biome) applyBiome(biome, textures.ground || null);
 
   // --- Pointeur ---
   const raycaster = new THREE.Raycaster();
@@ -136,6 +168,7 @@ export function createWorld(canvas, textures = {}) {
     scene,
     camera,
     ground,
+    applyBiome,
     update,
     render,
     resize,

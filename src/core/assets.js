@@ -29,6 +29,11 @@ function loadOne(url) {
   });
 }
 
+// Chargement d'une texture isolee : sert aux sols de decor, choisis a la volee.
+export function loadTexture(url) {
+  return loadOne(url);
+}
+
 export async function loadTextures(base = import.meta.env.BASE_URL || './') {
   const keys = Object.keys(MANIFEST);
   const results = await Promise.all(keys.map((k) => loadOne(base + MANIFEST[k])));

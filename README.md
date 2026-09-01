@@ -190,6 +190,18 @@ npm run android:sync && npm run assets
 └── vite.config.js
 ```
 
+## Le décor
+
+Quatre paysages — prairie, sous-bois, éboulis, terre sèche — tirés de la graine
+de l'œuf, donc chaque créature a le sien. Le joueur peut en forcer un dans
+**··· → Décor**, sans recharger.
+
+Chaque décor change **le sol et la lumière ensemble** : ciel, brouillard, lampe
+principale et lampe d'appoint. Autour de l'aire de jeu, des arbres sont plantés
+sur un anneau, avec une trouée côté caméra pour ne jamais masquer la créature.
+Ils se balancent au vent et passent par un `InstancedMesh` : un seul appel de
+rendu quel qu'en soit le nombre.
+
 ## Ce qui est déjà là
 
 - Œuf avec fissures progressives dessinées en canvas, secousses, éclosion en
@@ -215,7 +227,10 @@ npm run android:sync && npm run assets
 
 1. **Ambiance sonore** — la voix est là, mais pas les bruits de pas, le vent, ni
    la musique. Dépose des fichiers dans `public/assets/audio/`.
-2. **Décor** — remplacer le sol circulaire par une vraie pièce, ou charger un
+2. **Plus de décor** — buissons, rochers, champignons : le système d'arbres
+   accepte n'importe quel `.glb`, il suffit d'une entrée de plus dans
+   `src/game/decor.js`.
+3. **Ancien point sur le décor** — remplacer le sol circulaire par une vraie pièce, ou charger un
    modèle glTF pour le monstre si tu préfères le sculpter dans Blender plutôt
    que le générer par code (`GLTFLoader` s'ajoute en trois lignes dans `monster.js`).
 3. **Notifications** — `@capacitor/local-notifications` pour qu'il te réclame à

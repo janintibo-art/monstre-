@@ -1,28 +1,37 @@
-# Où déposer tes images
+# Textures
 
-Le jeu fonctionne **sans aucune image** : tout est généré par code. Dès que tu
-déposes un fichier ici avec le bon nom, il remplace automatiquement la version
-procédurale. Aucun code à modifier.
+## Sols de décor (`ground/`)
 
-| Nom du fichier      | Ce que ça habille                  | Taille conseillée | Format          |
-| ------------------- | ---------------------------------- | ----------------- | --------------- |
-| `monster_skin.png`  | Le corps, la tête, les membres     | 1024 × 1024       | PNG ou JPG      |
-| `monster_belly.png` | Le ventre et les cornes            | 512 × 512         | PNG ou JPG      |
-| `egg_shell.png`     | La coquille de l'œuf               | 512 × 512         | PNG ou JPG      |
-| `ground.png`        | Le sol (répété 3 × 3, il doit être *tileable*) | 1024 × 1024 | PNG ou JPG |
-| `sky.png`           | Le fond de scène                   | 2048 × 1024       | PNG ou JPG      |
+| Fichier       | Décor        |
+| ------------- | ------------ |
+| `prairie.jpg` | Prairie      |
+| `mousse.jpg`  | Sous-bois    |
+| `roche.jpg`   | Éboulis      |
+| `terre.jpg`   | Terre sèche  |
 
-## Règles pratiques
+Le décor est tiré de la graine de l'œuf, donc chaque créature a son paysage.
+Le joueur peut forcer un décor dans **··· → Décor**.
 
-- **Puissances de deux** (512, 1024, 2048) : meilleure compression et pas de
-  redimensionnement au chargement sur Android.
-- Les textures du corps sont appliquées en projection sphérique. Une texture
-  organique et sans motif fort (écailles, grain, dégradé) rendra mieux qu'un
-  dessin précis, qui se déformerait aux pôles.
-- `ground.png` doit être raccordable bord à bord, sinon la répétition se verra.
-- Si tu fournis `egg_shell.png`, les fissures dessinées par le moteur ne
-  s'appliquent plus. Retire le fichier pour retrouver l'animation de craquelure.
-- Poids total : garde l'ensemble sous 8 Mo, sinon l'APK gonfle vite.
+Le catalogue vit dans `src/game/biomes.js`. Chaque entrée définit **le sol et la
+lumière ensemble** : ciel, brouillard, lampe principale, lampe d'appoint et
+anneau du sol. Une prairie verte éclairée comme un éboulis violet sonnerait
+faux — les deux changent d'un bloc.
 
-Pour changer ces noms ou en ajouter, tout se passe dans `src/core/assets.js`,
-dans la constante `MANIFEST`.
+Pour ajouter un décor : dépose ton image ici, ajoute une entrée dans le
+catalogue, choisis ses couleurs et le nombre d'arbres.
+
+**Contrainte** : l'image doit être raccordable bord à bord (*tileable*), sinon la
+répétition se verra. Format 1024 × 1024, JPEG.
+
+## Autres textures (facultatives)
+
+| Fichier             | Ce que ça habille                    |
+| ------------------- | ------------------------------------ |
+| `monster_skin.png`  | Corps du monstre généré par code     |
+| `monster_belly.png` | Ventre et cornes                     |
+| `egg_shell.png`     | Coquille de l'œuf généré par code    |
+| `sky.png`           | Fond de scène (remplace le dégradé)  |
+
+Ces quatre-là ne servent qu'aux créatures générées par code, c'est-à-dire quand
+aucun modèle `.glb` n'est disponible. Si un fichier est absent, la matière est
+générée à la volée.
