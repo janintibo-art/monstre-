@@ -13,6 +13,7 @@ export function createPanels({
   onNamed,
   onBiome,
   onMemoryChange,
+  onPanelToggle,
   getPet,
   voice,
   daylight
@@ -199,10 +200,19 @@ export function createPanels({
   refreshProviderUI();
 
   // ----------------------------------------------------------------- panneaux
+  // Un panneau ouvert libere l'orientation : ces ecrans sont des listes et des
+  // formulaires, ils se lisent mieux a la verticale.
+  function notify() {
+    if (onPanelToggle) {
+      onPanelToggle(!menu.hidden || !naming.hidden || !memories.hidden);
+    }
+  }
+
   function closeAll() {
     menu.hidden = true;
     naming.hidden = true;
     memories.hidden = true;
+    notify();
   }
 
   // --------------------------------------------------------------- souvenirs
@@ -261,6 +271,7 @@ export function createPanels({
     closeAll();
     renderMemories();
     memories.hidden = false;
+    notify();
   });
   memoriesClose.addEventListener('click', closeAll);
 
@@ -281,6 +292,7 @@ export function createPanels({
       refreshProviderUI();
       menu.hidden = false;
     }
+    notify();
   });
   menuClose.addEventListener('click', closeAll);
 
@@ -303,12 +315,14 @@ export function createPanels({
   function confirmName() {
     const value = namingField.value.trim() || 'Nyx';
     naming.hidden = true;
+    notify();
     onNamed(value);
   }
 
   namingConfirm.addEventListener('click', confirmName);
   namingLater.addEventListener('click', () => {
     naming.hidden = true;
+    notify();
   });
   namingField.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') confirmName();
@@ -321,6 +335,7 @@ export function createPanels({
       namingField.value = currentName && currentName !== 'Œuf' ? currentName : '';
       naming.hidden = false;
       namingField.focus();
+      notify();
     },
     closeAll,
     syncName(name) {

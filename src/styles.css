@@ -640,3 +640,110 @@ select {
   pointer-events: none;
   mix-blend-mode: screen;
 }
+
+/* -------------------------------------------------------------------------
+   Paysage. Le jeu est verrouillé dans cette orientation : la hauteur devient
+   la ressource rare (environ 400 px utiles sur un téléphone), pas la largeur.
+   Tout ce qui empilait verticalement se compacte, et les panneaux passent sur
+   le côté au lieu de remonter du bas — une feuille qui occupe 76 % de la
+   hauteur ne laisserait plus rien voir.
+   ------------------------------------------------------------------------- */
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .ui {
+    padding: calc(var(--safe-top) + 8px) 20px calc(var(--safe-bottom) + 8px);
+  }
+
+  .identity__name {
+    font-size: 20px;
+  }
+
+  .identity__stage {
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  .icon-button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .vials {
+    margin-top: 10px;
+    gap: 8px;
+  }
+
+  .vial__tube {
+    height: 46px;
+    width: 10px;
+  }
+
+  .vial__label {
+    font-size: 8px;
+  }
+
+  .thought {
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+
+  .actionbar {
+    gap: 8px;
+  }
+
+  .pebble {
+    min-width: 54px;
+    padding: 6px 10px 5px;
+    border-radius: 16px;
+  }
+
+  .pebble__icon {
+    font-size: 16px;
+  }
+
+  .pebble__label {
+    font-size: 9px;
+  }
+
+  /* Panneaux : feuille latérale à droite, sur toute la hauteur. */
+  .panel {
+    left: auto;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    transform: none;
+    width: min(420px, 62vw);
+    max-height: 100%;
+    border-radius: 22px 0 0 22px;
+    padding: 14px 16px calc(var(--safe-bottom) + 14px);
+    animation: slide-side 220ms ease-out;
+  }
+
+  @keyframes slide-side {
+    from {
+      opacity: 0;
+      transform: translateX(24px);
+    }
+  }
+
+  .panel--center {
+    left: 50%;
+    right: auto;
+    top: 50%;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    width: min(400px, 70vw);
+    border-radius: 22px;
+    animation: none;
+  }
+
+  .chat-log {
+    min-height: 90px;
+  }
+
+  .bubble {
+    max-width: 40vw;
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+}

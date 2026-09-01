@@ -1,18 +1,18 @@
 import * as THREE from 'three';
 import { createRng } from '../core/rng.js';
 import { loadModel } from './gltf.js';
-import { TREE_MODEL } from './biomes.js';
+import { DECOR_MODELS } from './biomes.js';
 
-// Les arbres qui entourent l'aire de jeu.
+// Le decor qui entoure l'aire de jeu : arbres, plantes, champignons.
 //
-// Ils passent par un InstancedMesh : une seule geometrie, un seul appel de
-// rendu, quel que soit leur nombre. Avec 56 000 triangles par arbre, les
-// dupliquer en objets separes couterait bien plus cher sur telephone.
+// Un InstancedMesh par modele : une seule geometrie et un seul appel de rendu,
+// quel que soit le nombre d'exemplaires. Avec des modeles a 20 000 ou 48 000
+// triangles, les dupliquer en objets separes couterait bien plus cher.
 //
-// Ils sont plantes sur un anneau, avec une trouee cote camera pour ne jamais
-// masquer la creature.
+// Les elements sont plantes sur un anneau, avec une trouee cote camera pour ne
+// jamais masquer la creature.
 
-const OPENING = 0.62; // demi-angle, en radians, de la trouee devant la camera
+const OPENING = 0.7; // demi-angle, en radians, de la trouee devant la camera
 
 function firstMesh(object) {
   let found = null;
@@ -23,103 +23,111 @@ function firstMesh(object) {
 }
 
 export function createDecor(scene) {
-  let instanced = null;
-  const swayers = [];
+  const groups = []; // { mesh, items:[...] }
 
   function clear() {
-    if (!instanced) return;
-    scene.remove(instanced);
-    instanced.geometry.dispose();
-    instanced = null;
-    swayers.length = 0;
+    groups.forEach((g) => {
+      scene.remove(g.mesh);
+      g.mesh.geometry.dispose();
+    });
+    groups.length = 0;
   }
 
   async function build(biome, seed, base = import.meta.env.BASE_URL || './') {
     clear();
-    const count = biome.trees || 0;
-    if (!count) return;
-
-    const gltf = await loadModel(base + TREE_MODEL);
-    const source = gltf && firstMesh(gltf.scene);
-    if (!source) return; // modele absent : la scene reste nue, sans planter
-
-    // Mise a l'echelle : le modele arrive minuscule (12 cm de haut).
-    source.updateWorldMatrix(true, false);
-    const box = new THREE.Box3().setFromObject(source);
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    const unit = 1 / Math.max(size.y, 1e-6);
-
-    const geometry = source.geometry.clone();
-    geometry.applyMatrix4(source.matrixWorld);
-    geometry.translate(0, -box.min.y, 0); // pied a l'origine
-
-    const material = Array.isArray(source.material)
-      ? source.material[0].clone()
-      : source.material.clone();
-    material.side = THREE.FrontSide;
-
-    instanced = new THREE.InstancedMesh(geometry, material, count);
-    instanced.castShadow = true;
-    instanced.receiveShadow = false;
-    instanced.frustumCulled = false;
-    instanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    const plan = biome.decor || [];
+    if (!plan.length) return;
 
     const rng = createRng(seed + 4242);
-    const matrix = new THREE.Matrix4();
-    const position = new THREE.Vector3();
-    const quaternion = new THREE.Quaternion();
-    const scale = new THREE.Vector3();
 
-    for (let i = 0; i < count; i += 1) {
-      // Angles repartis puis brouilles : ni alignement, ni tas.
-      let angle = ((i + rng() * 0.6) / count) * Math.PI * 2;
-      // On repousse hors de la trouee, sans changer le nombre d'arbres.
-      const toFront = Math.atan2(Math.sin(angle), Math.cos(angle));
-      if (Math.abs(toFront - Math.PI / 2) < OPENING) {
-        angle += OPENING * 1.6;
+    // On charge tous les modeles du decor avant de placer quoi que ce soit :
+    // sinon les positions dependraient de l'ordre d'arrivee des fichiers et
+    // changeraient d'une partie a l'autre malgre la graine.
+    const loaded = await Promise.all(
+      plan.map((entry) => loadModel(base + DECOR_MODELS[entry.model]))
+    );
+
+    plan.forEach((entry, planIndex) => {
+      const gltf = loaded[planIndex];
+      const source = gltf && firstMesh(gltf.scene);
+      if (!source || !entry.count) return; // modele absent : on continue sans
+
+      source.updateWorldMatrix(true, false);
+      const box = new THREE.Box3().setFromObject(source);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const unit = 1 / Math.max(size.y, 1e-6);
+
+      const geometry = source.geometry.clone();
+      geometry.applyMatrix4(source.matrixWorld);
+      geometry.translate(0, -box.min.y, 0); // pied a l'origine
+
+      const material = Array.isArray(source.material)
+        ? source.material[0].clone()
+        : source.material.clone();
+      material.side = THREE.FrontSide;
+
+      const mesh = new THREE.InstancedMesh(geometry, material, entry.count);
+      mesh.castShadow = true;
+      mesh.frustumCulled = false;
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+      const matrix = new THREE.Matrix4();
+      const position = new THREE.Vector3();
+      const quaternion = new THREE.Quaternion();
+      const scale = new THREE.Vector3();
+      const items = [];
+
+      for (let i = 0; i < entry.count; i += 1) {
+        let angle = ((i + rng() * 0.7) / entry.count) * Math.PI * 2 + planIndex * 0.9;
+        const front = Math.atan2(Math.sin(angle), Math.cos(angle));
+        if (Math.abs(front - Math.PI / 2) < OPENING) angle += OPENING * 1.8;
+
+        const radius = entry.radius[0] + rng() * (entry.radius[1] - entry.radius[0]);
+        const height = (entry.height[0] + rng() * (entry.height[1] - entry.height[0])) * unit;
+
+        position.set(Math.cos(angle) * radius, -0.05, Math.sin(angle) * radius);
+        quaternion.setFromEuler(new THREE.Euler(0, rng() * Math.PI * 2, 0));
+        scale.set(height * (0.92 + rng() * 0.16), height, height * (0.92 + rng() * 0.16));
+        matrix.compose(position, quaternion, scale);
+        mesh.setMatrixAt(i, matrix);
+
+        items.push({
+          position: position.clone(),
+          baseY: quaternion.clone(),
+          scale: scale.clone(),
+          phase: rng() * Math.PI * 2,
+          // Un champignon ne se balance pas comme un arbre : l'amplitude vient
+          // du type de decor, pas d'une valeur unique pour tout le monde.
+          amount: entry.sway * (0.7 + rng() * 0.6)
+        });
       }
 
-      const radius = 7 + rng() * 2.6;
-      const height = (3.4 + rng() * 2.2) * unit;
-
-      position.set(Math.cos(angle) * radius, -0.1, Math.sin(angle) * radius);
-      quaternion.setFromEuler(new THREE.Euler(0, rng() * Math.PI * 2, 0));
-      scale.set(height * (0.9 + rng() * 0.2), height, height * (0.9 + rng() * 0.2));
-      matrix.compose(position, quaternion, scale);
-      instanced.setMatrixAt(i, matrix);
-
-      swayers.push({
-        position: position.clone(),
-        baseY: quaternion.clone(),
-        scale: scale.clone(),
-        phase: rng() * Math.PI * 2,
-        amount: 0.012 + rng() * 0.018
-      });
-    }
-
-    instanced.instanceMatrix.needsUpdate = true;
-    scene.add(instanced);
+      mesh.instanceMatrix.needsUpdate = true;
+      scene.add(mesh);
+      groups.push({ mesh, items });
+    });
   }
 
-  // Balancement au vent. Sept arbres a recomposer par image, c'est negligeable,
-  // et c'est ce qui empeche le decor d'avoir l'air peint.
   const matrix = new THREE.Matrix4();
   const tilt = new THREE.Quaternion();
   const axis = new THREE.Euler();
 
   function update(dt, time) {
-    if (!instanced) return;
-    for (let i = 0; i < swayers.length; i += 1) {
-      const tree = swayers[i];
-      const wind = Math.sin(time * 0.7 + tree.phase) * tree.amount;
-      const gust = Math.sin(time * 1.9 + tree.phase * 1.7) * tree.amount * 0.4;
-      axis.set(gust, 0, wind);
-      tilt.setFromEuler(axis).premultiply(tree.baseY);
-      matrix.compose(tree.position, tilt, tree.scale);
-      instanced.setMatrixAt(i, matrix);
-    }
-    instanced.instanceMatrix.needsUpdate = true;
+    groups.forEach((g) => {
+      if (!g.items.length) return;
+      for (let i = 0; i < g.items.length; i += 1) {
+        const item = g.items[i];
+        if (item.amount < 0.001) continue;
+        const wind = Math.sin(time * 0.7 + item.phase) * item.amount;
+        const gust = Math.sin(time * 1.9 + item.phase * 1.7) * item.amount * 0.4;
+        axis.set(gust, 0, wind);
+        tilt.setFromEuler(axis).premultiply(item.baseY);
+        matrix.compose(item.position, tilt, item.scale);
+        g.mesh.setMatrixAt(i, matrix);
+      }
+      g.mesh.instanceMatrix.needsUpdate = true;
+    });
   }
 
   return { build, update, clear };

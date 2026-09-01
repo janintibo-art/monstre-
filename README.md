@@ -240,24 +240,24 @@ npm run android:sync && npm run assets
 └── vite.config.js
 ```
 
-## Le cadrage
+## Le cadrage : paysage verrouillé
 
-Sur un écran tenu verticalement, le champ horizontal est étranglé : à 42 degrés
-sur un 20:9, il ne reste que **deux unités de large**, alors que la hauteur en
-couvre plus de quatre. C'est pour ça que la créature sortait du cadre.
+Le jeu se verrouille en **paysage**. C'est la seule orientation où l'on voit
+correctement la créature : en portrait, à 42 degrés d'angle sur un écran 20:9,
+il ne reste que **deux unités de large** contre plus de neuf en paysage. Élargir
+l'angle pour compenser rapetissait la créature au point de perdre ce qu'on
+était venu regarder — cette compensation a donc été retirée.
 
-Trois mesures, qui se complètent :
+Les **panneaux libèrent le verrou** : réglages, souvenirs et conversation sont
+des listes et des formulaires, ils se lisent mieux à la verticale et le clavier
+y prend moins de place. Le verrou revient à la fermeture.
 
-1. **L'angle de vue s'ouvre en portrait**, jusqu'à 54 degrés, pour gagner en
-   largeur. Pas au-delà : à 60 degrés la créature ne ferait plus que le quart de
-   la hauteur et on perdrait ce qu'on est venu regarder. En paysage la largeur
-   est confortable, l'angle reste à 42.
-2. **L'aire de jeu est elliptique**, calculée depuis le cadrage réel : étroite
-   en largeur, plus profonde en avant-arrière. Elle est recalculée à chaque
-   rotation d'écran.
-3. **La caméra suit la créature** avec du retard, et un rappel progressif la
-   ramène si elle se retrouve dehors — par exemple juste après une rotation,
-   quand l'aire rétrécit d'un coup.
+Il reste deux garde-fous, utiles quel que soit l'écran : l'aire de jeu est une
+ellipse calculée depuis le cadrage réel, et un rappel progressif ramène la
+créature si elle se retrouve dehors.
+
+Sur navigateur et sur la version Windows, il n'y a rien à verrouiller : les
+appels échouent silencieusement et le jeu fonctionne normalement.
 
 ## Le cycle jour / nuit
 
@@ -295,8 +295,11 @@ plein midi. Il fournit son sol, sa couleur d'accent et une teinte d'atmosphère
 mélangée au ciel à hauteur de 16 à 26 % : assez pour reconnaître le lieu, pas
 assez pour nier l'heure qu'il est. Autour de l'aire de jeu, des arbres sont plantés
 sur un anneau, avec une trouée côté caméra pour ne jamais masquer la créature.
-Ils se balancent au vent et passent par un `InstancedMesh` : un seul appel de
-rendu quel qu'en soit le nombre.
+Trois modèles — arbre, plante, champignon — répartis en quantités différentes
+selon le décor : neuf champignons au sous-bois, deux arbres seulement sur
+l'éboulis. Chacun a son amplitude de balancement, parce qu'un champignon ne
+bouge pas comme un arbre. Chaque modèle passe par un `InstancedMesh` : un seul
+appel de rendu quel qu'en soit le nombre.
 
 ## Ce qui est déjà là
 

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { loadTextures, loadTexture } from './core/assets.js';
 import { createLoop } from './core/loop.js';
+import { lockLandscape, setPanelOpen } from './core/orientation.js';
 import { createWorld } from './game/world.js';
 import { createEgg } from './game/egg.js';
 import { createMonster } from './game/monster.js';
@@ -57,6 +58,7 @@ function showFatal(error) {
 }
 
 async function boot() {
+  lockLandscape();
   const canvas = document.getElementById('scene');
   // Les textures sont facultatives ; les modeles se chargent a la demande,
   // stade par stade. Ce qui manque est remplace par la version generee par code.
@@ -171,6 +173,7 @@ async function boot() {
     getPet: () => pet,
     voice,
     onMemoryChange: () => save(pet),
+    onPanelToggle: setPanelOpen,
     onBiome: async (next) => {
       biome = next;
       const texture = await loadTexture(base + biome.ground);
