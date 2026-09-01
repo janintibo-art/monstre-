@@ -131,6 +131,34 @@ c'est une règle du navigateur, pas un bug.
 
 Elle est en deux couches, et la première suffit à faire vivre la créature.
 
+**0. Mémoire (`src/ai/memory.js` et `facts.js`)**
+
+Trois couches, qui ne servent pas à la même chose :
+
+- **Les gestes** — file des soins récents et compteurs cumulés. Court terme,
+  sert au score de négligence et aux habitudes.
+- **Les faits** — ce qu'elle sait de toi. Extraits de ce que tu dis par des
+  motifs en français : prénom, âge, ville, métier, goûts, dégoûts, proches,
+  projets, humeur. Pas de modèle de langage, ça tourne hors ligne. C'est
+  volontairement modeste : mieux vaut retenir cinq choses justes que trente
+  approximatives — une créature qui se trompe sur ton prénom est pire qu'une
+  créature qui ne le connaît pas.
+- **Le fil** — les derniers échanges, pour répondre dans la continuité.
+
+**Et surtout, elle oublie.** Chaque fait a une force qui monte quand tu le
+répètes et retombe avec le temps : 0,9 point par jour pour une intention datée,
+0,22 pour un goût, 0,05 pour ton prénom. Sous 0,18, le souvenir s'efface. C'est
+ce qui rend le fait qu'elle se souvienne significatif : si elle retenait tout
+pour toujours, se souvenir ne voudrait rien dire.
+
+**··· → Voir ses souvenirs** montre tout ce qu'elle retient, avec la force de
+chaque souvenir en barre latérale — un souvenir qui pâlit est en train de
+s'effacer, il suffit d'en reparler pour le raviver. Tu peux lui faire oublier
+un souvenir précis, ou tout effacer.
+
+Le modèle distant reçoit ce résumé plus les six derniers échanges, avec
+consigne explicite de ne jamais inventer un souvenir absent de la liste.
+
 **1. Comportement (`src/ai/`, hors ligne, toujours actif)**
 
 - `needs.js` — cinq jauges qui descendent en temps réel : faim, énergie,

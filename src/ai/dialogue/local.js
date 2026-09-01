@@ -1,6 +1,13 @@
 import { NEED_LABELS, lowestNeed } from '../needs.js';
 import { dominantTrait, TRAIT_LABELS } from '../personality.js';
-import { favouriteCare, hoursSinceCare } from '../memory.js';
+import {
+  favouriteCare,
+  hoursSinceCare,
+  playerName,
+  randomFact,
+  knownFacts,
+  daysTogether
+} from '../memory.js';
 
 // Moteur de dialogue hors ligne. Il ne "comprend" pas le langage : il repere
 // des intentions par mots-cles et pioche une phrase coherente avec l'etat
@@ -55,6 +62,21 @@ const SPONTANEOUS = {
 };
 
 export function spontaneousLine(pet, emotion) {
+  // Une fois sur quatre, elle ressort un souvenir au lieu d'une phrase
+  // d'ambiance. Assez rare pour surprendre, assez frequent pour qu'on sente
+  // qu'elle retient les choses.
+  if (pet.memory && Math.random() < 0.25) {
+    const fact = randomFact(pet.memory, ['like', 'dislike', 'relation', 'plan', 'home', 'work']);
+    if (fact) {
+      const name = playerName(pet.memory);
+      const prefix = name && Math.random() < 0.4 ? `${name}, ` : '';
+      return say([
+        `${prefix}je repensais à un truc. ${fact.text}`,
+        `${prefix}${fact.text} Je m'en souviens, tu vois.`,
+        `Dis… ${fact.text.toLowerCase()}`
+      ]);
+    }
+  }
   const pool = SPONTANEOUS[emotion] || SPONTANEOUS.calme;
   return say(pool);
 }
@@ -65,12 +87,33 @@ const INTENTS = [
   {
     id: 'greeting',
     test: /\b(salut|bonjour|coucou|hey|hello|bonsoir|yo)\b/i,
-    reply: (pet) =>
-      say([
-        `Salut ! Je suis ${pet.name}.`,
-        'Te revoilà.',
-        'Ah, toi. Bien.'
-      ])
+    reply: (pet) => {
+      // Si elle connait ton prenom, elle s'en sert : c'est la difference la plus
+      // immediatement sensible entre une creature qui te reconnait et une autre.
+      const name = playerName(pet.memory);
+      if (name) return say([`Salut ${name} !`, `Te revoilà, ${name}.`, `Ah, ${name}.`]);
+      return say([`Salut ! Je suis ${pet.name}.`, 'Te revoilà.', 'Ah, toi. Bien.']);
+    }
+  },
+  {
+    id: 'whoami',
+    test: /\b(tu (?:te )?(?:souviens|rappelles)|tu me connais|qui suis-je|tu sais qui je suis)\b/i,
+    reply: (pet) => {
+      const name = playerName(pet.memory);
+      const facts = knownFacts(pet.memory).filter((f) => f.kind !== 'name');
+      const days = daysTogether(pet.memory);
+      if (!name && !facts.length) {
+        return say([
+          'Je ne sais presque rien de toi, en fait. Raconte.',
+          "Tu ne m'as encore rien dit sur toi."
+        ]);
+      }
+      const pieces = [];
+      if (name) pieces.push(`Tu es ${name}`);
+      if (facts.length) pieces.push(facts[0].text.replace(/^Tu /, 'tu ').replace(/\.$/, ''));
+      if (days >= 1) pieces.push(`on se connaît depuis ${days} jour${days > 1 ? 's' : ''}`);
+      return `${pieces.join(', ')}.`;
+    }
   },
   {
     id: 'name',
@@ -133,12 +176,28 @@ const INTENTS = [
   },
   {
     id: 'memory',
-    test: /\b(souviens|hier|avant|mémoire|memoire)\b/i,
+    test: /\b(hier|avant|mémoire|memoire|dit)\b/i,
     reply: (pet) => {
+      const fact = randomFact(pet.memory);
+      if (fact) return say([fact.text, `${fact.text} Je n'ai pas oublié.`]);
       const fav = favouriteCare(pet.memory);
-      const map = { feed: 'me nourrir', play: 'jouer avec moi', wash: 'me laver', pet: 'me caresser' };
+      const map = {
+        feed: 'me nourrir',
+        play: 'jouer avec moi',
+        wash: 'me laver',
+        pet: 'me caresser'
+      };
       if (fav) return `Je me souviens surtout que tu aimes ${map[fav]}. Moi aussi.`;
       return 'Tout est encore un peu flou. Je viens juste de naître.';
+    }
+  },
+  {
+    id: 'tastes',
+    test: /\b(j'aime|tu sais ce que j'aime|mes goûts|mes gouts)\b/i,
+    reply: (pet) => {
+      const likes = knownFacts(pet.memory).filter((f) => f.kind === 'like');
+      if (!likes.length) return 'Dis-m\'en plus, je retiendrai.';
+      return say([likes[0].text, `Je sais : ${likes[0].text.toLowerCase()}`]);
     }
   }
 ];

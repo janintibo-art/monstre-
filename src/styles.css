@@ -573,3 +573,58 @@ select {
     transform: translateX(250%);
   }
 }
+
+
+/* ------------------------------ Souvenirs -------------------------------- */
+
+.memories {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.memory {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--ink-2);
+  border: 1px solid rgba(233, 238, 245, 0.08);
+}
+
+.memory__text {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+/* La barre montre la force du souvenir : un souvenir peu réactivé s'efface,
+   et on doit pouvoir le voir venir. */
+.memory__strength {
+  width: 4px;
+  align-self: stretch;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--glow), rgba(111, 227, 196, 0.2));
+  flex: none;
+}
+
+.memory__forget {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.memory__forget:hover {
+  color: #ff9b9b;
+}
+
+.memory--moment {
+  background: rgba(169, 139, 255, 0.1);
+  border-color: rgba(169, 139, 255, 0.25);
+  font-style: italic;
+}

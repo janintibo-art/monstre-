@@ -1,4 +1,4 @@
-import { createPet, advance, SAVE_VERSION } from './pet.js';
+import { createPet, advance, refreshMemory, SAVE_VERSION } from './pet.js';
 
 export const SAVE_KEY = 'monstre.save.v3';
 const KEY = SAVE_KEY;
@@ -21,6 +21,7 @@ export function load() {
     if (!pet || pet.version !== SAVE_VERSION) {
       return { pet: createPet(), offlineSeconds: 0, fresh: true };
     }
+    refreshMemory(pet); // complete les anciennes sauvegardes, applique l'oubli
     const elapsed = Math.max(0, (Date.now() - (pet.lastSeen || Date.now())) / 1000);
     const applied = Math.min(elapsed, MAX_CATCHUP_SECONDS);
     // La nuit compte comme du sommeil : le monstre recupere de l'energie.

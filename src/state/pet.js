@@ -1,6 +1,6 @@
 import { createNeeds, decayNeeds, wellbeing } from '../ai/needs.js';
 import { createPersonality } from '../ai/personality.js';
-import { createMemory } from '../ai/memory.js';
+import { createMemory, ensureMemory, consolidate } from '../ai/memory.js';
 import { createGenome } from '../game/monster.js';
 import { pickSpecies } from '../game/species.js';
 
@@ -54,6 +54,13 @@ export function createPet(seed = Date.now() >>> 0) {
 
 // Fait avancer la simulation de dtSeconds. Utilise aussi pour rattraper le
 // temps ecoule pendant que l'application etait fermee.
+// Complete une memoire ancienne et efface ce qui est tombe dans l'oubli.
+export function refreshMemory(pet) {
+  pet.memory = ensureMemory(pet.memory);
+  consolidate(pet.memory);
+  return pet;
+}
+
 export function advance(pet, dtSeconds, { asleep = false } = {}) {
   if (!pet.hatched) {
     // L'oeuf mûrit tout seul en deux minutes et demie. Le stimuler va bien plus

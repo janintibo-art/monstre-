@@ -2,11 +2,21 @@ import { PROVIDERS, loadConfig, saveConfig, testConnection, listModels } from '.
 import { VOICE_MODES, voiceProfile } from '../audio/voice.js';
 import { BIOMES, biomeById, loadBiomePreference, saveBiomePreference, pickBiome } from '../game/biomes.js';
 import { CYCLE_MODES } from '../game/daylight.js';
+import { knownFacts, forget, daysTogether, playerName } from '../ai/memory.js';
 
 // Reglages et bapteme. Regle de base : un seul panneau ouvert a la fois,
 // et tout panneau doit pouvoir se fermer. Un ecran bloque est un bug.
 
-export function createPanels({ onRename, onReset, onNamed, onBiome, getPet, voice, daylight }) {
+export function createPanels({
+  onRename,
+  onReset,
+  onNamed,
+  onBiome,
+  onMemoryChange,
+  getPet,
+  voice,
+  daylight
+}) {
   const menu = document.getElementById('menu');
   const menuBtn = document.getElementById('btn-menu');
   const menuClose = document.getElementById('menu-close');
@@ -32,6 +42,13 @@ export function createPanels({ onRename, onReset, onNamed, onBiome, getPet, voic
   const endpointField = document.getElementById('field-endpoint');
   const testBtn = document.getElementById('btn-test');
   const testStatus = document.getElementById('test-status');
+
+  const memories = document.getElementById('memories');
+  const memoriesBtn = document.getElementById('btn-memories');
+  const memoriesClose = document.getElementById('memories-close');
+  const memoriesList = document.getElementById('memories-list');
+  const memoriesIntro = document.getElementById('memories-intro');
+  const forgetAllBtn = document.getElementById('btn-forget-all');
 
   const naming = document.getElementById('naming');
   const namingField = document.getElementById('naming-field');
@@ -185,7 +202,76 @@ export function createPanels({ onRename, onReset, onNamed, onBiome, getPet, voic
   function closeAll() {
     menu.hidden = true;
     naming.hidden = true;
+    memories.hidden = true;
   }
+
+  // --------------------------------------------------------------- souvenirs
+  function renderMemories() {
+    const pet = getPet();
+    const facts = knownFacts(pet.memory);
+    const moments = [...(pet.memory.moments || [])].reverse().slice(0, 6);
+    const days = daysTogether(pet.memory);
+    const who = playerName(pet.memory);
+
+    const parts = [];
+    if (who) parts.push(`Elle sait que tu t'appelles ${who}.`);
+    parts.push(days >= 1 ? `Vous vous connaissez depuis ${days} jour(s).` : 'Vous venez de vous rencontrer.');
+    if (!facts.length) parts.push("Elle ne retient encore rien : parle-lui de toi, elle enregistrera.");
+    memoriesIntro.textContent = parts.join(' ');
+
+    memoriesList.innerHTML = '';
+
+    facts.forEach((fact) => {
+      const row = document.createElement('div');
+      row.className = 'memory';
+      const bar = document.createElement('div');
+      bar.className = 'memory__strength';
+      // La force se lit a l'opacite : un souvenir qui pâlit est en train de
+      // s'effacer, et il suffit d'en reparler pour le raviver.
+      bar.style.opacity = String(Math.min(1, 0.25 + fact.current / 3));
+      const text = document.createElement('div');
+      text.className = 'memory__text';
+      text.textContent = fact.text;
+      const remove = document.createElement('button');
+      remove.className = 'memory__forget';
+      remove.type = 'button';
+      remove.textContent = '×';
+      remove.setAttribute('aria-label', 'Lui faire oublier');
+      remove.addEventListener('click', () => {
+        forget(getPet().memory, fact.key);
+        if (onMemoryChange) onMemoryChange();
+        renderMemories();
+      });
+      row.append(bar, text, remove);
+      memoriesList.appendChild(row);
+    });
+
+    moments.forEach((moment) => {
+      const row = document.createElement('div');
+      row.className = 'memory memory--moment';
+      const text = document.createElement('div');
+      text.className = 'memory__text';
+      text.textContent = moment.text;
+      row.appendChild(text);
+      memoriesList.appendChild(row);
+    });
+  }
+
+  memoriesBtn.addEventListener('click', () => {
+    closeAll();
+    renderMemories();
+    memories.hidden = false;
+  });
+  memoriesClose.addEventListener('click', closeAll);
+
+  forgetAllBtn.addEventListener('click', () => {
+    if (!window.confirm('Elle oubliera tout ce que tu lui as raconté. Continuer ?')) return;
+    const pet = getPet();
+    pet.memory.facts = [];
+    pet.memory.dialogue = [];
+    if (onMemoryChange) onMemoryChange();
+    renderMemories();
+  });
 
   menuBtn.addEventListener('click', () => {
     const wasOpen = !menu.hidden;

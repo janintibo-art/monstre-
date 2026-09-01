@@ -63,6 +63,10 @@ def used(src):
     # on retire chaines, gabarits, commentaires, acces aux proprietes et cles
     s = re.sub(r'//.*', '', src)
     s = re.sub(r'/\*.*?\*/', '', s, flags=re.S)
+    # Les litteraux d'expression reguliere passent avant les chaines : sinon
+    # une apostrophe dans /\bj'?ai/ ouvre une fausse chaine et deregle tout le
+    # reste du fichier.
+    s = re.sub(r'(?<![\w)\]])/(?:[^/\\\n\[]|\\.|\[(?:[^\]\\]|\\.)*\])+/[gimsuyd]*', ' RE ', s)
     s = re.sub(r'`(?:[^`\\]|\\.)*`', '""', s, flags=re.S)
     s = re.sub(r"'(?:[^'\\]|\\.)*'", '""', s)
     s = re.sub(r'"(?:[^"\\]|\\.)*"', '""', s)

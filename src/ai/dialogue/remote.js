@@ -1,6 +1,6 @@
 import { describe } from '../personality.js';
 import { NEED_LABELS } from '../needs.js';
-import { favouriteCare } from '../memory.js';
+import { favouriteCare, digest, lastExchanges, playerName } from '../memory.js';
 
 // Branchement facultatif vers un vrai modele de langage.
 //
@@ -14,15 +14,44 @@ export function buildContext(pet) {
   const needs = Object.keys(NEED_LABELS)
     .map((k) => `${NEED_LABELS[k]} ${Math.round(pet.needs[k])}/100`)
     .join(', ');
-  return [
+
+  const lines = [
     `Tu es ${pet.name}, une petite creature de compagnie imaginaire.`,
     `Caractere : ${describe(pet.personality)}.`,
     `Stade de vie : ${pet.stage}. Age : ${Math.round(pet.age / 60)} minutes de vie.`,
     `Etat interne : ${needs}.`,
-    `Activite preferee du joueur : ${favouriteCare(pet.memory) || 'aucune encore'}.`,
-    'Reponds en francais, en une ou deux phrases courtes, a la premiere personne.',
+    `Activite preferee du joueur : ${favouriteCare(pet.memory) || 'aucune encore'}.`
+  ];
+
+  // Ce qu'elle sait de son humain. C'est la partie qui fait la difference entre
+  // un assistant poli et une creature qui te connait.
+  const known = digest(pet.memory);
+  if (known.length) {
+    lines.push('');
+    lines.push('Ce dont tu te souviens :');
+    known.forEach((line) => lines.push(`- ${line}`));
+  }
+
+  const recent = lastExchanges(pet.memory, 6);
+  if (recent.length) {
+    lines.push('');
+    lines.push('Vos derniers echanges :');
+    recent.forEach((turn) => {
+      const who = turn.who === 'you' ? (playerName(pet.memory) || 'Lui') : 'Toi';
+      lines.push(`${who} : ${turn.text}`);
+    });
+  }
+
+  lines.push('');
+  lines.push('Reponds en francais, en une ou deux phrases courtes, a la premiere personne.');
+  lines.push(
     "Reste dans le personnage : tu es une creature, pas un assistant. N'utilise pas d'emoji."
-  ].join('\n');
+  );
+  lines.push(
+    "N'invente jamais un souvenir qui n'est pas dans la liste ci-dessus. Si tu ne sais pas, dis-le."
+  );
+
+  return lines.join('\n');
 }
 
 export async function askRemote(endpoint, message, pet, { timeout = 8000 } = {}) {

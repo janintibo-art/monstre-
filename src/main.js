@@ -13,7 +13,14 @@ import { createDaylight } from './game/daylight.js';
 import { createBrain } from './ai/brain.js';
 import { applyEffects, wellbeing } from './ai/needs.js';
 import { nudge } from './ai/personality.js';
-import { remember } from './ai/memory.js';
+import {
+  remember,
+  learnFrom,
+  recordSpeech,
+  recordMoment,
+  playerName,
+  consolidate
+} from './ai/memory.js';
 import { speak, spontaneousLine } from './ai/dialogue/index.js';
 import { load, save, reset, autosave, SAVE_KEY } from './state/save.js';
 import { advance, hatch, createPet } from './state/pet.js';
@@ -94,6 +101,7 @@ async function boot() {
   let wanderTimer = 0;
   let thinkTimer = 0;
   let hudTimer = 0;
+  let forgetTimer = 30;
   let chatterTimer = 12 + Math.random() * 14;
   let decision = { action: 'idle', emotion: 'calme', urgency: 0 };
   let hatching = 0;
@@ -142,6 +150,7 @@ async function boot() {
       world.scene.add(monster.group);
       currentModelUrl = url;
       particles.burst(monster.headWorldPosition(), 26, 0xa98bff, 2);
+      recordMoment(pet.memory, 'croissance', `J'ai grandi et changé de corps.`);
       say('Je me sens... différent.', 4000);
     } finally {
       swapping = false;
@@ -155,6 +164,7 @@ async function boot() {
   const panels = createPanels({
     getPet: () => pet,
     voice,
+    onMemoryChange: () => save(pet),
     onBiome: async (next) => {
       biome = next;
       const texture = await loadTexture(base + biome.ground);
@@ -196,6 +206,7 @@ async function boot() {
       pet.name = name;
       panels.syncName(name);
       remember(pet.memory, 'named', { name });
+      recordMoment(pet.memory, 'naissance', `Tu m'as appelé ${name} le jour de mon éclosion.`);
       say(`${name}… d’accord. C’est moi.`);
       save(pet);
     }
@@ -208,9 +219,42 @@ async function boot() {
     remember(pet.memory, 'talk');
     applyEffects(pet.needs, { affection: 4 });
     if (monster) monster.react('pet', 0.8);
+
+    // On retient AVANT de repondre : ce que tu viens de dire fait deja partie
+    // de ce qu'elle sait au moment ou elle repond.
+    recordSpeech(pet.memory, 'you', message);
+    const learned = learnFrom(pet.memory, message);
+
     const { text } = await speak(message, pet, decision.emotion);
+    recordSpeech(pet.memory, 'pet', text);
+
     say(text, 5200);
+
+    // Un fait tout juste appris merite un accuse de reception, sinon on ne sait
+    // pas si elle a enregistre. Une seule relance, et seulement en mode local.
+    if (learned.length && getEndpointless()) {
+      setTimeout(() => {
+        const fact = learned[0];
+        hud.showBubble(
+          fact.kind === 'name' ? `${fact.value}. Je retiens.` : `Je note : ${fact.text.toLowerCase()}`,
+          4000
+        );
+      }, 5400);
+    }
+
+    save(pet);
     return text;
+  }
+
+  // En mode distant, le modele confirme lui-meme ce qu'il a retenu : une
+  // relance de notre part ferait doublon.
+  function getEndpointless() {
+    try {
+      const config = JSON.parse(localStorage.getItem('monstre.ai') || '{}');
+      return !config.provider || config.provider === 'local';
+    } catch {
+      return true;
+    }
   }
 
   const chat = createChat(answer);
@@ -529,6 +573,14 @@ async function boot() {
     if (hudTimer <= 0) {
       hudTimer = 0.2;
       hud.update(pet, decision);
+    }
+
+    // L'oubli tourne en fond, une fois par minute : inutile plus souvent, et ca
+    // evite de parcourir la memoire a chaque image.
+    forgetTimer -= dt;
+    if (forgetTimer <= 0) {
+      forgetTimer = 60;
+      consolidate(pet.memory);
     }
 
     world.update(dt);
