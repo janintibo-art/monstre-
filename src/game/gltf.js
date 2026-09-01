@@ -55,21 +55,28 @@ function measureWorld(object) {
 }
 
 // Met le modele a la bonne taille en corrigeant par iterations : on mesure, on
-// ajuste, on remesure. Trois passes suffisent quel que soit l'exportateur, et
-// ca reste juste meme si la mesure initiale est imparfaite.
+// ajuste, on remesure.
+//
+// La correction est amortie (racine carree du rapport) et c'est indispensable.
+// Sur un maillage skinne en mode « attached », l'echelle du parent intervient
+// DEUX fois dans la pose finale : une fois par la matrice du noeud, une fois par
+// celle des os. La taille varie donc comme le carre du facteur applique.
+// Appliquer le rapport brut faisait osciller le resultat entre trop petit et
+// cent fois trop grand — c'est ce qui donnait une creature geante.
+// L'amortissement converge dans les deux cas, lineaire comme quadratique.
 function fitToHeight(holder, model, height) {
   holder.scale.setScalar(1);
   holder.position.set(0, 0, 0);
 
-  let box = measureWorld(model);
   const size = new THREE.Vector3();
+  let box = measureWorld(model);
 
-  for (let pass = 0; pass < 3; pass += 1) {
+  for (let pass = 0; pass < 12; pass += 1) {
     box.getSize(size);
     if (!(size.y > 1e-9) || !Number.isFinite(size.y)) break;
-    const factor = height / size.y;
-    if (Math.abs(factor - 1) < 0.005) break;
-    holder.scale.multiplyScalar(factor);
+    const ratio = height / size.y;
+    if (Math.abs(ratio - 1) < 0.02) break;
+    holder.scale.multiplyScalar(Math.sqrt(ratio));
     box = measureWorld(model);
   }
 
