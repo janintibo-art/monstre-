@@ -1,0 +1,87 @@
+name: Build APK et EXE
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Les trois cibles partent du meme build web (dossier dist/).
+# Chaque job le refait de son cote : c'est plus simple que de se passer
+# un artefact, et ca reste rapide.
+
+jobs:
+  web:
+    name: Build web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: dist
+
+  android:
+    name: APK Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - run: npm install
+      - run: npm run build
+
+      # Le dossier android/ n'est pas versionne : Capacitor le regenere ici.
+      - name: Générer le projet Android
+        run: |
+          if [ ! -d android ]; then npx cap add android; fi
+          npx cap sync android
+
+      - name: Compiler l'APK de debug
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: monstre-android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+  windows:
+    name: EXE Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm install
+      - run: npm run build
+
+      # portable = un .exe unique lancable ; nsis = un installateur.
+      - name: Empaqueter avec electron-builder
+        run: npx electron-builder --win portable nsis --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: monstre-windows
+          path: |
+            release/*.exe

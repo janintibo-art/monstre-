@@ -1,0 +1,11 @@
+{
+  "appId": "com.exemple.monstre",
+  "appName": "Monstre de Compagnie",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#0B0F1E"
+  }
+}

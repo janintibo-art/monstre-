@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#0B0F1E" />
+    <title>Monstre de Compagnie</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <!-- Rendu 3D -->
+    <canvas id="scene"></canvas>
+
+    <!-- Interface superposee -->
+    <div id="ui" class="ui">
+      <header class="topbar">
+        <div class="identity">
+          <span id="pet-name" class="identity__name">Œuf</span>
+          <span id="pet-stage" class="identity__stage">incubation</span>
+        </div>
+        <button id="btn-menu" class="icon-button" aria-label="Ouvrir le menu">···</button>
+      </header>
+
+      <!-- Signature visuelle : les besoins sont des fioles de seve -->
+      <section id="vials" class="vials" aria-label="Besoins du monstre"></section>
+
+      <div id="bubble" class="bubble" hidden></div>
+
+      <div id="thought" class="thought" aria-live="polite"></div>
+
+      <footer class="actionbar" id="actionbar"></footer>
+
+      <!-- Panneau de dialogue -->
+      <div id="chat" class="panel" hidden>
+        <div class="panel__head">
+          <h2>Parler</h2>
+          <button id="chat-close" class="icon-button" aria-label="Fermer">×</button>
+        </div>
+        <div id="chat-log" class="chat-log"></div>
+        <div class="chat-input">
+          <input id="chat-field" type="text" placeholder="Dis quelque chose…" autocomplete="off" />
+          <button id="chat-send">Envoyer</button>
+        </div>
+      </div>
+
+      <!-- Panneau reglages -->
+      <div id="menu" class="panel" hidden>
+        <div class="panel__head">
+          <h2>Réglages</h2>
+          <button id="menu-close" class="icon-button" aria-label="Fermer">×</button>
+        </div>
+        <div class="panel__body">
+          <label class="field">
+            <span>Nom du monstre</span>
+            <input id="field-name" type="text" maxlength="16" />
+          </label>
+          <label class="field">
+            <span>Endpoint IA distante (facultatif)</span>
+            <input id="field-endpoint" type="url" placeholder="https://mon-proxy.exemple/chat" />
+          </label>
+          <p class="hint">
+            Laisse vide pour utiliser l'IA locale, qui fonctionne hors ligne. Ne mets jamais une clé
+            d'API ici : passe par un proxy que tu héberges.
+          </p>
+          <button id="btn-reset" class="danger">Recommencer avec un nouvel œuf</button>
+        </div>
+      </div>
+
+      <!-- Bapteme apres eclosion -->
+      <div id="naming" class="panel panel--center" hidden>
+        <div class="panel__body">
+          <h2>Il est sorti.</h2>
+          <p class="hint">Donne-lui un nom, il s'en souviendra.</p>
+          <input id="naming-field" type="text" maxlength="16" placeholder="Son nom" />
+          <button id="naming-confirm">C'est son nom</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
