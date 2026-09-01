@@ -27,6 +27,14 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Indispensable : la regle par defaut du navigateur pour [hidden] est
+   display:none, mais elle a une specificite plus faible que n'importe quelle
+   classe. Sans cette ligne, .panel { display: flex } gagne et tous les
+   panneaux restent visibles en permanence, meme marques hidden. */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   margin: 0;
