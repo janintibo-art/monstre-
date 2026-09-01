@@ -2,6 +2,7 @@ import { GAMES, gamesForBand } from '../games/index.js';
 import { createSession } from '../games/session.js';
 import { createTutor } from '../games/tutor.js';
 import { currentBand } from '../state/profiles.js';
+import { matchChoice } from '../audio/hearing.js';
 import { topicsFor, personalTopic } from '../games/topics.js';
 
 // Interface des jeux educatifs.
@@ -56,6 +57,7 @@ export function createGamesUi({
   const gameTalkBtn = document.getElementById('game-talk');
 
   const repeatBtn = document.getElementById('game-repeat');
+  const voiceBtn = document.getElementById('game-voice');
   const whyBtn = document.getElementById('game-why');
   const quitBtn = document.getElementById('game-quit');
 
@@ -195,6 +197,7 @@ export function createGamesUi({
     }
 
     renderChoices(question);
+    voiceBtn.hidden = !onListen;
     say(question.prompt);
 
     // Jeu de memoire : on montre la suite, puis on rend la main.
@@ -551,6 +554,32 @@ export function createGamesUi({
 
   repeatBtn.addEventListener('click', () => {
     if (session && session.question) say(session.question.prompt);
+  });
+
+  // Répondre à la voix. C'est ici que la reconnaissance est la plus fiable :
+  // on lui donne les réponses affichées comme vocabulaire, donc « vingt-deux »
+  // ou « Bordeaux » sont attendus et reconnus même mal prononcés.
+  //
+  // Ça sert deux publics d'un coup : l'enfant qui ne lit pas encore, et la
+  // personne dont les doigts visent moins bien qu'avant.
+  voiceBtn.addEventListener('click', () => {
+    if (!session || !session.question || locked || !onListen) return;
+    const question = session.question;
+    voice.unlock();
+    voice.stop();
+    feedbackEl.textContent = 'Je t’écoute…';
+
+    onListen((heard) => {
+      if (!session || session.question !== question) return;
+      const choice = matchChoice(heard, question.choices);
+      if (!choice) {
+        feedbackEl.textContent = `J’ai entendu « ${heard} ». Ce n’est pas une des réponses.`;
+        say('Je n’ai pas reconnu de réponse. Tu peux toucher, ou redire.');
+        return;
+      }
+      const button = choicesEl.querySelector(`[data-key="${CSS.escape(choice.key)}"]`);
+      if (button) submit(choice.key, button);
+    }, question.choices);
   });
 
   whyBtn.addEventListener('click', async () => {

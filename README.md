@@ -137,6 +137,36 @@ Le bouton **🎤 Parler** écoute et transmet ce que tu dis à la créature, qui
 répond dans sa bulle, à voix haute. **💬 Écrire** garde la saisie au clavier ;
 les deux aboutissent à la même réponse.
 
+Le moteur de reconnaissance n'est qu'une partie du travail. Ce qui fait la
+précision réelle, c'est ce qu'on fait de sa sortie (`src/audio/hearing.js`) :
+
+- **Le vocabulaire du moment.** Le moteur ne sait pas que « Nyx » est un mot,
+  ni que la question attend « Bordeaux ». Nous si : le nom de la créature, le
+  prénom du joueur, ses souvenirs et surtout les réponses affichées entrent dans
+  un lexique pondéré.
+- **Le choix entre hypothèses.** On en demande cinq et on retient celle qui
+  contient un mot attendu, pas seulement la mieux classée acoustiquement. Une
+  troisième hypothèse contenant la bonne réponse bat une première hypothèse
+  vide de sens.
+- **La correction des mots proches.** « nixe » redevient « Nyx ». La tolérance
+  dépend de la longueur du mot **et** de son poids : on tire fort vers un mot
+  attendu, prudemment vers du vocabulaire général — mieux vaut laisser un mot
+  inconnu tel quel que le transformer en un autre mot légitime.
+- **Les nombres en toutes lettres.** « quatre-vingt-dix-neuf » devient 99,
+  indispensable pour répondre à un calcul à la voix.
+- **Le découpage sur le silence.** Le moteur coupe à la première pause. Une
+  personne âgée qui cherche son mot, un enfant qui hésite, et la phrase part en
+  morceaux. On accumule les fragments et on ne conclut qu'après un vrai
+  silence — 2,6 s pour les profils jeune et senior, 1,7 s sinon.
+- **Un filtre de confiance.** Un raclement de gorge ne devient pas une réponse :
+  en dessous du seuil, la créature demande de répéter au lieu de répondre à
+  côté.
+
+**Répondre aux jeux à la voix** (bouton dans chaque question) est le cas où
+c'est le plus fiable, puisque les réponses affichées servent de vocabulaire. Ça
+sert deux publics d'un coup : l'enfant qui ne lit pas encore, et la personne
+dont les doigts visent moins bien qu'avant.
+
 Deux moteurs, essayés dans cet ordre :
 
 1. **Le module natif** `@capacitor-community/speech-recognition`. C'est lui qui

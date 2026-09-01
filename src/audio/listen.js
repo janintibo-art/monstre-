@@ -1,16 +1,25 @@
-// Ecoute au micro.
+import { understand, contextLexicon } from './hearing.js';
+
+// Écoute au micro.
 //
-// Deux chemins, essayes dans cet ordre :
+// Deux chemins, essayés dans cet ordre :
 //
-//   1. Le module natif Capacitor. C'est lui qui compte sur telephone : la
+//   1. Le module natif Capacitor. C'est lui qui compte sur téléphone : la
 //      reconnaissance vocale du navigateur n'est pas fiable dans une WebView
 //      Android, alors que le moteur natif l'est.
-//   2. L'API du navigateur (SpeechRecognition), pour le mode developpement dans
-//      un vrai Chrome.
+//   2. L'API du navigateur, pour le développement dans un vrai Chrome.
 //
-// Si aucun des deux n'est disponible — c'est le cas sur la version Windows,
-// Electron n'embarquant pas de moteur de reconnaissance — on le dit clairement
-// et on renvoie l'utilisateur vers la saisie au clavier.
+// Ce module ne se contente pas de transmettre ce que le moteur renvoie. Trois
+// traitements font la différence sur la compréhension réelle :
+//
+//   • **Découpage sur le silence.** Le moteur coupe dès la première pause. Une
+//     personne âgée qui cherche son mot, un enfant qui hésite, et la phrase
+//     part en morceaux. On accumule donc les fragments et on ne conclut qu'après
+//     un vrai silence, dont la durée dépend du profil.
+//   • **Plusieurs hypothèses.** On en demande cinq et on choisit avec le
+//     vocabulaire du moment, pas seulement avec le score acoustique.
+//   • **Un filtre de confiance.** Un raclement de gorge ne doit pas devenir une
+//     réponse : en dessous du seuil, on fait répéter.
 
 let nativePlugin = null;
 let nativeChecked = false;
@@ -22,7 +31,6 @@ async function getNative() {
     const module = await import('@capacitor-community/speech-recognition');
     const plugin = module.SpeechRecognition;
     const status = await plugin.available();
-    // Selon les versions, `available()` renvoie un booleen ou { available }.
     const ok = typeof status === 'boolean' ? status : status && status.available;
     nativePlugin = ok ? plugin : null;
   } catch {
@@ -32,25 +40,79 @@ async function getNative() {
 }
 
 function browserEngine() {
-  const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
-  return Ctor || null;
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 
-export function createListener({ onPartial, onFinal, onState, onError }) {
+// Durée de silence avant de conclure. Une personne âgée ou un jeune enfant
+// prend le temps de formuler : couper au bout d'une seconde leur volerait la
+// fin de leur phrase.
+export const SILENCE_MS = {
+  fast: 1100,
+  normal: 1700,
+  slow: 2600
+};
+
+export function createListener({ onPartial, onFinal, onState, onError, getContext }) {
   let listening = false;
   let browser = null;
-  let mode = null; // 'native' | 'browser'
+  let mode = null;
+  let pieces = [];
+  let alternatives = [];
+  let silenceTimer = null;
+  let hardTimer = null;
+  let expected = null;
+  let pace = 'normal';
 
   function setState(value) {
     listening = value;
     if (onState) onState(value);
   }
 
-  async function supported() {
-    if (await getNative()) return 'native';
-    if (browserEngine()) return 'browser';
-    return null;
+  function clearTimers() {
+    clearTimeout(silenceTimer);
+    clearTimeout(hardTimer);
+    silenceTimer = null;
+    hardTimer = null;
   }
+
+  // Repart le compte à rebours de silence à chaque fragment entendu.
+  function bumpSilence() {
+    clearTimeout(silenceTimer);
+    silenceTimer = setTimeout(() => finish(), SILENCE_MS[pace] || SILENCE_MS.normal);
+  }
+
+  function finish() {
+    clearTimers();
+    const assembled = pieces.join(' ').replace(/\s+/g, ' ').trim();
+    const list = alternatives.length
+      ? alternatives
+      : assembled
+        ? [{ text: assembled, confidence: 0.6 }]
+        : [];
+
+    // Les fragments accumulés forment une hypothèse à part entière, en général
+    // meilleure que chacune prise isolément.
+    if (assembled && !list.some((a) => a.text === assembled)) {
+      list.unshift({ text: assembled, confidence: 0.75 });
+    }
+
+    stop();
+
+    const context = (getContext && getContext()) || {};
+    const lexicon = context.lexicon || contextLexicon({});
+    const result = understand(list, lexicon, { numbers: Boolean(context.numbers) });
+
+    pieces = [];
+    alternatives = [];
+
+    if (!result.confident) {
+      if (onError) onError(result.reason === 'silence' ? "Je n'ai rien entendu." : "Je n'ai pas bien compris.", { soft: true });
+      return;
+    }
+    onFinal(result.text, { raw: result.raw, expected });
+  }
+
+  /* ------------------------------------------------------------- natif */
 
   async function startNative(plugin) {
     const permission = await plugin.requestPermissions().catch(() => null);
@@ -65,57 +127,123 @@ export function createListener({ onPartial, onFinal, onState, onError }) {
 
     await plugin.removeAllListeners().catch(() => {});
     await plugin.addListener('partialResults', (data) => {
-      const text = data && data.matches && data.matches[0];
-      if (text && onPartial) onPartial(text);
+      const matches = (data && data.matches) || [];
+      const text = matches[0];
+      if (!text) return;
+      // Le natif renvoie la phrase complète en cours, pas un ajout : on
+      // remplace le dernier fragment plutôt que d'empiler des répétitions.
+      pieces[pieces.length ? pieces.length - 1 : 0] = text;
+      alternatives = matches.map((m, i) => ({ text: m, confidence: 1 - i * 0.12 }));
+      if (onPartial) onPartial(pieces.join(' '));
+      bumpSilence();
     });
     await plugin.addListener('listeningState', (data) => {
-      if (data && data.status === 'stopped') setState(false);
+      if (data && data.status === 'stopped' && listening) {
+        // Le moteur s'est arrêté de lui-même sur une pause : on relance pour
+        // laisser la personne finir sa phrase.
+        relaunchNative(plugin);
+      }
     });
 
     setState(true);
-    // `popup: false` garde l'ecoute dans le jeu au lieu d'ouvrir la fenetre
-    // systeme de Google, qui masquerait la creature.
-    const result = await plugin
-      .start({ language: 'fr-FR', maxResults: 1, partialResults: true, popup: false })
-      .catch((error) => {
-        onError(String((error && error.message) || error));
-        return null;
-      });
-
-    setState(false);
-    const text = result && result.matches && result.matches[0];
-    if (text) onFinal(text);
+    bumpSilence();
+    // Garde-fou : au-delà d'une minute, on conclut quoi qu'il arrive.
+    hardTimer = setTimeout(() => finish(), 60000);
+    launchNative(plugin);
   }
+
+  function launchNative(plugin) {
+    plugin
+      .start({ language: 'fr-FR', maxResults: 5, partialResults: true, popup: false })
+      .then((result) => {
+        const matches = (result && result.matches) || [];
+        if (matches.length) {
+          pieces[pieces.length ? pieces.length - 1 : 0] = matches[0];
+          alternatives = matches.map((m, i) => ({ text: m, confidence: 1 - i * 0.12 }));
+          if (onPartial) onPartial(pieces.join(' '));
+          pieces.push(''); // le fragment suivant ira dans une case neuve
+          bumpSilence();
+        }
+      })
+      .catch(() => {
+        /* relancé par listeningState, ou conclu par le silence */
+      });
+  }
+
+  function relaunchNative(plugin) {
+    if (!listening) return;
+    setTimeout(() => {
+      if (listening) launchNative(plugin);
+    }, 120);
+  }
+
+  /* --------------------------------------------------------- navigateur */
 
   function startBrowser(Ctor) {
     browser = new Ctor();
     browser.lang = 'fr-FR';
     browser.interimResults = true;
-    browser.maxAlternatives = 1;
-    browser.continuous = false;
+    browser.maxAlternatives = 5;
+    browser.continuous = true;
 
     browser.onresult = (event) => {
-      let text = '';
-      let done = false;
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        text += event.results[i][0].transcript;
-        if (event.results[i].isFinal) done = true;
+        const result = event.results[i];
+        const text = result[0].transcript.trim();
+        if (!text) continue;
+        pieces[i] = text;
+        if (result.isFinal) {
+          alternatives = Array.from(result)
+            .map((alt, rank) => ({
+              text: alt.transcript.trim(),
+              confidence: alt.confidence || 1 - rank * 0.12
+            }))
+            .filter((a) => a.text);
+        }
       }
-      if (done) onFinal(text.trim());
-      else if (onPartial) onPartial(text.trim());
+      if (onPartial) onPartial(pieces.filter(Boolean).join(' '));
+      bumpSilence();
     };
     browser.onerror = (event) => {
+      if (event.error === 'no-speech') return; // le silence s'en chargera
+      clearTimers();
       setState(false);
       onError(event.error === 'not-allowed' ? 'Accès au micro refusé.' : String(event.error));
     };
-    browser.onend = () => setState(false);
+    browser.onend = () => {
+      // En mode continu, certains navigateurs coupent quand même : on relance
+      // tant que l'écoute est censée durer.
+      if (listening) {
+        try {
+          browser.start();
+        } catch {
+          /* déjà relancé */
+        }
+      }
+    };
 
     setState(true);
+    bumpSilence();
+    hardTimer = setTimeout(() => finish(), 60000);
     browser.start();
   }
 
-  async function start() {
+  /* ------------------------------------------------------------ public */
+
+  async function supported() {
+    if (await getNative()) return 'native';
+    if (browserEngine()) return 'browser';
+    return null;
+  }
+
+  // `options.pace` règle la patience, `options.expected` sert au contexte.
+  async function start(options = {}) {
     if (listening) return;
+    pieces = [];
+    alternatives = [];
+    pace = options.pace || 'normal';
+    expected = options.expected || null;
+
     const kind = await supported();
     mode = kind;
     if (kind === 'native') await startNative(nativePlugin);
@@ -123,20 +251,37 @@ export function createListener({ onPartial, onFinal, onState, onError }) {
     else onError("Ce téléphone n'a pas de reconnaissance vocale disponible.");
   }
 
-  async function stop() {
+  function stop() {
+    clearTimers();
     if (!listening) return;
-    if (mode === 'native' && nativePlugin) await nativePlugin.stop().catch(() => {});
-    if (mode === 'browser' && browser) browser.stop();
     setState(false);
+    if (mode === 'native' && nativePlugin) {
+      nativePlugin.stop().catch(() => {});
+      nativePlugin.removeAllListeners().catch(() => {});
+    }
+    if (mode === 'browser' && browser) {
+      try {
+        browser.stop();
+      } catch {
+        /* déjà arrêté */
+      }
+    }
   }
 
-  function toggle() {
-    return listening ? stop() : start();
+  // Conclure tout de suite, sans attendre le silence : c'est le bouton
+  // « J'ai fini », utile quand on sait qu'on a terminé de parler.
+  function submit() {
+    if (listening) finish();
+  }
+
+  function toggle(options) {
+    return listening ? submit() : start(options);
   }
 
   return {
     start,
     stop,
+    submit,
     toggle,
     supported,
     get listening() {

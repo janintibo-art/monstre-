@@ -19,6 +19,7 @@ import {
   remember,
   learn,
   learnFrom,
+  knownFacts,
   recordSpeech,
   recordMoment,
   playerName,
@@ -29,6 +30,7 @@ import { load, save, reset, autosave } from './state/save.js';
 import { advance, hatch, createPet } from './state/pet.js';
 import { createVoice, voiceProfile } from './audio/voice.js';
 import { createListener } from './audio/listen.js';
+import { contextLexicon } from './audio/hearing.js';
 import { createGamesUi } from './ui/games.js';
 import { createGuide } from './ui/guide.js';
 import { comfortEnabled, applyComfortClass } from './state/profile.js';
@@ -440,12 +442,38 @@ async function boot() {
   // Quand la conversation guidee ecoute, le texte lui revient a elle plutot
   // qu'au fil de discussion ordinaire.
   let talkTarget = null;
+  let expectedChoices = null; // reponses possibles quand un jeu est ouvert
+
+  // Le vocabulaire du moment. C'est lui qui fait la difference : le moteur ne
+  // sait pas que « Nyx » est un mot, ni que la question attend « Bordeaux ».
+  function hearingContext() {
+    const profile = getActiveProfile();
+    const facts = knownFacts(pet.memory)
+      .slice(0, 12)
+      .map((f) => f.value)
+      .filter(Boolean);
+    const expected = expectedChoices ? expectedChoices.map((c) => c.label) : [];
+    return {
+      lexicon: contextLexicon({ pet, profile, expected, facts }),
+      numbers: Boolean(expectedChoices)
+    };
+  }
+
+  // Les plus jeunes et les plus âgés prennent le temps de formuler : couper au
+  // bout d'une seconde leur volerait la fin de leur phrase.
+  function listeningPace() {
+    const audience = currentBand().audience;
+    if (audience === 'senior' || audience === 'enfant') return 'slow';
+    return 'normal';
+  }
 
   const listener = createListener({
+    getContext: hearingContext,
     onPartial: (text) => {
       hud.showThought(`« ${text} »`);
     },
     onFinal: async (text) => {
+      expectedChoices = null;
       hud.showThought('');
       if (!text) return;
       if (talkTarget) {
@@ -465,10 +493,17 @@ async function boot() {
       if (active) voice.stop();
       if (!active) hud.showThought('');
     },
-    onError: (message) => {
+    onError: (message, options = {}) => {
       actionBar.setListening(false);
-      talkTarget = null;
       hud.showThought('');
+      // Une phrase mal comprise n'est pas une panne : on fait repeter au lieu
+      // d'ouvrir le clavier comme si le micro etait casse.
+      if (options.soft) {
+        talkTarget = null;
+        say(`${message} Tu peux répéter ?`, 4000);
+        return;
+      }
+      talkTarget = null;
       hud.showBubble(`Je n'entends rien : ${message}`, 5000);
       chat.open();
     }
@@ -490,7 +525,9 @@ async function boot() {
 
     if (care.id === 'listen') {
       voice.unlock();
-      listener.toggle();
+      // Un appui pendant l'ecoute conclut au lieu d'annuler : c'est le
+      // « j'ai fini » de celui qui sait qu'il a termine sa phrase.
+      listener.toggle({ pace: listeningPace() });
       return;
     }
 
@@ -547,11 +584,12 @@ async function boot() {
     voice,
     voiceProfile,
     onAnswer: answer,
-    onListen: (onHeard) => {
+    onListen: (onHeard, choices) => {
       // Le micro des jeux passe par le meme module que le reste : une seule
       // voie d'ecoute a maintenir, et les memes garde-fous.
       talkTarget = onHeard;
-      listener.start();
+      expectedChoices = choices || null;
+      listener.start({ pace: listeningPace() });
     },
     onCelebrate: (big = false) => {
       if (!monster) return;
