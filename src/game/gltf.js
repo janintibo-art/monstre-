@@ -28,19 +28,57 @@ export async function loadModels(base = import.meta.env.BASE_URL || './') {
   return { monster, egg };
 }
 
-// Recentre le modele et le met a l'echelle voulue : les exports Blender
-// arrivent avec des tailles et des origines tres variables.
-function fitToHeight(object, height) {
+// Mesure la boite englobante REELLE, apres skinning.
+//
+// Box3.setFromObject() applique la matrice du noeud a la geometrie brute. Pour
+// un maillage skinne c'est faux : la pose est pilotee par les os, pas par le
+// noeud. Sur un rig Meshy (armature a l'echelle 0,01, os en centimetres) la
+// mesure se trompait d'un facteur 100 — d'ou le monstre geant.
+function measureWorld(object) {
+  const box = new THREE.Box3();
+  const tmp = new THREE.Box3();
   object.updateWorldMatrix(true, true);
-  const box = new THREE.Box3().setFromObject(object);
+  object.traverse((child) => {
+    if (!child.isMesh || !child.geometry) return;
+    if (child.isSkinnedMesh && typeof child.computeBoundingBox === 'function') {
+      child.computeBoundingBox(); // tient compte de la pose courante
+      tmp.copy(child.boundingBox);
+    } else {
+      if (!child.geometry.boundingBox) child.geometry.computeBoundingBox();
+      tmp.copy(child.geometry.boundingBox);
+    }
+    tmp.applyMatrix4(child.matrixWorld);
+    box.union(tmp);
+  });
+  return box;
+}
+
+// Met le modele a la bonne taille en corrigeant par iterations : on mesure, on
+// ajuste, on remesure. Trois passes suffisent quel que soit l'exportateur, et
+// ca reste juste meme si la mesure initiale est imparfaite.
+function fitToHeight(holder, model, height) {
+  holder.scale.setScalar(1);
+  holder.position.set(0, 0, 0);
+
+  let box = measureWorld(model);
   const size = new THREE.Vector3();
+
+  for (let pass = 0; pass < 3; pass += 1) {
+    box.getSize(size);
+    if (!(size.y > 1e-9) || !Number.isFinite(size.y)) break;
+    const factor = height / size.y;
+    if (Math.abs(factor - 1) < 0.005) break;
+    holder.scale.multiplyScalar(factor);
+    box = measureWorld(model);
+  }
+
   const center = new THREE.Vector3();
-  box.getSize(size);
   box.getCenter(center);
-  const scale = height / (size.y || 1);
-  object.scale.setScalar(scale);
-  object.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale);
-  return { height, radius: (Math.max(size.x, size.z) / 2) * scale };
+  box.getSize(size);
+  // Pieds au sol, centre sur l'axe vertical.
+  holder.position.set(-center.x, -box.min.y, -center.z);
+
+  return { height: size.y || height, radius: Math.max(size.x, size.z) / 2 };
 }
 
 function prepare(object) {
@@ -72,8 +110,8 @@ export function createModelMonster(gltf, genome) {
   // et cloneSkinned preserve le squelette (un clone() simple le casserait).
   const model = cloneSkinned(gltf.scene);
   prepare(model);
-  const bounds = fitToHeight(model, 1.5);
   holder.add(model);
+  const bounds = fitToHeight(holder, model, 1.5);
 
   // Si le modele contient des animations Blender, on les utilise.
   // Sinon tout est anime au niveau de l'objet entier.
@@ -210,31 +248,31 @@ export function createModelMonster(gltf, genome) {
     // Elle s'ajoute aux clips Blender sans les contrarier.
     const breath = Math.sin(time * (asleep ? 1.1 : 2.2));
     const excited = emotion === 'joyeux' || emotion === 'excite';
-    holder.scale.y = 1 + breath * (asleep ? 0.05 : 0.028);
-    holder.scale.x = 1 - breath * 0.015;
-    holder.scale.z = holder.scale.x;
+    anim.scale.y = 1 + breath * (asleep ? 0.05 : 0.028);
+    anim.scale.x = 1 - breath * 0.015;
+    anim.scale.z = anim.scale.x;
 
     hop = moving && !mixer ? Math.abs(Math.sin(time * 8)) : lerp(hop, 0, Math.min(dt * 5, 1));
     const bounce = action === 'dance' ? Math.abs(Math.sin(time * 6)) * 0.2 : 0;
     root.position.y = hop * 0.1 + bounce;
 
-    holder.rotation.x = asleep ? 0.35 : moving && !mixer ? 0.1 : Math.sin(time * 0.7) * 0.03;
-    holder.rotation.z = excited ? Math.sin(time * 7) * 0.05 : Math.sin(time * 0.9) * 0.02;
+    anim.rotation.x = asleep ? 0.35 : moving && !mixer ? 0.1 : Math.sin(time * 0.7) * 0.03;
+    anim.rotation.z = excited ? Math.sin(time * 7) * 0.05 : Math.sin(time * 0.9) * 0.02;
 
     if (asleep) root.position.y -= 0.04;
 
     // Reactions ponctuelles
     if (reaction) {
       reactionTime -= dt;
-      if (reaction === 'eat') holder.rotation.x += Math.sin(time * 20) * 0.12;
+      if (reaction === 'eat') anim.rotation.x += Math.sin(time * 20) * 0.12;
       if (reaction === 'wash') root.rotation.y += Math.sin(time * 24) * 0.12;
       if (reaction === 'play') root.position.y += Math.abs(Math.sin(time * 10)) * 0.16;
-      if (reaction === 'pet') holder.rotation.z += Math.sin(time * 16) * 0.06;
+      if (reaction === 'pet') anim.rotation.z += Math.sin(time * 16) * 0.06;
       if (reactionTime <= 0) reaction = null;
     }
 
     // Petit scintillement pour eviter la fixite parfaite
-    holder.position.x = Math.sin(time * 0.6 + jitterPhase) * 0.004;
+    anim.position.x = Math.sin(time * 0.6 + jitterPhase) * 0.004;
   }
 
   function headWorldPosition(out = new THREE.Vector3()) {
@@ -261,13 +299,15 @@ export function createModelMonster(gltf, genome) {
 
 export function createModelEgg(gltf, seed) {
   const group = new THREE.Group();
+  const anim = new THREE.Group();
   const holder = new THREE.Group();
-  group.add(holder);
+  group.add(anim);
+  anim.add(holder);
 
   const model = cloneSkinned(gltf.scene);
   prepare(model);
-  const bounds = fitToHeight(model, 1.25);
   holder.add(model);
+  const bounds = fitToHeight(holder, model, 1.25);
 
   const nest = new THREE.Mesh(
     new THREE.TorusGeometry(Math.max(0.42, bounds.radius * 0.9), 0.16, 12, 32),
@@ -295,7 +335,7 @@ export function createModelEgg(gltf, seed) {
   function burst() {
     if (hatched) return;
     hatched = true;
-    holder.visible = false;
+    anim.visible = false;
     const rng = createRng(seed + 7);
     const material = new THREE.MeshStandardMaterial({ color: 0xe8d9bd, roughness: 0.6 });
     for (let i = 0; i < 14; i += 1) {
@@ -317,10 +357,10 @@ export function createModelEgg(gltf, seed) {
     if (!hatched) {
       shake = Math.max(0, shake - dt * 2.2);
       const tension = progress + shake;
-      holder.rotation.z = Math.sin(time * 1.4) * 0.02 + Math.sin(time * 15) * 0.09 * tension;
-      holder.rotation.x = Math.sin(time * 12.5) * 0.05 * tension;
-      holder.position.y = Math.abs(Math.sin(time * 7)) * 0.05 * tension;
-      holder.scale.setScalar(1 + Math.sin(time * 3) * 0.012);
+      anim.rotation.z = Math.sin(time * 1.4) * 0.02 + Math.sin(time * 15) * 0.09 * tension;
+      anim.rotation.x = Math.sin(time * 12.5) * 0.05 * tension;
+      anim.position.y = Math.abs(Math.sin(time * 7)) * 0.05 * tension;
+      anim.scale.setScalar(1 + Math.sin(time * 3) * 0.012);
     }
 
     for (let i = debris.length - 1; i >= 0; i -= 1) {
