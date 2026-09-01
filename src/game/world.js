@@ -221,22 +221,53 @@ export function createWorld(canvas, textures = {}, biome = null) {
     };
   }
 
+  const BASE_FOV = 42;
+  const MAX_FOV = 54;
+  const WANTED_HALF_WIDTH = 1.25; // largeur minimale souhaitee de chaque cote
+
   function resize() {
     const w = canvas.clientWidth || window.innerWidth;
     const h = canvas.clientHeight || window.innerHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
+
+    const distance = Math.hypot(camera.position.y - 1, camera.position.z);
+
+    // En mode portrait, le champ horizontal est etrangle : a 42 degres sur un
+    // ecran 20:9, il ne reste que deux unites de large. On ouvre donc l'angle,
+    // mais pas au-dela de 54 degres — plus loin, la creature ne ferait plus que
+    // le quart de la hauteur et on perdrait ce qu'on est venu regarder.
+    // En paysage, la largeur est confortable et l'angle reste a 42.
+    const neededTan = WANTED_HALF_WIDTH / (distance * camera.aspect);
+    const neededFov = (Math.atan(neededTan) * 360) / Math.PI;
+    camera.fov = Math.min(MAX_FOV, Math.max(BASE_FOV, neededFov));
     camera.updateProjectionMatrix();
 
-    // Demi-largeur reellement visible au niveau de la creature.
-    const distance = Math.hypot(camera.position.y - 1, camera.position.z);
     const halfWidth = distance * Math.tan((camera.fov * Math.PI) / 360) * camera.aspect;
     // La camera suit une partie du deplacement, donc la creature peut s'ecarter
     // davantage que la demi-largeur brute sans sortir du cadre.
     playBounds.x = Math.max(1, (halfWidth / (1 - FOLLOW)) * 0.72);
     playBounds.z = 2.8;
   }
+
+  // Ramene un point dans l'aire visible. Utilise aussi bien pour les cibles de
+  // deplacement que pour la position reelle de la creature : si l'ecran pivote,
+  // l'aire retrecit d'un coup et il faut pouvoir la faire rentrer.
+  function clampToArena(vec, margin = 1) {
+    const over = Math.hypot(vec.x / (playBounds.x * margin), vec.z / (playBounds.z * margin));
+    if (over > 1) {
+      vec.x /= over;
+      vec.z /= over;
+    }
+    return vec;
+  }
   window.addEventListener('resize', resize);
+  // Sur Android, le redimensionnement suit parfois la rotation avec un retard :
+  // on repasse un coup apres coup pour ne pas rester sur l'ancien cadrage.
+  window.addEventListener('orientationchange', () => {
+    resize();
+    setTimeout(resize, 250);
+  });
   resize();
 
   function update(dt) {
@@ -274,6 +305,7 @@ export function createWorld(canvas, textures = {}, biome = null) {
     ground,
     env,
     playBounds,
+    clampToArena,
     setFocus,
     shake,
     applyBiome,

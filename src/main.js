@@ -351,16 +351,6 @@ async function boot() {
     save(pet);
   });
 
-  // Ramene un point dans l'ellipse visible.
-  function clampToArena(vec) {
-    const over = Math.hypot(vec.x / world.playBounds.x, vec.z / world.playBounds.z);
-    if (over > 1) {
-      vec.x /= over;
-      vec.z /= over;
-    }
-    return vec;
-  }
-
   // -------------------------------------------------------------- pointeur
   function onPointerDown(event) {
     voice.unlock(); // le son reste bloque tant que l'ecran n'a pas ete touche
@@ -397,7 +387,7 @@ async function boot() {
     const ground = world.groundPointFrom(x, y);
     if (ground) {
       ground.y = 0;
-      clampToArena(ground);
+      world.clampToArena(ground);
       pointerTarget.copy(ground);
     }
   }
@@ -412,7 +402,7 @@ async function boot() {
     const ground = world.groundPointFrom(event.clientX, event.clientY);
     if (ground) {
       ground.y = 0;
-      clampToArena(ground);
+      world.clampToArena(ground);
       pointerTarget.copy(ground);
       pointerActive = 2.5;
     }
@@ -529,13 +519,7 @@ async function boot() {
 
     // Aire de jeu elliptique, calquee sur ce que la camera voit reellement :
     // etroite en largeur sur un ecran vertical, plus profonde en avant-arriere.
-    const bx = world.playBounds.x;
-    const bz = world.playBounds.z;
-    const over = Math.hypot(moveTarget.x / bx, moveTarget.z / bz);
-    if (over > 1) {
-      moveTarget.x /= over;
-      moveTarget.z /= over;
-    }
+    world.clampToArena(moveTarget);
   }
 
   // -------------------------------------------------------------- boucle
@@ -616,6 +600,18 @@ async function boot() {
         } else {
           ambientTimer = 0.4;
         }
+      }
+
+      // Garde-fou : on ramene la creature elle-meme, pas seulement sa cible.
+      // Si l'ecran pivote, l'aire retrecit d'un coup et elle se retrouverait
+      // dehors sans jamais y revenir.
+      const here = monster.group.position;
+      const outside = Math.hypot(here.x / world.playBounds.x, here.z / world.playBounds.z);
+      if (outside > 1.05) {
+        // Rappel progressif plutot qu'un saut : on la voit revenir.
+        const pull = Math.min(dt * 1.5, 1);
+        here.x += (here.x / outside - here.x) * pull;
+        here.z += (here.z / outside - here.z) * pull;
       }
 
       world.setFocus(monster.group.position);

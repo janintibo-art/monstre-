@@ -240,6 +240,25 @@ npm run android:sync && npm run assets
 └── vite.config.js
 ```
 
+## Le cadrage
+
+Sur un écran tenu verticalement, le champ horizontal est étranglé : à 42 degrés
+sur un 20:9, il ne reste que **deux unités de large**, alors que la hauteur en
+couvre plus de quatre. C'est pour ça que la créature sortait du cadre.
+
+Trois mesures, qui se complètent :
+
+1. **L'angle de vue s'ouvre en portrait**, jusqu'à 54 degrés, pour gagner en
+   largeur. Pas au-delà : à 60 degrés la créature ne ferait plus que le quart de
+   la hauteur et on perdrait ce qu'on est venu regarder. En paysage la largeur
+   est confortable, l'angle reste à 42.
+2. **L'aire de jeu est elliptique**, calculée depuis le cadrage réel : étroite
+   en largeur, plus profonde en avant-arrière. Elle est recalculée à chaque
+   rotation d'écran.
+3. **La caméra suit la créature** avec du retard, et un rappel progressif la
+   ramène si elle se retrouve dehors — par exemple juste après une rotation,
+   quand l'aire rétrécit d'un coup.
+
 ## Le cycle jour / nuit
 
 Sept moments — nuit, aube, matin, midi, après-midi, crépuscule, nuit —
