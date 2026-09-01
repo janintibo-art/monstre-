@@ -57,14 +57,41 @@
             <span>Nom du monstre</span>
             <input id="field-name" type="text" maxlength="16" />
           </label>
+
           <label class="field">
-            <span>Endpoint IA distante (facultatif)</span>
+            <span>Cerveau du monstre</span>
+            <select id="field-provider"></select>
+          </label>
+
+          <p id="provider-help" class="hint"></p>
+
+          <label class="field" id="row-key" hidden>
+            <span>Clé d'API</span>
+            <input id="field-key" type="text" placeholder="Colle ta clé ici" autocomplete="off" />
+          </label>
+
+          <a id="key-link" class="link" href="#" target="_blank" rel="noopener" hidden
+            >Obtenir une clé gratuite →</a
+          >
+
+          <label class="field" id="row-model" hidden>
+            <span>Modèle</span>
+            <input id="field-model" type="text" autocomplete="off" />
+          </label>
+
+          <label class="field" id="row-endpoint" hidden>
+            <span>Adresse du proxy</span>
             <input id="field-endpoint" type="url" placeholder="https://mon-proxy.exemple/chat" />
           </label>
+
+          <button id="btn-test">Tester la connexion</button>
+          <p id="test-status" class="hint"></p>
+
           <p class="hint">
-            Laisse vide pour utiliser l'IA locale, qui fonctionne hors ligne. Ne mets jamais une clé
-            d'API ici : passe par un proxy que tu héberges.
+            La clé reste sur ce téléphone et n'est jamais envoyée sur GitHub. Elle part uniquement
+            vers le fournisseur que tu choisis.
           </p>
+
           <button id="btn-reset" class="danger">Recommencer avec un nouvel œuf</button>
         </div>
       </div>
@@ -76,6 +103,7 @@
           <p class="hint">Donne-lui un nom, il s'en souviendra.</p>
           <input id="naming-field" type="text" maxlength="16" placeholder="Son nom" />
           <button id="naming-confirm">C'est son nom</button>
+          <button id="naming-later" class="ghost">Plus tard</button>
         </div>
       </div>
     </div>

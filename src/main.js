@@ -18,6 +18,29 @@ import { createActionBar } from './ui/actions.js';
 import { createChat } from './ui/chat.js';
 import { createPanels } from './ui/panels.js';
 
+// Affiche l'erreur a l'ecran plutot que de laisser l'application figee en
+// silence, et propose la seule action qui debloque a coup sur.
+function showFatal(error) {
+  if (document.getElementById('fatal')) return;
+  const box = document.createElement('div');
+  box.id = 'fatal';
+  box.className = 'fatal';
+  box.innerHTML = `
+    <strong>Quelque chose a cassé.</strong>
+    <span>${String((error && error.message) || error)}</span>
+    <button type="button">Recommencer avec un nouvel œuf</button>
+  `;
+  box.querySelector('button').addEventListener('click', () => {
+    try {
+      localStorage.removeItem('monstre.save.v2');
+    } catch {
+      /* rien a faire */
+    }
+    window.location.reload();
+  });
+  document.body.appendChild(box);
+}
+
 async function boot() {
   const canvas = document.getElementById('scene');
   // Textures et modeles sont facultatifs : tout ce qui manque est remplace
@@ -68,6 +91,7 @@ async function boot() {
 
   // ------------------------------------------------------------- interface
   const panels = createPanels({
+    getPet: () => pet,
     onRename: (name) => {
       pet.name = name;
       save(pet);
@@ -212,8 +236,9 @@ async function boot() {
     egg.dispose();
     egg = null;
     spawnMonster();
+    if (monster.playBirth) monster.playBirth();
     particles.burst(new THREE.Vector3(0, 0.8, 0), 30, 0x6fe3c4, 2);
-    panels.askName();
+    panels.askName(pet.name);
     save(pet);
   }
 
@@ -250,7 +275,12 @@ async function boot() {
   }
 
   // -------------------------------------------------------------- boucle
-  const loop = createLoop((dt, time) => {
+  // Une exception dans la boucle empechait la frame suivante d'etre planifiee :
+  // l'ecran se figeait sans un mot. On l'attrape, on l'affiche, et on continue
+  // tant que c'est possible.
+  let errorCount = 0;
+
+  function step(dt, time) {
     pointerActive = Math.max(0, pointerActive - dt);
 
     const sleeping = asleep || decision.action === 'sleep';
@@ -315,6 +345,17 @@ async function boot() {
 
     world.update(dt);
     world.render();
+  }
+
+  const loop = createLoop((dt, time) => {
+    try {
+      step(dt, time);
+    } catch (error) {
+      errorCount += 1;
+      console.error(error);
+      if (errorCount === 1) showFatal(error);
+      if (errorCount > 30) loop.stop();
+    }
   });
 
   autosave(() => pet);

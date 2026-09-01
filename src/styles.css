@@ -411,3 +411,80 @@ button:focus-visible {
     transition: none !important;
   }
 }
+
+/* ------------------------- Ajouts : réglages IA -------------------------- */
+
+select {
+  background: var(--ink-2);
+  border: 1px solid rgba(233, 238, 245, 0.14);
+  border-radius: 12px;
+  padding: 11px 13px;
+  color: var(--bone);
+  font-size: 15px;
+  font-family: inherit;
+  pointer-events: auto;
+}
+
+.link {
+  color: var(--glow);
+  font-size: 13px;
+  text-decoration: none;
+  pointer-events: auto;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+#btn-test {
+  background: transparent;
+  border: 1px solid var(--glow);
+  color: var(--glow);
+  border-radius: 12px;
+  padding: 11px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ghost {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  padding: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.ghost:hover {
+  color: var(--bone);
+}
+
+/* Bannière d'erreur : visible, et toujours au-dessus du reste. */
+.fatal {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--safe-bottom) + 16px);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #2a1620;
+  border: 1px solid rgba(255, 155, 155, 0.35);
+  color: #ffd8d8;
+  font-size: 14px;
+  line-height: 1.45;
+  pointer-events: auto;
+}
+
+.fatal button {
+  background: #ff9b9b;
+  color: #2a1620;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}

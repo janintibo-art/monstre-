@@ -17,20 +17,28 @@ personnage face à **+Z**.
 
 ## Animations
 
-Le moteur cherche des clips par leur nom et bascule dessus automatiquement :
+Le moteur cherche un **fragment** de nom dans les clips du fichier, pas une
+correspondance exacte : `Walking` est reconnu par le mot-clé `walk`. Aucun
+renommage n'est nécessaire.
 
-| Nom du clip dans Blender          | Quand il se joue                |
-| --------------------------------- | ------------------------------- |
-| `idle` ou `repos`                 | au repos, mendicité, câlin      |
-| `walk` ou `marche`                | déplacement, exploration        |
-| `play`, `jump` ou `saut`          | jeu                             |
-| `dance` ou `danse`                | euphorie                        |
-| `sleep`, `sommeil` ou `dormir`    | sommeil                         |
-| `sad` ou `triste`                 | bouderie                        |
+| Mots-clés cherchés              | Quand le clip se joue           |
+| ------------------------------- | ------------------------------- |
+| `idle`, `repos`, `arise`        | au repos, bouderie              |
+| `walk`, `marche`                | déplacement, exploration        |
+| `run`, `jump`, `saut`, `play`   | jeu                             |
+| `danc`                          | euphorie                        |
+| `sleep`, `sommeil`, `dormir`    | sommeil                         |
+| `agree`, `gesture`, `wave`      | câlin, repas, demande d'attention |
+
+Les clips contenant `arise`, `agree`, `gesture` ou `wave` sont joués **une seule
+fois** puis figés sur leur dernière image, au lieu d'être bouclés.
+
+Le modèle actuel contient `Agree_Gesture`, `Arise`, `Running` et `Walking`.
+Il manque un clip d'attente et un clip de sommeil : en attendant, la pose finale
+d'`Arise` sert de position debout, et la respiration reste procédurale.
 
 Sans aucune animation, le moteur anime le modèle entier : respiration,
-sautillement, inclinaison, secousses de réaction. C'est le cas aujourd'hui —
-le squelette est présent mais aucun clip n'est exporté.
+sautillement, inclinaison, secousses de réaction.
 
 ## Poids
 

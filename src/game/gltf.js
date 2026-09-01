@@ -84,27 +84,63 @@ export function createModelMonster(gltf, genome) {
   });
   let currentClip = null;
 
+  // Correspondance action -> clip, par mots-cles cherches DANS le nom du clip.
+  // Un exportateur nomme rarement ses clips "idle" : "Walking", "Running" ou
+  // "Armature|clip0" sont plus courants. La recherche par fragment evite d'avoir
+  // a renommer quoi que ce soit dans Blender.
   const CLIP_FOR = {
-    idle: ['idle', 'repos', 'attente'],
-    follow: ['walk', 'marche', 'run'],
+    idle: ['idle', 'repos', 'attente', 'arise'],
+    beg: ['agree', 'gesture', 'idle', 'arise'],
+    seekAttention: ['agree', 'gesture', 'idle', 'arise'],
+    follow: ['walk', 'marche'],
     explore: ['walk', 'marche'],
-    play: ['play', 'jump', 'saut'],
-    dance: ['dance', 'danse'],
+    play: ['run', 'jump', 'saut', 'play'],
+    dance: ['danc', 'run', 'jump'],
     sleep: ['sleep', 'sommeil', 'dormir'],
-    sulk: ['sad', 'triste', 'idle'],
-    beg: ['idle'],
-    seekAttention: ['idle']
+    sulk: ['sad', 'triste', 'idle', 'arise']
   };
 
-  function playFor(action) {
+  // Clips qui n'ont de sens qu'une fois : on les fige sur leur derniere image
+  // au lieu de les boucler. "Arise" sert ainsi de pose debout au repos.
+  const ONE_SHOT = ['arise', 'agree', 'gesture', 'wave'];
+
+  const clipNames = Object.keys(clips);
+
+  function findClip(keywords) {
+    for (const keyword of keywords) {
+      const name = clipNames.find((n) => n.includes(keyword));
+      if (name) return clips[name];
+    }
+    return null;
+  }
+
+  function configure(action, clip) {
+    const once = ONE_SHOT.some((k) => clip.name.toLowerCase().includes(k));
+    action.clampWhenFinished = once;
+    action.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, once ? 1 : Infinity);
+    return action;
+  }
+
+  function playFor(behaviour) {
     if (!mixer) return;
-    const names = CLIP_FOR[action] || ['idle'];
-    const found = names.map((n) => clips[n]).find(Boolean);
-    if (!found || found === currentClip) return;
-    const next = mixer.clipAction(found);
-    next.reset().fadeIn(0.3).play();
-    if (currentClip) mixer.clipAction(currentClip).fadeOut(0.3);
+    const found = findClip(CLIP_FOR[behaviour] || CLIP_FOR.idle);
+    if (found === currentClip) return;
+    if (currentClip) mixer.clipAction(currentClip).fadeOut(0.35);
     currentClip = found;
+    if (!found) return; // aucun clip : l'animation procedurale prend le relais
+    configure(mixer.clipAction(found), found).reset().fadeIn(0.35).play();
+  }
+
+  // Geste ponctuel joue par-dessus, pour les caresses et les repas.
+  function playGesture(keywords) {
+    if (!mixer) return;
+    const found = findClip(keywords);
+    if (!found) return;
+    const action = mixer.clipAction(found);
+    action.clampWhenFinished = false;
+    action.setLoop(THREE.LoopOnce, 1);
+    action.reset().fadeIn(0.2).play();
+    currentClip = null; // force une re-selection au prochain comportement
   }
 
   let scaleTarget = STAGE_SCALE.baby;
@@ -122,6 +158,12 @@ export function createModelMonster(gltf, genome) {
   function react(type, duration = 1.4) {
     reaction = type;
     reactionTime = duration;
+    if (type === 'pet' || type === 'eat') playGesture(['agree', 'gesture', 'wave']);
+  }
+
+  // Joue le clip de reveil au sortir de l'oeuf, si le modele en a un.
+  function playBirth() {
+    playGesture(['arise', 'stand', 'wake']);
   }
 
   function update(dt, time, ctx = {}) {
@@ -208,7 +250,7 @@ export function createModelMonster(gltf, genome) {
     holder.remove(model);
   }
 
-  return { group: root, setStage, react, update, headWorldPosition, dispose, bounds };
+  return { group: root, setStage, react, playBirth, update, headWorldPosition, dispose, bounds };
 }
 
 /* -------------------------------------------------------------------------

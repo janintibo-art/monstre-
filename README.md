@@ -114,10 +114,14 @@ Elle est en deux couches, et la première suffit à faire vivre la créature.
 - `remote.js` — branchement facultatif vers un vrai modèle de langage. En cas
   d'échec ou de timeout, on retombe silencieusement sur le local.
 
-> **Ne mets jamais de clé d'API dans l'application.** Un APK ou un .exe se
-> décompile. Passe par un proxy que tu héberges : un exemple complet est fourni
-> dans `tools/proxy-example.mjs`. Tu colles ensuite son URL dans
-> *Réglages → Endpoint IA*.
+Trois fournisseurs gratuits sont intégrés (Google Gemini, Groq, OpenRouter). Tu
+choisis dans **··· → Cerveau du monstre**, tu colles ta clé, tu testes. Marche à
+suivre détaillée : [docs/IA-GRATUITE.md](docs/IA-GRATUITE.md).
+
+> La clé est enregistrée sur l'appareil, jamais dans le code : elle ne part donc
+> pas sur GitHub et ne se retrouve pas dans l'APK distribué. Pour une
+> application publiée avec une clé partagée, utilise l'option *Mon propre
+> proxy* et `tools/proxy-example.mjs`.
 
 ## Arborescence
 
