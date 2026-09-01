@@ -104,8 +104,13 @@ export function createModelMonster(gltf, genome) {
   const rng = createRng((genome && genome.seed) || 1);
   const jitterPhase = rng() * Math.PI * 2;
   const root = new THREE.Group();
+  // Deux groupes distincts : `holder` porte la mise a l'echelle calculee une
+  // fois pour toutes, `anim` porte la respiration et les inclinaisons. Les
+  // melanger ferait ecraser l'echelle a chaque image.
+  const anim = new THREE.Group();
   const holder = new THREE.Group();
-  root.add(holder);
+  root.add(anim);
+  anim.add(holder);
 
   // On clone : le meme .glb doit pouvoir etre reinstancie apres un reset,
   // et cloneSkinned preserve le squelette (un clone() simple le casserait).
