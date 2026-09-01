@@ -39,6 +39,7 @@ export function createHud() {
   });
 
   let bubbleTimer = null;
+  let override = ''; // texte impose, par exemple la transcription du micro
 
   function update(pet, decision) {
     NEEDS.forEach((key) => {
@@ -54,9 +55,16 @@ export function createHud() {
       ? `${STAGE_LABELS[pet.stage]} · ${describe(pet.personality)}`
       : STAGE_LABELS.egg;
 
-    thoughtEl.textContent = pet.hatched
-      ? THOUGHTS[decision.action] || ''
-      : 'Quelque chose bouge à l’intérieur.';
+    if (override) {
+      thoughtEl.textContent = override;
+    } else if (!pet.hatched) {
+      // Pendant l'incubation, on montre l'avancement : sans repere, on ne sait
+      // pas si tapoter sert a quelque chose.
+      const percent = Math.round((pet.hatchProgress || 0) * 100);
+      thoughtEl.textContent = `Quelque chose bouge à l’intérieur… ${percent} %`;
+    } else {
+      thoughtEl.textContent = THOUGHTS[decision.action] || '';
+    }
   }
 
   function showVials(visible) {
@@ -84,5 +92,11 @@ export function createHud() {
     bubbleEl.style.top = `${screen.y - 12}px`;
   }
 
-  return { update, showBubble, placeBubble, showVials };
+  // Impose un texte a la ligne de pensee ; une chaine vide rend la main.
+  function showThought(text) {
+    override = text || '';
+    if (override) thoughtEl.textContent = override;
+  }
+
+  return { update, showBubble, placeBubble, showVials, showThought };
 }

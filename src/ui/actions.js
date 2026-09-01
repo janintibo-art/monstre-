@@ -53,9 +53,19 @@ export const CARES = [
     line: 'Bonne nuit…'
   },
   {
+    id: 'listen',
+    icon: '🎤',
+    label: 'Parler',
+    cooldown: 0,
+    effects: {},
+    reaction: null,
+    drift: {},
+    line: null
+  },
+  {
     id: 'talk',
     icon: '💬',
-    label: 'Parler',
+    label: 'Écrire',
     cooldown: 0,
     effects: {},
     reaction: null,
@@ -105,11 +115,21 @@ export function createActionBar(onCare) {
     });
   }
 
+  // Le bouton du micro change d'etat pendant l'ecoute : sans retour visible,
+  // on ne sait pas si l'application entend quelque chose.
+  function setListening(active) {
+    const button = buttons.listen;
+    if (!button) return;
+    button.classList.toggle('pebble--live', active);
+    button.querySelector('.pebble__label').textContent = active ? "J'écoute" : 'Parler';
+    button.querySelector('.pebble__icon').textContent = active ? '🔴' : '🎤';
+  }
+
   function setSleepLabel(asleep) {
     const button = buttons.sleep;
     button.querySelector('.pebble__label').textContent = asleep ? 'Réveiller' : 'Dormir';
     button.querySelector('.pebble__icon').textContent = asleep ? '☀️' : '🌙';
   }
 
-  return { update, setSleepLabel, buttons };
+  return { update, setSleepLabel, setListening, buttons };
 }

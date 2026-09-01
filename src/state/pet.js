@@ -56,8 +56,9 @@ export function createPet(seed = Date.now() >>> 0) {
 // temps ecoule pendant que l'application etait fermee.
 export function advance(pet, dtSeconds, { asleep = false } = {}) {
   if (!pet.hatched) {
-    // L'oeuf mûrit tout seul, mais deux fois moins vite que si on le stimule.
-    pet.hatchProgress = Math.min(1, pet.hatchProgress + dtSeconds / 240);
+    // L'oeuf mûrit tout seul en deux minutes et demie. Le stimuler va bien plus
+    // vite : une dizaine de tapes suffisent.
+    pet.hatchProgress = Math.min(1, pet.hatchProgress + dtSeconds / 150);
     pet.age += dtSeconds;
     return pet;
   }

@@ -87,6 +87,28 @@ maintenant, sans une seule image.
 
 ---
 
+## Lui parler au micro
+
+Le bouton **🎤 Parler** écoute et transmet ce que tu dis à la créature, qui
+répond dans sa bulle, à voix haute. **💬 Écrire** garde la saisie au clavier ;
+les deux aboutissent à la même réponse.
+
+Deux moteurs, essayés dans cet ordre :
+
+1. **Le module natif** `@capacitor-community/speech-recognition`. C'est lui qui
+   compte sur téléphone : la reconnaissance vocale du navigateur n'est pas
+   fiable dans une WebView Android, alors que le moteur natif l'est. Il demande
+   l'autorisation micro au premier usage.
+2. **L'API du navigateur**, pour le développement dans un vrai Chrome.
+
+> Sur la version Windows, ça ne marchera pas : Electron n'embarque pas de moteur
+> de reconnaissance vocale. Le jeu le dit et bascule sur la saisie clavier plutôt
+> que d'échouer en silence.
+
+Pendant l'écoute, la voix de la créature est coupée — sinon le micro la reprend
+et elle finit par se répondre à elle-même. La transcription s'affiche en direct
+sous la scène, pour qu'on voie que l'application entend bien quelque chose.
+
 ## La voix
 
 Deux modes, réglables dans **··· → Voix**, sans aucun fichier audio.

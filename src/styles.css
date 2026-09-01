@@ -259,6 +259,19 @@ body {
   color: var(--muted);
 }
 
+/* Bouton du micro pendant l'écoute. */
+.pebble--live {
+  border-color: #ff8fa3;
+  box-shadow: 0 0 0 1px rgba(255, 143, 163, 0.4), 0 0 22px rgba(255, 143, 163, 0.28);
+  animation: listen-pulse 1.3s ease-in-out infinite;
+}
+
+@keyframes listen-pulse {
+  50% {
+    box-shadow: 0 0 0 1px rgba(255, 143, 163, 0.7), 0 0 30px rgba(255, 143, 163, 0.45);
+  }
+}
+
 .pebble[disabled] {
   opacity: 0.35;
   cursor: not-allowed;

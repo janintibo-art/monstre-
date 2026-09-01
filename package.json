@@ -20,7 +20,8 @@
     "assets": "capacitor-assets generate --android"
   },
   "dependencies": {
-    "three": "0.169.0"
+    "three": "0.169.0",
+    "@capacitor-community/speech-recognition": "^6.0.0"
   },
   "devDependencies": {
     "@capacitor/android": "6.2.0",

@@ -88,6 +88,20 @@ export function createWorld(canvas, textures = {}, biome = null) {
   const cameraTarget = new THREE.Vector3(0, 1, 0);
   camera.lookAt(cameraTarget);
 
+  // Sur un ecran de telephone tenu verticalement, le champ horizontal est
+  // minuscule : avec 42 degres en vertical et un rapport de 0,46, il ne reste
+  // qu'une vingtaine de degres en largeur. A 5,5 unites de distance, cela fait
+  // moins d'un metre de part et d'autre du centre. D'ou une aire de jeu calculee
+  // depuis le cadrage reel, et non fixee en dur.
+  const playBounds = { x: 1.8, z: 2.8 };
+  const focus = new THREE.Vector3(0, 0, 0);
+  const focusTarget = new THREE.Vector3(0, 0, 0);
+  const FOLLOW = 0.55; // part du deplacement repercutee sur la camera
+
+  function setFocus(vec) {
+    focusTarget.set(vec.x, 0, vec.z);
+  }
+
   // --- Lumieres ---
   const hemi = new THREE.HemisphereLight(0x8fb6ff, 0x2a1f3d, 0.55);
   scene.add(hemi);
@@ -206,16 +220,30 @@ export function createWorld(canvas, textures = {}, biome = null) {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+
+    // Demi-largeur reellement visible au niveau de la creature.
+    const distance = Math.hypot(camera.position.y - 1, camera.position.z);
+    const halfWidth = distance * Math.tan((camera.fov * Math.PI) / 360) * camera.aspect;
+    // La camera suit une partie du deplacement, donc la creature peut s'ecarter
+    // davantage que la demi-largeur brute sans sortir du cadre.
+    playBounds.x = Math.max(1, (halfWidth / (1 - FOLLOW)) * 0.72);
+    playBounds.z = 2.8;
   }
   window.addEventListener('resize', resize);
   resize();
 
   function update(dt) {
-    // Leger parallaxe : la camera suit mollement le pointeur.
-    camera.position.x += (parallax.x * 0.6 - camera.position.x) * Math.min(dt * 1.6, 1);
-    camera.position.y += (2.1 + parallax.y * 0.35 - camera.position.y) * Math.min(dt * 1.6, 1);
+    // La camera suit la creature, avec du retard : elle ne peut plus sortir du
+    // cadre, et le mouvement reste doux au lieu d'etre colle a elle.
+    focus.lerp(focusTarget, Math.min(dt * 2.2, 1));
+
+    const wantedX = parallax.x * 0.35 + focus.x * FOLLOW;
+    const wantedY = 2.1 + parallax.y * 0.3;
+    camera.position.x += (wantedX - camera.position.x) * Math.min(dt * 2.2, 1);
+    camera.position.y += (wantedY - camera.position.y) * Math.min(dt * 1.6, 1);
+
+    cameraTarget.set(focus.x * 0.85, 1, focus.z * 0.35);
     camera.lookAt(cameraTarget);
-    rim.intensity = 10 + Math.sin(performance.now() * 0.0012) * 3;
   }
 
   function render() {
@@ -231,6 +259,8 @@ export function createWorld(canvas, textures = {}, biome = null) {
     camera,
     ground,
     env,
+    playBounds,
+    setFocus,
     applyBiome,
     update,
     render,

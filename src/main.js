@@ -18,6 +18,7 @@ import { speak, spontaneousLine } from './ai/dialogue/index.js';
 import { load, save, reset, autosave, SAVE_KEY } from './state/save.js';
 import { advance, hatch, createPet } from './state/pet.js';
 import { createVoice, voiceProfile } from './audio/voice.js';
+import { createListener } from './audio/listen.js';
 import { createHud } from './ui/hud.js';
 import { createActionBar } from './ui/actions.js';
 import { createChat } from './ui/chat.js';
@@ -201,12 +202,44 @@ async function boot() {
   });
   panels.syncName(pet.name);
 
-  const chat = createChat(async (message) => {
+  // Clavier et micro aboutissent au meme endroit : une seule voie de reponse,
+  // donc un seul comportement a maintenir.
+  async function answer(message) {
     remember(pet.memory, 'talk');
     applyEffects(pet.needs, { affection: 4 });
+    if (monster) monster.react('pet', 0.8);
     const { text } = await speak(message, pet, decision.emotion);
     say(text, 5200);
     return text;
+  }
+
+  const chat = createChat(answer);
+
+  // --- Micro ---
+  const listener = createListener({
+    onPartial: (text) => {
+      hud.showThought(`« ${text} »`);
+    },
+    onFinal: async (text) => {
+      hud.showThought('');
+      if (!text) return;
+      chat.append(text, 'you');
+      const reply = await answer(text);
+      chat.append(reply, 'pet');
+    },
+    onState: (active) => {
+      actionBar.setListening(active);
+      // On coupe la voix de la creature pendant l'ecoute, sinon le micro la
+      // reprend et elle finit par se repondre a elle-meme.
+      if (active) voice.stop();
+      if (!active) hud.showThought('');
+    },
+    onError: (message) => {
+      actionBar.setListening(false);
+      hud.showThought('');
+      hud.showBubble(`Je n'entends rien : ${message}`, 5000);
+      chat.open();
+    }
   });
 
   const actionBar = createActionBar((care) => {
@@ -214,6 +247,12 @@ async function boot() {
 
     if (care.id === 'talk') {
       chat.open();
+      return;
+    }
+
+    if (care.id === 'listen') {
+      voice.unlock();
+      listener.toggle();
       return;
     }
 
@@ -245,6 +284,16 @@ async function boot() {
     save(pet);
   });
 
+  // Ramene un point dans l'ellipse visible.
+  function clampToArena(vec) {
+    const over = Math.hypot(vec.x / world.playBounds.x, vec.z / world.playBounds.z);
+    if (over > 1) {
+      vec.x /= over;
+      vec.z /= over;
+    }
+    return vec;
+  }
+
   // -------------------------------------------------------------- pointeur
   function onPointerDown(event) {
     voice.unlock(); // le son reste bloque tant que l'ecran n'a pas ete touche
@@ -253,13 +302,20 @@ async function boot() {
     pointerActive = 2.5;
 
     if (!pet.hatched && egg) {
+      // Toucher l'oeuf compte double, mais une tape a cote compte quand meme :
+      // viser une petite forme sur un ecran de telephone est ingrat, et rater
+      // sans aucun retour donnait l'impression que rien ne se passait.
       const hits = world.objectsUnder(x, y, [egg.group]);
-      if (hits.length) {
-        egg.poke();
-        pet.taps += 1;
-        pet.hatchProgress = Math.min(1, pet.hatchProgress + 0.07);
-        particles.burst(new THREE.Vector3(0, 1.1, 0), 8, 0xffe9c2, 1.2);
-      }
+      const gain = hits.length ? 0.1 : 0.045;
+      egg.poke();
+      pet.taps += 1;
+      pet.hatchProgress = Math.min(1, pet.hatchProgress + gain);
+      particles.burst(
+        new THREE.Vector3(0, 1.1, 0),
+        hits.length ? 10 : 5,
+        0xffe9c2,
+        hits.length ? 1.4 : 1
+      );
       return;
     }
 
@@ -278,7 +334,7 @@ async function boot() {
     const ground = world.groundPointFrom(x, y);
     if (ground) {
       ground.y = 0;
-      ground.clampLength(0, 5.4);
+      clampToArena(ground);
       pointerTarget.copy(ground);
     }
   }
@@ -293,7 +349,7 @@ async function boot() {
     const ground = world.groundPointFrom(event.clientX, event.clientY);
     if (ground) {
       ground.y = 0;
-      ground.clampLength(0, 5.4);
+      clampToArena(ground);
       pointerTarget.copy(ground);
       pointerActive = 2.5;
     }
@@ -356,7 +412,7 @@ async function boot() {
         // Il vient au premier plan, mais pas toujours exactement au meme
         // endroit : un leger decalage evite l'effet de rail.
         if (wanderTimer <= 0) {
-          moveTarget.set((Math.random() - 0.5) * 1.2, 0, 1.8 + Math.random() * 0.6);
+          moveTarget.set((Math.random() - 0.5) * 0.8, 0, 1.6 + Math.random() * 0.5);
           wanderTimer = 3 + Math.random() * 3;
         }
         break;
@@ -365,7 +421,7 @@ async function boot() {
         // Il s'eloigne et reste dos tourne, dans un coin.
         if (wanderTimer <= 0) {
           const a = Math.PI + (Math.random() - 0.5) * 1.2;
-          moveTarget.set(Math.cos(a) * 3.4, 0, Math.sin(a) * 3.4 - 1.5);
+          moveTarget.set(Math.cos(a) * 1.6, 0, Math.sin(a) * 1.6 - 1.6);
           wanderTimer = 5 + Math.random() * 4;
         }
         break;
@@ -378,7 +434,7 @@ async function boot() {
       case 'play':
         // Tourne autour du joueur en zigzag : lisible et joyeux.
         orbitAngle += dt * (1.4 + Math.random() * 0.2);
-        moveTarget.set(Math.cos(orbitAngle) * 2.2, 0, Math.sin(orbitAngle) * 1.6 + 0.4);
+        moveTarget.set(Math.cos(orbitAngle) * 1.3, 0, Math.sin(orbitAngle) * 1.4 + 0.3);
         break;
 
       case 'explore':
@@ -390,8 +446,15 @@ async function boot() {
         break;
     }
 
-    // Il ne sort jamais de l'aire de jeu.
-    moveTarget.clampLength(0, 5);
+    // Aire de jeu elliptique, calquee sur ce que la camera voit reellement :
+    // etroite en largeur sur un ecran vertical, plus profonde en avant-arriere.
+    const bx = world.playBounds.x;
+    const bz = world.playBounds.z;
+    const over = Math.hypot(moveTarget.x / bx, moveTarget.z / bz);
+    if (over > 1) {
+      moveTarget.x /= over;
+      moveTarget.z /= over;
+    }
   }
 
   // -------------------------------------------------------------- boucle
@@ -446,6 +509,7 @@ async function boot() {
         speaking: voice.level()
       });
 
+      world.setFocus(monster.group.position);
       hud.placeBubble(world.toScreen(monster.headWorldPosition()));
 
       // Prise de parole spontanee
