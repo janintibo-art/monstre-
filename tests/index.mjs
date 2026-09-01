@@ -13,3 +13,4 @@ import './memory.test.mjs';
 import './games.test.mjs';
 import './profiles.test.mjs';
 import './food.test.mjs';
+import './species.test.mjs';

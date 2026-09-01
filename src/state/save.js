@@ -2,6 +2,7 @@ import { createPet, advance, refreshMemory, SAVE_VERSION } from './pet.js';
 import { createNeeds, NEEDS } from '../ai/needs.js';
 import { TRAITS } from '../ai/personality.js';
 import { SPECIES } from '../game/species.js';
+import { BIOMES, pickBiomeLegacy } from '../game/biomes.js';
 
 // Sauvegarde. Trois regles, dans cet ordre d'importance :
 //
@@ -68,8 +69,19 @@ export function normalize(pet) {
 
   out.species = SPECIES.some((s) => s.id === pet.species) ? pet.species : fresh.species;
 
-  // Le genome se reconstruit toujours depuis la graine : impossible a corrompre.
-  out.genome = fresh.genome;
+  // Le genome enregistre est conserve tel quel. On ne le reconstruit que s'il
+  // manque ou s'il est abime : le regenerer systematiquement ferait changer
+  // d'apparence toutes les creatures le jour ou l'on corrige le generateur
+  // aleatoire. Une creature doit rester la meme.
+  const genome = pet.genome;
+  const genomeValide =
+    genome &&
+    typeof genome === 'object' &&
+    Number.isFinite(genome.hue) &&
+    Number.isFinite(genome.saturation);
+  out.genome = genomeValide ? { ...genome, seed: out.seed } : fresh.genome;
+
+  out.biome = BIOMES.some((b) => b.id === pet.biome) ? pet.biome : fresh.biome;
 
   const needs = createNeeds();
   NEEDS.forEach((key) => {
@@ -116,7 +128,15 @@ const MIGRATIONS = {
   // v2 -> v3 : arrivee des especes. L'espece se deduit de la graine.
   2: (pet) => ({ ...pet, version: 3, species: createPet(pet.seed).species }),
   // v3 -> v4 : normalisation systematique ; rien a transformer, tout a borner.
-  3: (pet) => ({ ...pet, version: 4 })
+  3: (pet) => ({ ...pet, version: 4 }),
+  // v4 -> v5 : le paysage devient une donnee enregistree. Pour une creature
+  // deja nee, on le recalcule avec l'ancien generateur afin qu'elle retrouve
+  // exactement le decor qu'elle avait.
+  4: (pet) => ({
+    ...pet,
+    version: 5,
+    biome: pet.biome || pickBiomeLegacy(Number(pet.seed) || 1).id
+  })
 };
 
 export function migrate(raw) {

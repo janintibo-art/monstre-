@@ -26,6 +26,36 @@ export const SPECIES = [
       baby: 'jeune.glb',
       teen: 'vieux.glb'
     }
+  },
+  {
+    id: 'braisillon',
+    name: 'Braisillon',
+    folder: 'rouge',
+    egg: 'oeuf.glb',
+    stages: {
+      baby: 'jeune.glb',
+      teen: 'vieux.glb'
+    }
+  },
+  {
+    id: 'sylvanou',
+    name: 'Sylvanou',
+    folder: 'vert',
+    egg: 'oeuf.glb',
+    stages: {
+      baby: 'jeune.glb',
+      teen: 'vieux.glb'
+    }
+  },
+  {
+    id: 'ondinelle',
+    name: 'Ondinelle',
+    folder: 'bleu',
+    egg: 'oeuf.glb',
+    stages: {
+      baby: 'jeune.glb',
+      teen: 'vieux.glb'
+    }
   }
 ];
 

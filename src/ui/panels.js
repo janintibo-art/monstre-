@@ -129,7 +129,7 @@ export function createPanels({
     const value = biomeSelect.value;
     saveBiomePreference(value);
     const pet = getPet();
-    onBiome(value === 'auto' ? pickBiome(pet.seed) : biomeById(value));
+    onBiome(value === 'auto' ? biomeById(pet.biome || pickBiome(pet.seed).id) : biomeById(value));
   });
 
   // -------------------------------------------------------------------- voix

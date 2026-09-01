@@ -72,3 +72,32 @@ test('sanitizeName : vide, espaces, controle', () => {
   assert.equal(sanitizeName('Bo\u0000b'), 'Bob');
   assert.equal(sanitizeName(42), 'Nyx');
 });
+
+test('une créature existante ne change ni d’apparence ni de paysage', async () => {
+  const { pickBiomeLegacy } = await import('../src/game/biomes.js');
+
+  // Sauvegarde d'avant la correction du générateur : son génome et son décor
+  // avaient été tirés avec l'ancienne version.
+  const ancienne = {
+    ...createPet(4242),
+    version: 4,
+    name: 'Nyx',
+    hatched: true,
+    genome: { seed: 4242, hue: 0.11, saturation: 0.6, horns: 2, ears: true, tailSegments: 4, spots: 5, stubby: false }
+  };
+  delete ancienne.biome;
+
+  const migre = migrate(ancienne);
+  assert.equal(migre.genome.hue, 0.11, 'la couleur a changé');
+  assert.equal(migre.genome.horns, 2, 'la morphologie a changé');
+  assert.equal(migre.biome, pickBiomeLegacy(4242).id, 'le paysage a changé');
+  assert.equal(migre.species, ancienne.species, 'l’espèce a changé');
+});
+
+test('un génome abîmé est reconstruit, un génome valide est gardé', () => {
+  const casse = normalize({ ...createPet(7), genome: { hue: 'rouge' } });
+  assert.ok(Number.isFinite(casse.genome.hue));
+
+  const bon = normalize({ ...createPet(7), genome: { hue: 0.42, saturation: 0.5 } });
+  assert.equal(bon.genome.hue, 0.42);
+});

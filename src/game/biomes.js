@@ -1,4 +1,4 @@
-import { createRng } from '../core/rng.js';
+import { createRng, createLegacyRng } from '../core/rng.js';
 
 // Les décors. Chacun definit son sol, sa couleur d'accent, la teinte qu'il
 // donne a l'atmosphere et le nombre d'arbres plantes autour de l'aire de jeu.
@@ -88,6 +88,14 @@ export function pickBiome(seed) {
   return BIOMES[Math.floor(rng() * BIOMES.length) % BIOMES.length];
 }
 
+// Tirage tel qu'il etait avant la correction du generateur. Sert uniquement a
+// retrouver le paysage d'une creature nee avant : le sien ne doit pas changer
+// parce qu'on a corrige un bug.
+export function pickBiomeLegacy(seed) {
+  const rng = createLegacyRng(seed + 8081);
+  return BIOMES[Math.floor(rng() * BIOMES.length) % BIOMES.length];
+}
+
 export function loadBiomePreference() {
   try {
     return localStorage.getItem(PREF_KEY) || 'auto';
@@ -105,7 +113,11 @@ export function saveBiomePreference(value) {
   }
 }
 
-export function resolveBiome(seed) {
+// Le paysage est enregistre dans la sauvegarde : une fois attribue, il ne bouge
+// plus. On ne le recalcule que pour une creature qui n'en a pas encore.
+export function resolveBiome(pet) {
   const pref = loadBiomePreference();
-  return pref === 'auto' ? pickBiome(seed) : biomeById(pref);
+  if (pref !== 'auto') return biomeById(pref);
+  if (pet && pet.biome) return biomeById(pet.biome);
+  return pickBiome(pet && pet.seed ? pet.seed : 1);
 }

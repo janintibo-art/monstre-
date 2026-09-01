@@ -133,7 +133,7 @@ async function boot() {
   }
 
   // Le decor decoule de la graine, sauf si le joueur en a choisi un.
-  let biome = resolveBiome(pet.seed);
+  let biome = resolveBiome(pet);
   const base = import.meta.env.BASE_URL || './';
   const groundTexture = await loadTexture(base + biome.ground);
 
@@ -339,7 +339,7 @@ async function boot() {
       brain = createBrain(pet.seed);
       species = speciesById(pet.species);
       currentModelUrl = null;
-      biome = resolveBiome(pet.seed);
+      biome = resolveBiome(pet);
       const g = generation;
       loadTexture(base + biome.ground).then((texture) => {
         if (stale(g)) return;

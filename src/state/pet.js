@@ -3,8 +3,9 @@ import { createPersonality } from '../ai/personality.js';
 import { createMemory, ensureMemory, consolidate } from '../ai/memory.js';
 import { createGenome } from '../ai/genome.js';
 import { pickSpecies } from '../game/species.js';
+import { pickBiome } from '../game/biomes.js';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 // Seuils de croissance, en "secondes de bien-etre" : un monstre neglige
 // grandit moins vite qu'un monstre choye. La croissance n'est pas qu'un timer.
@@ -45,6 +46,7 @@ export function createPet(seed = Date.now() >>> 0) {
     age: 0,
     growth: 0,
     species: pickSpecies(seed).id,
+    biome: pickBiome(seed).id,
     genome: createGenome(seed),
     needs: createNeeds(),
     personality: createPersonality(seed),

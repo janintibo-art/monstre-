@@ -61,3 +61,21 @@ test('un monstre neglige grandit moins vite', () => {
   advance(sad, 3600);
   assert.ok(happy.growth > sad.growth);
 });
+
+test('le tirage couvre tout le catalogue, pas deux entrées sur cinq', async () => {
+  const { SPECIES, pickSpecies } = await import('../src/game/species.js');
+  const { BIOMES, pickBiome } = await import('../src/game/biomes.js');
+
+  // Les graines viennent de Date.now() : deux œufs créés à quelques minutes
+  // d'intervalle ont des graines voisines. Le générateur doit malgré tout les
+  // répartir, sinon toute une famille se retrouve avec la même créature.
+  function repartition(pick, catalogue) {
+    const vus = new Map();
+    const base = Date.now();
+    for (let i = 0; i < 600; i += 1) vus.set(pick(base + i * 1000).id, true);
+    return vus.size;
+  }
+
+  assert.equal(repartition(pickSpecies, SPECIES), SPECIES.length, 'espèces mal réparties');
+  assert.equal(repartition(pickBiome, BIOMES), BIOMES.length, 'décors mal répartis');
+});

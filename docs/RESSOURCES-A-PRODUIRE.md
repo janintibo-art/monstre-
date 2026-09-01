@@ -125,7 +125,14 @@ c'est compliqué, saute ce lot : le gain est réel mais modeste.
 
 ---
 
-## Lot 6 — Une troisième espèce ★ quand tu veux
+## Lot 6 — De nouvelles espèces ★ quand tu veux
+
+> **Trois espèces livrées** (v28) : Braisillon, Sylvanou, Ondinelle, chacune
+> avec œuf, forme jeune et forme adulte. Le catalogue en compte cinq.
+> Il manque toujours un clip **`idle`** : les six nouvelles créatures n'ont, elles
+> aussi, que `Walking` et `Running`.
+
+### Pour en ajouter encore
 
 Le système accepte autant d'espèces que tu veux. Il faut par espèce :
 

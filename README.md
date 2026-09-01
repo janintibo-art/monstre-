@@ -443,6 +443,17 @@ L'heure du cycle pilote aussi le comportement : en mode accéléré, la créatur
 s'endort vraiment quand la nuit tombe. Changer de mode ne provoque pas de flash,
 la transition se fait comme un lever de soleil accéléré.
 
+## Les espèces
+
+Cinq espèces, chacune avec son œuf et ses formes jeune et adulte :
+**Gigglehorn**, **Moonberry**, **Braisillon** (renardeau de braise),
+**Sylvanou** (créature des bois) et **Ondinelle** (créature des eaux).
+
+L'espèce et le paysage sont tirés de la graine de l'œuf, puis **enregistrés** :
+une fois attribués, ils ne bougent plus. Le génome aussi est conservé tel quel
+et n'est reconstruit que s'il manque — corriger un générateur aléatoire ne doit
+jamais faire changer d'apparence une créature à laquelle on s'est attaché.
+
 ## Les repas
 
 Nourrir la créature ne remplit plus une jauge : **le plat tombe du ciel, se pose
