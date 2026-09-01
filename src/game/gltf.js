@@ -38,7 +38,17 @@ export function loadModel(url) {
 function measureWorld(object) {
   const box = new THREE.Box3();
   const tmp = new THREE.Box3();
-  object.updateWorldMatrix(true, true);
+
+  // updateMatrixWorld, PAS updateWorldMatrix : c'est le premier que SkinnedMesh
+  // redefinit, et sa surcharge recalcule bindMatrixInverse a partir de la
+  // matrice courante. Avec l'autre, cette matrice de liaison restait celle du
+  // chargement, et toute mesure prise apres un changement d'echelle etait
+  // fausse — la creature finissait dix fois trop grande.
+  // On remonte a l'ancetre le plus haut, sinon les matrices parentes ne sont
+  // pas a jour et la mesure repart fausse.
+  let top = object;
+  while (top.parent) top = top.parent;
+  top.updateMatrixWorld(true);
   object.traverse((child) => {
     if (!child.isMesh || !child.geometry) return;
     if (child.isSkinnedMesh && typeof child.computeBoundingBox === 'function') {
@@ -57,13 +67,11 @@ function measureWorld(object) {
 // Met le modele a la bonne taille en corrigeant par iterations : on mesure, on
 // ajuste, on remesure.
 //
-// La correction est amortie (racine carree du rapport) et c'est indispensable.
-// Sur un maillage skinne en mode « attached », l'echelle du parent intervient
-// DEUX fois dans la pose finale : une fois par la matrice du noeud, une fois par
-// celle des os. La taille varie donc comme le carre du facteur applique.
-// Appliquer le rapport brut faisait osciller le resultat entre trop petit et
-// cent fois trop grand — c'est ce qui donnait une creature geante.
-// L'amortissement converge dans les deux cas, lineaire comme quadratique.
+// La correction est amortie : on applique le rapport a la puissance 0,6 au lieu
+// du rapport brut. Selon le rig, la taille rendue reagit lineairement ou
+// quadratiquement au facteur applique, et le rapport brut fait osciller le
+// second cas au lieu de le resoudre. Cet exposant converge dans les deux
+// regimes, verifie par simulation avant d'etre retenu.
 function fitToHeight(holder, model, height) {
   holder.scale.setScalar(1);
   holder.position.set(0, 0, 0);
@@ -71,12 +79,12 @@ function fitToHeight(holder, model, height) {
   const size = new THREE.Vector3();
   let box = measureWorld(model);
 
-  for (let pass = 0; pass < 12; pass += 1) {
+  for (let pass = 0; pass < 16; pass += 1) {
     box.getSize(size);
     if (!(size.y > 1e-9) || !Number.isFinite(size.y)) break;
     const ratio = height / size.y;
     if (Math.abs(ratio - 1) < 0.02) break;
-    holder.scale.multiplyScalar(Math.sqrt(ratio));
+    holder.scale.multiplyScalar(ratio ** 0.6);
     box = measureWorld(model);
   }
 
@@ -125,6 +133,7 @@ export function createModelMonster(gltf, genome) {
   prepare(model);
   holder.add(model);
   const bounds = fitToHeight(holder, model, 1.5);
+
 
   // Couche d'animation os par os : elle fournit tout ce que les clips exportes
   // n'ont pas (repos, sommeil, bouderie, danse, regard, gestes).
@@ -207,6 +216,7 @@ export function createModelMonster(gltf, genome) {
   let reactionTime = 0;
   let gestureTime = 0;
   let speed = 0;
+  let needsRefit = true;
   const head = new THREE.Vector3();
 
   function setStage(stage) {
@@ -233,6 +243,20 @@ export function createModelMonster(gltf, genome) {
       speaking = 0
     } = ctx;
     const asleep = action === 'sleep';
+
+    // Filet de securite : on remesure une fois le modele reellement en scene,
+    // avec la vraie chaine de matrices. Si l'ajustement initial s'est fait sur
+    // un sous-arbre detache et a devie, c'est ici que ca se rattrape — plutot
+    // que de decouvrir une creature de dix metres en jouant.
+    if (needsRefit) {
+      needsRefit = false;
+      const keep = root.scale.x;
+      root.scale.setScalar(1); // la mesure ne doit pas inclure l'echelle du stade
+      const fixed = fitToHeight(holder, model, 1.5);
+      bounds.height = fixed.height;
+      bounds.radius = fixed.radius;
+      root.scale.setScalar(keep);
+    }
 
     currentScale = lerp(currentScale, scaleTarget, Math.min(dt * 1.2, 1));
     root.scale.setScalar(currentScale);
