@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createRng, clamp, lerp } from '../core/rng.js';
+export { createGenome } from '../ai/genome.js';
 
 // Le monstre est entierement genere par code a partir de son genome.
 // Aucune image n'est requise : si tu fournis monster_skin.png, elle est
@@ -13,19 +14,6 @@ export const STAGE_SCALE = {
   adult: 1.1
 };
 
-export function createGenome(seed) {
-  const rng = createRng(seed);
-  return {
-    seed,
-    hue: rng(),
-    saturation: 0.42 + rng() * 0.3,
-    horns: Math.floor(rng() * 3), // 0, 1 ou 2 cornes
-    ears: rng() > 0.45,
-    tailSegments: 3 + Math.floor(rng() * 3),
-    spots: 3 + Math.floor(rng() * 5),
-    stubby: rng() > 0.5
-  };
-}
 
 export function createMonster(genome, textures = {}) {
   const rng = createRng(genome.seed + 101);

@@ -3,6 +3,7 @@ import { VOICE_MODES, voiceProfile } from '../audio/voice.js';
 import { BIOMES, biomeById, loadBiomePreference, saveBiomePreference, pickBiome } from '../game/biomes.js';
 import { CYCLE_MODES } from '../game/daylight.js';
 import { knownFacts, forget, daysTogether, playerName } from '../ai/memory.js';
+import { exportSave, parseImport } from '../state/save.js';
 
 // Reglages et bapteme. Regle de base : un seul panneau ouvert a la fois,
 // et tout panneau doit pouvoir se fermer. Un ecran bloque est un bug.
@@ -14,6 +15,7 @@ export function createPanels({
   onBiome,
   onMemoryChange,
   onPanelToggle,
+  onImport,
   getPet,
   voice,
   daylight
@@ -50,6 +52,11 @@ export function createPanels({
   const memoriesList = document.getElementById('memories-list');
   const memoriesIntro = document.getElementById('memories-intro');
   const forgetAllBtn = document.getElementById('btn-forget-all');
+
+  const exportBtn = document.getElementById('btn-export');
+  const importBtn = document.getElementById('btn-import');
+  const importFile = document.getElementById('file-import');
+  const saveStatus = document.getElementById('save-status');
 
   const naming = document.getElementById('naming');
   const namingField = document.getElementById('naming-field');
@@ -214,6 +221,45 @@ export function createPanels({
     memories.hidden = true;
     notify();
   }
+
+  // -------------------------------------------------------------- sauvegarde
+  // Un fichier que le joueur garde chez lui : la seule vraie assurance contre
+  // un telephone perdu ou une mise a jour qui tourne mal.
+  exportBtn.addEventListener('click', () => {
+    const pet = getPet();
+    const blob = new Blob([exportSave(pet)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `${pet.name || 'monstre'}-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    saveStatus.textContent = 'Sauvegarde exportée.';
+  });
+
+  importBtn.addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', async () => {
+    const file = importFile.files && importFile.files[0];
+    importFile.value = '';
+    if (!file) return;
+    const text = await file.text();
+    const result = parseImport(text);
+    if (result.error) {
+      saveStatus.textContent = result.error;
+      return;
+    }
+    // On montre le nom AVANT de remplacer : personne ne doit ecraser son
+    // monstre par accident avec un vieux fichier.
+    const ok = window.confirm(
+      `Remplacer ${getPet().name} par ${result.pet.name} (importé) ? L'actuel sera gardé en copie de secours.`
+    );
+    if (!ok) return;
+    onImport(result.pet);
+    saveStatus.textContent = `${result.pet.name} est de retour.`;
+  });
 
   // --------------------------------------------------------------- souvenirs
   function renderMemories() {

@@ -22,7 +22,7 @@ import {
   playerName,
   consolidate
 } from './ai/memory.js';
-import { speak, spontaneousLine } from './ai/dialogue/index.js';
+import { speak, spontaneousLine, getLastError } from './ai/dialogue/index.js';
 import { load, save, reset, autosave, SAVE_KEY } from './state/save.js';
 import { advance, hatch, createPet } from './state/pet.js';
 import { createVoice, voiceProfile } from './audio/voice.js';
@@ -38,24 +38,36 @@ function showFatal(error) {
   const boot = document.getElementById('boot');
   if (boot) boot.remove(); // sinon l'erreur resterait cachee derriere le logo
   if (document.getElementById('fatal')) return;
+  // Construit avec textContent : un message d'erreur peut venir d'une URL ou
+  // d'un fournisseur distant, il ne doit jamais etre interprete comme du HTML.
   const box = document.createElement('div');
   box.id = 'fatal';
   box.className = 'fatal';
-  box.innerHTML = `
-    <strong>Quelque chose a cassé.</strong>
-    <span>${String((error && error.message) || error)}</span>
-    <button type="button">Recommencer avec un nouvel œuf</button>
-  `;
-  box.querySelector('button').addEventListener('click', () => {
-    try {
-      localStorage.removeItem(SAVE_KEY);
-    } catch {
-      /* rien a faire */
-    }
+  const title = document.createElement('strong');
+  title.textContent = 'Quelque chose a cassé.';
+  const detail = document.createElement('span');
+  detail.textContent = String((error && error.message) || error).slice(0, 300);
+  const reload = document.createElement('button');
+  reload.type = 'button';
+  reload.textContent = 'Recharger';
+  reload.addEventListener('click', () => window.location.reload());
+  const restart = document.createElement('button');
+  restart.type = 'button';
+  restart.className = 'fatal__secondary';
+  restart.textContent = 'Recommencer avec un nouvel œuf';
+  restart.addEventListener('click', () => {
+    // Le monstre courant part en copie de secours avant d'etre remplace.
+    reset();
     window.location.reload();
   });
+  box.append(title, detail, reload, restart);
   document.body.appendChild(box);
 }
+
+const REDUCED_MOTION =
+  typeof window !== 'undefined' &&
+  window.matchMedia &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 async function boot() {
   lockLandscape();
@@ -77,7 +89,8 @@ async function boot() {
 
   const daylight = createDaylight(world);
   daylight.setBiome(biome);
-  const vfx = createVfx(world.scene);
+  const vfx = createVfx(world.scene, { reducedMotion: REDUCED_MOTION });
+  if (REDUCED_MOTION) world.shake = () => {};
   const hud = createHud();
   const voice = createVoice();
 
@@ -90,6 +103,12 @@ async function boot() {
   let egg = null;
   let monster = null;
   let brain = createBrain(pet.seed);
+
+  // Jeton de generation. Chaque operation asynchrone note la generation au
+  // depart ; si elle a change a l'arrivee (reset, changement de decor rapide),
+  // le resultat est jete au lieu d'etre applique par-dessus l'etat courant.
+  let generation = 0;
+  const stale = (g) => g !== generation;
   let species = speciesById(pet.species || pickSpecies(pet.seed).id);
   let currentModelUrl = null;
   let swapping = false;
@@ -111,15 +130,19 @@ async function boot() {
 
   // ------------------------------------------------------------- entites 3D
   async function spawnEgg() {
+    const g = generation;
     const gltf = await loadModel(eggUrl(species));
+    if (stale(g) || egg) return;
     egg = gltf ? createModelEgg(gltf, pet.seed) : createEgg(pet.seed, textures);
     world.scene.add(egg.group);
     hud.showVials(false);
   }
 
   async function spawnMonster(at = null) {
+    const g = generation;
     const url = stageUrl(species, pet.stage);
     const gltf = await loadModel(url);
+    if (stale(g) || monster) return;
     currentModelUrl = url;
     monster = gltf
       ? createModelMonster(gltf, pet.genome)
@@ -136,9 +159,11 @@ async function boot() {
     const url = stageUrl(species, pet.stage);
     if (!url || url === currentModelUrl || swapping) return;
     swapping = true;
+    const g = generation;
     const at = monster ? monster.group.position.clone() : null;
     try {
       const gltf = await loadModel(url);
+      if (stale(g)) return;
       if (!gltf) {
         currentModelUrl = url;
         return;
@@ -173,10 +198,19 @@ async function boot() {
     getPet: () => pet,
     voice,
     onMemoryChange: () => save(pet),
+    onImport: (imported) => {
+      reset(); // l'actuel devient la copie de secours
+      save(imported);
+      window.location.reload(); // repartir propre est plus sur que recabler a chaud
+    },
     onPanelToggle: setPanelOpen,
     onBiome: async (next) => {
       biome = next;
+      const g = generation;
+      const wanted = next;
       const texture = await loadTexture(base + biome.ground);
+      // Deux changements rapides : seule la derniere demande s'applique.
+      if (stale(g) || biome !== wanted) return;
       world.applyBiome(biome, texture);
       daylight.setBiome(biome);
       decor.build(biome, pet.seed);
@@ -187,13 +221,16 @@ async function boot() {
       save(pet);
     },
     onReset: () => {
+      generation += 1; // tout chargement en cours devient caduc
       reset();
       pet = createPet();
       brain = createBrain(pet.seed);
       species = speciesById(pet.species);
       currentModelUrl = null;
       biome = resolveBiome(pet.seed);
+      const g = generation;
       loadTexture(base + biome.ground).then((texture) => {
+        if (stale(g)) return;
         world.applyBiome(biome, texture);
         daylight.setBiome(biome);
         decor.build(biome, pet.seed);
@@ -224,7 +261,18 @@ async function boot() {
 
   // Clavier et micro aboutissent au meme endroit : une seule voie de reponse,
   // donc un seul comportement a maintenir.
+  let answering = false;
   async function answer(message) {
+    if (answering) return null; // double envoi : on ignore le second
+    answering = true;
+    try {
+      return await answerInner(message);
+    } finally {
+      answering = false;
+    }
+  }
+
+  async function answerInner(message) {
     remember(pet.memory, 'talk');
     applyEffects(pet.needs, { affection: 4 });
     if (monster) monster.react('pet', 0.8);
@@ -234,10 +282,16 @@ async function boot() {
     recordSpeech(pet.memory, 'you', message);
     const learned = learnFrom(pet.memory, message);
 
-    const { text } = await speak(message, pet, decision.emotion);
+    const { text, source } = await speak(message, pet, decision.emotion);
     recordSpeech(pet.memory, 'pet', text);
 
     say(text, 5200);
+
+    // Le joueur a choisi un fournisseur distant et c'est le local qui a repondu :
+    // il doit le savoir, sinon il croit parler a un modele qui n'est pas la.
+    if (source === 'local' && !getEndpointless()) {
+      chat.notice(`Réponse locale : ${getLastError() || 'fournisseur injoignable'}`);
+    }
 
     // Un fait tout juste appris merite un accuse de reception, sinon on ne sait
     // pas si elle a enregistre. Une seule relance, et seulement en mode local.
@@ -654,11 +708,14 @@ async function boot() {
   const loop = createLoop((dt, time) => {
     try {
       step(dt, time);
+      errorCount = 0; // une image reussie remet le compteur a zero
     } catch (error) {
       errorCount += 1;
       console.error(error);
       if (errorCount === 1) showFatal(error);
-      if (errorCount > 30) loop.stop();
+      // Trois echecs d'affilee : l'erreur n'est pas transitoire, on cesse de
+      // solliciter le GPU pour rien.
+      if (errorCount >= 3) loop.stop();
     }
   });
 
@@ -687,8 +744,8 @@ boot().catch((error) => {
   console.error(error);
   document.body.insertAdjacentHTML(
     'beforeend',
-    `<div style="position:fixed;inset:auto 16px 16px;padding:14px;border-radius:12px;background:#2a1620;color:#ffd8d8;font:14px system-ui">
-       Le monde n'a pas pu démarrer : ${String(error && error.message)}. Recharge la page.
-     </div>`
+    '<div id="boot-error" class="fatal"></div>'
   );
+  const el = document.getElementById('boot-error');
+  el.textContent = `Le monde n'a pas pu démarrer : ${String(error && error.message).slice(0, 300)}. Recharge la page.`;
 });

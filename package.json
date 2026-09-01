@@ -17,7 +17,9 @@
     "android:add": "cap add android",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
-    "assets": "capacitor-assets generate --android"
+    "assets": "npx --yes @capacitor/assets@3 generate --android",
+    "test": "node --test tests/*.test.mjs",
+    "check": "python3 tools/check_scope.py && npm test"
   },
   "dependencies": {
     "three": "0.169.0",
@@ -30,8 +32,7 @@
     "@capacitor/core": "6.2.0",
     "electron": "33.2.1",
     "electron-builder": "25.1.8",
-    "vite": "5.4.11",
-    "@capacitor/assets": "3.0.5"
+    "vite": "5.4.11"
   },
   "build": {
     "appId": "com.exemple.monstre",

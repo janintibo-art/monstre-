@@ -42,7 +42,7 @@
       <footer class="actionbar" id="actionbar"></footer>
 
       <!-- Panneau de dialogue -->
-      <div id="chat" class="panel" hidden>
+      <div id="chat" role="dialog" aria-modal="true" aria-label="Parler" class="panel" hidden>
         <div class="panel__head">
           <h2>Parler</h2>
           <button id="chat-close" class="icon-button" aria-label="Fermer">×</button>
@@ -55,7 +55,7 @@
       </div>
 
       <!-- Panneau reglages -->
-      <div id="menu" class="panel" hidden>
+      <div id="menu" role="dialog" aria-modal="true" aria-label="Réglages" class="panel" hidden>
         <div class="panel__head">
           <h2>Réglages</h2>
           <button id="menu-close" class="icon-button" aria-label="Fermer">×</button>
@@ -92,7 +92,7 @@
 
           <label class="field" id="row-key" hidden>
             <span>Clé d'API</span>
-            <input id="field-key" type="text" placeholder="Colle ta clé ici" autocomplete="off" />
+            <input id="field-key" type="password" placeholder="Colle ta clé ici" autocomplete="off" />
           </label>
 
           <a id="key-link" class="link" href="#" target="_blank" rel="noopener" hidden
@@ -107,7 +107,7 @@
           <div class="field" id="row-model-list" hidden>
             <button id="btn-models" type="button">Charger les modèles disponibles</button>
             <select id="field-model-list" hidden></select>
-            <p id="models-status" class="hint"></p>
+            <p id="models-status" class="hint" aria-live="polite"></p>
           </div>
 
           <label class="field" id="row-endpoint" hidden>
@@ -116,21 +116,32 @@
           </label>
 
           <button id="btn-test">Tester la connexion</button>
-          <p id="test-status" class="hint"></p>
+          <p id="test-status" class="hint" aria-live="polite"></p>
 
           <p class="hint">
-            La clé reste sur ce téléphone et n'est jamais envoyée sur GitHub. Elle part uniquement
-            vers le fournisseur que tu choisis.
+            La clé est enregistrée en clair dans le stockage de l'application, et envoyée au
+            fournisseur choisi à chaque réponse. Elle n'est jamais écrite dans le code ni poussée sur
+            GitHub. Pour une application partagée, préfère « Mon propre proxy ».
           </p>
 
           <button id="btn-memories">Voir ses souvenirs</button>
+
+          <div class="field">
+            <span>Sauvegarde</span>
+            <div class="row">
+              <button id="btn-export" type="button">Exporter</button>
+              <button id="btn-import" type="button">Importer</button>
+              <input id="file-import" type="file" accept="application/json,.json" hidden />
+            </div>
+            <p id="save-status" class="hint" aria-live="polite"></p>
+          </div>
 
           <button id="btn-reset" class="danger">Recommencer avec un nouvel œuf</button>
         </div>
       </div>
 
       <!-- Ce dont la creature se souvient -->
-      <div id="memories" class="panel" hidden>
+      <div id="memories" role="dialog" aria-modal="true" aria-label="Ses souvenirs" class="panel" hidden>
         <div class="panel__head">
           <h2>Ses souvenirs</h2>
           <button id="memories-close" class="icon-button" aria-label="Fermer">×</button>
@@ -143,7 +154,7 @@
       </div>
 
       <!-- Bapteme apres eclosion -->
-      <div id="naming" class="panel panel--center" hidden>
+      <div id="naming" role="dialog" aria-modal="true" aria-label="Baptême" class="panel panel--center" hidden>
         <div class="panel__body">
           <h2>Il est sorti.</h2>
           <p class="hint">Donne-lui un nom, il s'en souviendra.</p>

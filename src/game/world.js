@@ -266,8 +266,9 @@ export function createWorld(canvas, textures = {}, biome = null) {
     // cadre, et le mouvement reste doux au lieu d'etre colle a elle.
     focus.lerp(focusTarget, Math.min(dt * 2.2, 1));
 
-    const wantedX = parallax.x * 0.35 + focus.x * FOLLOW;
-    const wantedY = 2.1 + parallax.y * 0.3;
+    const motion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1;
+    const wantedX = parallax.x * 0.35 * motion + focus.x * FOLLOW;
+    const wantedY = 2.1 + parallax.y * 0.3 * motion;
     camera.position.x += (wantedX - camera.position.x) * Math.min(dt * 2.2, 1);
     camera.position.y += (wantedY - camera.position.y) * Math.min(dt * 1.6, 1);
 

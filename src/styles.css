@@ -747,3 +747,51 @@ select {
     padding: 8px 12px;
   }
 }
+
+
+/* ------------------------------- Divers -------------------------------- */
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.row button {
+  flex: 1;
+  background: transparent;
+  border: 1px solid rgba(233, 238, 245, 0.18);
+  color: var(--bone);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.line--thinking {
+  opacity: 0.6;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.line--notice {
+  align-self: center;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.fatal__secondary {
+  background: transparent;
+  color: #ff9b9b;
+  border: 1px solid rgba(255, 155, 155, 0.4);
+}
+
+/* Cibles tactiles : 44 px minimum sur tout ce qui se touche. */
+.icon-button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.memory__forget {
+  min-width: 44px;
+  min-height: 44px;
+}

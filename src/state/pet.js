@@ -1,10 +1,10 @@
 import { createNeeds, decayNeeds, wellbeing } from '../ai/needs.js';
 import { createPersonality } from '../ai/personality.js';
 import { createMemory, ensureMemory, consolidate } from '../ai/memory.js';
-import { createGenome } from '../game/monster.js';
+import { createGenome } from '../ai/genome.js';
 import { pickSpecies } from '../game/species.js';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 // Seuils de croissance, en "secondes de bien-etre" : un monstre neglige
 // grandit moins vite qu'un monstre choye. La croissance n'est pas qu'un timer.

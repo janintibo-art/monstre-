@@ -18,6 +18,19 @@ EXE), dis-le : la structure du projet resterait proche, seul le rendu changerait
 Aucune dépendance lourde : `three` en production, `vite`, `electron`,
 `electron-builder` et `capacitor` en développement.
 
+## Vérifier
+
+```bash
+npm test          # 22 tests : sauvegarde, migrations, progression, mémoire
+npm run check     # + détection des identifiants non déclarés
+```
+
+Les tests couvrent la logique pure — création, éclosion, stades, besoins,
+extraction de faits, oubli, migrations de sauvegarde, valeurs corrompues,
+import/export. Ils tournent sans navigateur ni Three.js, avec le lanceur
+intégré de Node : aucune dépendance à installer. Le workflow les exécute avant
+chaque build.
+
 ## Démarrer
 
 ```bash
@@ -41,6 +54,37 @@ npm run android:open     # ouvre Android Studio
 
 Prérequis pour l'APK en local : JDK 17 et Android Studio. Sur GitHub Actions,
 tout est installé automatiquement, tu n'as rien à faire.
+
+> **Depuis un téléphone**, n'installe pas les dépendances : l'outil de
+> génération d'icônes repose sur `sharp`, qui n'a pas de binaire pour Android
+> ARM64 et fait échouer tout `npm install`. Il est volontairement absent des
+> dépendances du projet — la CI le récupère à la volée avec `npx`, sous Linux,
+> où il fonctionne. Sur téléphone, contente-toi de `--package-lock-only`.
+
+## Builds reproductibles
+
+L'archive ne contient pas de `package-lock.json`. Génère-le une fois, puis
+versionne-le :
+
+```bash
+npm install --package-lock-only
+git add package-lock.json
+git commit -m "Lockfile"
+```
+
+`--package-lock-only` calcule l'arbre de dépendances **sans rien installer** :
+pas de téléchargement, pas de compilation native, quelques secondes. C'est ce
+qu'il faut depuis un téléphone, où certains paquets n'ont pas de binaire ARM64
+et feraient échouer une installation complète.
+
+Dès qu'il est présent, le workflow bascule de `npm install` à `npm ci` : deux
+builds à deux dates différentes installent exactement les mêmes versions.
+
+Les dépendances épinglées datent de la création du projet. Pour les mettre à
+jour, fais-le dans une branche, une famille à la fois (Vite, puis Electron,
+puis Capacitor), avec `npm audit` et un test sur appareil entre chaque.
+Jamais `npm audit fix --force` : il peut changer de version majeure sans
+prévenir.
 
 ## Publier sur GitHub
 
@@ -329,7 +373,16 @@ appel de rendu quel qu'en soit le nombre.
 - Quatre stades de croissance, atteints d'autant plus vite que la créature est
   bien traitée.
 - Soins avec temps de recharge, réactions physiques et dérive de caractère.
-- Sauvegarde locale et rattrapage du temps hors ligne, plafonné à 12 heures.
+- Sauvegarde locale avec **chaîne de migrations** (une sauvegarde ancienne est
+  migrée, jamais jetée), **copie de secours** avant toute migration ou reset,
+  **validation champ par champ** des valeurs (NaN, bornes, types, longueurs),
+  et **export/import JSON** depuis les réglages. Rattrapage du temps hors ligne
+  plafonné à 12 heures.
+- Opérations asynchrones protégées par un jeton de génération : un reset ou un
+  changement de décor rapide invalide les chargements en cours au lieu de les
+  laisser s'appliquer par-dessus l'état courant.
+- Mouvements réduits (`prefers-reduced-motion`) respectés jusque dans la 3D :
+  plus de secousse, de flash ni de parallaxe, moitié moins de particules.
 
 ## Prochaines étapes possibles
 

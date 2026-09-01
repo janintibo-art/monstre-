@@ -8,7 +8,21 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     target: 'es2020',
-    sourcemap: false
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        // Three.js dans son propre fichier : il ne change qu'a la mise a jour
+        // de la dependance, alors que le code du jeu change a chaque version.
+        // Le navigateur garde ainsi le gros morceau en cache.
+        manualChunks: {
+          three: ['three'],
+          'three-addons': [
+            'three/examples/jsm/loaders/GLTFLoader.js',
+            'three/examples/jsm/utils/SkeletonUtils.js'
+          ]
+        }
+      }
+    }
   },
   server: {
     host: true,

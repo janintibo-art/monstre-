@@ -124,7 +124,22 @@ Après 5 à 10 minutes, les fichiers sont en bas de la page, dans **Artifacts** 
 
 Pour installer l'APK, autorise les sources inconnues dans Android.
 
-## 7. Les fois suivantes
+## 7. Le fichier de verrouillage (une seule fois)
+
+```bash
+cd ~/projets/monster-pet && npm install --package-lock-only
+```
+
+```bash
+git add package-lock.json && git commit -m "Lockfile" && git push
+```
+
+> N'utilise **pas** `npm install` tout court sur le téléphone : certains outils
+> de build n'ont pas de binaire pour Android ARM64 et l'installation échoue.
+> `--package-lock-only` calcule l'arbre sans rien télécharger, en quelques
+> secondes. La compilation, elle, se fait sur GitHub, pas ici.
+
+## 8. Les fois suivantes
 
 ```bash
 cd ~/projets/monster-pet
@@ -187,3 +202,5 @@ Ouvre ensuite `http://localhost:5173` dans le navigateur du téléphone.
 | `remote origin already exists` | `git remote set-url origin https://github.com/TON-PSEUDO/monstre.git` |
 | `Permission denied` sur `/sdcard` | `termux-setup-storage` n'a pas été validé. Relance-le. |
 | Le push reste bloqué | Fichier trop lourd. GitHub refuse au-delà de 100 Mo : `du -sh public/assets/*` pour repérer le coupable. |
+| `npm error sharp` / `libvips ... not available for android-arm64` | Tu as lancé `npm install` complet. Utilise `npm install --package-lock-only`. |
+| `Everything up-to-date` alors que tu as modifié des fichiers | Une commande précédente de la chaîne `&&` a échoué, donc `git commit` n'a jamais tourné. Relance `git add -A`, `git commit` et `git push` **séparément**. |

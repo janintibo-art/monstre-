@@ -19,7 +19,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm install
+      # npm ci si le lockfile est versionne (builds reproductibles),
+      # npm install sinon. Le lockfile se genere une fois en local :
+      # `npm install` puis `git add package-lock.json`.
+      - name: Installer les dépendances
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - run: npm test
       - run: npm run build
       - uses: actions/upload-artifact@v4
         with:
@@ -43,7 +50,14 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
-      - run: npm install
+      # npm ci si le lockfile est versionne (builds reproductibles),
+      # npm install sinon. Le lockfile se genere une fois en local :
+      # `npm install` puis `git add package-lock.json`.
+      - name: Installer les dépendances
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - run: npm test
       - run: npm run build
 
       # Le dossier android/ n'est pas versionne : Capacitor le regenere ici.
@@ -52,7 +66,7 @@ jobs:
           if [ ! -d android ]; then npx cap add android; fi
           npx cap sync android
           # Icone et ecran de demarrage generes depuis assets/
-          npx capacitor-assets generate --android
+          npx --yes @capacitor/assets@3 generate --android
 
       - name: Compiler l'APK de debug
         run: |
@@ -75,7 +89,14 @@ jobs:
         with:
           node-version: '20'
 
-      - run: npm install
+      # npm ci si le lockfile est versionne (builds reproductibles),
+      # npm install sinon. Le lockfile se genere une fois en local :
+      # `npm install` puis `git add package-lock.json`.
+      - name: Installer les dépendances
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - run: npm test
       - run: npm run build
 
       # portable = un .exe unique lancable ; nsis = un installateur.

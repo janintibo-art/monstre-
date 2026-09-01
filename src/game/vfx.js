@@ -387,7 +387,7 @@ function createPool(scene, texture, additive) {
   };
 }
 
-export function createVfx(scene) {
+export function createVfx(scene, { reducedMotion = false } = {}) {
   const textures = {};
   const pools = {};
 
@@ -409,7 +409,9 @@ export function createVfx(scene) {
     if (!preset) return;
 
     const p = pool(preset.shape, preset.additive);
-    const count = Math.round((options.count || preset.count) * (options.scale || 1));
+    // Mouvements reduits : moitie moins de particules, et aucun flash.
+    const density = reducedMotion ? 0.5 : 1;
+    const count = Math.round((options.count || preset.count) * (options.scale || 1) * density);
     startColor.setHex(options.colorStart || preset.colorStart);
     endColor.setHex(options.colorEnd || preset.colorEnd);
     const speedScale = options.speedScale || 1;
@@ -654,6 +656,7 @@ export function createVfx(scene) {
   }
 
   function flash(color = '#fff6d8', strength = 0.7, ms = 420) {
+    if (reducedMotion) return;
     flashEl.style.transition = 'none';
     flashEl.style.background = color;
     flashEl.style.opacity = String(strength);
