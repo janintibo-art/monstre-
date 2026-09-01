@@ -1,7 +1,8 @@
 import { GAMES, gamesForBand } from '../games/index.js';
 import { createSession } from '../games/session.js';
 import { createTutor } from '../games/tutor.js';
-import { currentBand } from '../state/child.js';
+import { currentBand } from '../state/profile.js';
+import { topicsFor, personalTopic } from '../games/topics.js';
 
 // Interface des jeux educatifs.
 //
@@ -20,7 +21,15 @@ import { currentBand } from '../state/child.js';
 const NEXT_DELAY = 1500;
 const SEQUENCE_STEP = 700;
 
-export function createGamesUi({ getPet, voice, voiceProfile, onCelebrate, onEncourage }) {
+export function createGamesUi({
+  getPet,
+  voice,
+  voiceProfile,
+  onAnswer, // meme voie de reponse que le chat : memoire, IA, voix
+  onListen, // demande d'ecoute au micro
+  onCelebrate,
+  onEncourage
+}) {
   const panel = document.getElementById('games');
   const closeBtn = document.getElementById('games-close');
   const listView = document.getElementById('games-list');
@@ -33,6 +42,19 @@ export function createGamesUi({ getPet, voice, voiceProfile, onCelebrate, onEnco
   const displayEl = document.getElementById('game-display');
   const choicesEl = document.getElementById('game-choices');
   const feedbackEl = document.getElementById('game-feedback');
+  const talkView = document.getElementById('games-talk');
+  const talkTopic = document.getElementById('talk-topic');
+  const talkLog = document.getElementById('talk-log');
+  const talkMic = document.getElementById('talk-mic');
+  const talkWrite = document.getElementById('talk-write');
+  const talkInputRow = document.getElementById('talk-input');
+  const talkField = document.getElementById('talk-field');
+  const talkSend = document.getElementById('talk-send');
+  const talkAgain = document.getElementById('talk-again');
+  const talkOther = document.getElementById('talk-other');
+  const talkQuit = document.getElementById('talk-quit');
+  const gameTalkBtn = document.getElementById('game-talk');
+
   const repeatBtn = document.getElementById('game-repeat');
   const whyBtn = document.getElementById('game-why');
   const quitBtn = document.getElementById('game-quit');
@@ -72,6 +94,28 @@ export function createGamesUi({ getPet, voice, voiceProfile, onCelebrate, onEnco
         : `Jeux adaptés à ${band.label}. ${band.description}`;
 
     listView.innerHTML = '';
+
+    // La conversation est en tete de liste, avant les jeux : pour beaucoup de
+    // gens — les plus jeunes comme les plus ages — c'est l'activite principale,
+    // et les jeux sont ce qu'on fait entre deux discussions.
+    const papoter = document.createElement('button');
+    papoter.type = 'button';
+    papoter.className = 'game-card game-card--talk';
+    const pIcon = document.createElement('span');
+    pIcon.className = 'game-card__icon';
+    pIcon.textContent = '💬';
+    const pBody = document.createElement('span');
+    pBody.className = 'game-card__body';
+    const pName = document.createElement('strong');
+    pName.textContent = 'Papoter avec moi';
+    const pSkill = document.createElement('span');
+    pSkill.className = 'game-card__skill';
+    pSkill.textContent = 'Discussion · je propose le sujet, vous n’avez qu’à répondre';
+    pBody.append(pName, pSkill);
+    papoter.append(pIcon, pBody);
+    papoter.addEventListener('click', () => startTalk());
+    listView.appendChild(papoter);
+
     games.forEach((game) => {
       const card = document.createElement('button');
       card.type = 'button';
@@ -106,7 +150,9 @@ export function createGamesUi({ getPet, voice, voiceProfile, onCelebrate, onEnco
 
     listView.hidden = false;
     playView.hidden = true;
+    talkView.hidden = true;
     intro.hidden = false;
+    titleEl.textContent = 'Jeux et discussion';
   }
 
   /* ------------------------------------------------------------ une partie */
@@ -116,6 +162,7 @@ export function createGamesUi({ getPet, voice, voiceProfile, onCelebrate, onEnco
     titleEl.textContent = `${game.icon} ${game.name}`;
     listView.hidden = true;
     intro.hidden = true;
+    talkView.hidden = true;
     playView.hidden = false;
     nextQuestion();
   }
@@ -125,6 +172,7 @@ export function createGamesUi({ getPet, voice, voiceProfile, onCelebrate, onEnco
     tutor.cancel();
     feedbackEl.textContent = '';
     whyBtn.hidden = true;
+    gameTalkBtn.hidden = true;
     locked = false;
 
     const question = session.next();
@@ -238,7 +286,11 @@ export function createGamesUi({ getPet, voice, voiceProfile, onCelebrate, onEnco
       say(result.say);
       if (onCelebrate) onCelebrate();
       whyBtn.hidden = !question.explain;
-      later(nextQuestion, NEXT_DELAY);
+      // Certaines questions ouvrent sur une discussion : proverbes, geographie,
+      // souvenirs de prix. C'est la que le jeu devient un pretexte a parler.
+      gameTalkBtn.hidden = !question.talk;
+      gameTalkBtn.onclick = question.talk ? () => startTalk(question.talk) : null;
+      later(nextQuestion, question.talk ? NEXT_DELAY + 1200 : NEXT_DELAY);
       return;
     }
 
@@ -302,9 +354,126 @@ export function createGamesUi({ getPet, voice, voiceProfile, onCelebrate, onEnco
     back.textContent = 'Autre jeu';
     back.addEventListener('click', renderList);
 
-    choicesEl.append(again, back);
+    const discuter = document.createElement('button');
+    discuter.type = 'button';
+    discuter.className = 'choice choice--text';
+    discuter.textContent = '💬 Papoter';
+    discuter.addEventListener('click', () => startTalk());
+
+    choicesEl.append(again, discuter, back);
     whyBtn.hidden = true;
+    gameTalkBtn.hidden = true;
   }
+
+  /* ------------------------------------------------------------- papoter */
+
+  let topic = null;
+  let relanceIndex = 0;
+  let lastSaid = '';
+  let talking = false;
+
+  function talkLine(text, who) {
+    const line = document.createElement('div');
+    line.className = `line line--${who}`;
+    line.textContent = text;
+    talkLog.appendChild(line);
+    talkLog.scrollTop = talkLog.scrollHeight;
+  }
+
+  function creatureSays(text) {
+    lastSaid = text;
+    talkLine(text, 'pet');
+    say(text);
+  }
+
+  // Choisit un sujet. Un sujet personnel — tire de ce que la creature a retenu —
+  // passe en priorite une fois sur trois : c'est ce qui donne l'impression
+  // qu'elle se souvient de la derniere conversation, parce que c'est le cas.
+  function chooseTopic(force = null) {
+    if (force) return force;
+    const band = currentBand();
+    const perso = personalTopic(getPet());
+    if (perso && Math.random() < 0.34) return perso;
+    const list = topicsFor(band).filter((t) => !topic || t.id !== topic.id);
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  function startTalk(seed = null) {
+    listView.hidden = true;
+    intro.hidden = true;
+    playView.hidden = true;
+    talkView.hidden = false;
+    talkLog.innerHTML = '';
+    talkInputRow.hidden = true;
+    relanceIndex = 0;
+
+    if (seed) {
+      // Sujet amene par une question de jeu : on enchaine naturellement.
+      topic = { id: 'jeu', icon: '🎲', title: 'À propos du jeu', opener: seed, relances: [] };
+    } else {
+      topic = chooseTopic();
+    }
+
+    titleEl.textContent = `${topic.icon} ${topic.title}`;
+    talkTopic.textContent = topic.personal ? 'Je me souviens de quelque chose…' : 'Parlons un peu';
+    creatureSays(topic.opener);
+  }
+
+  async function sendTalk(text) {
+    if (!text || talking) return;
+    talking = true;
+    talkLine(text, 'you');
+    talkField.value = '';
+
+    const pending = document.createElement('div');
+    pending.className = 'line line--pet line--thinking';
+    pending.textContent = '…';
+    talkLog.appendChild(pending);
+    talkLog.scrollTop = talkLog.scrollHeight;
+
+    try {
+      const reply = await onAnswer(text, { silent: true });
+      pending.remove();
+      if (reply) creatureSays(reply);
+
+      // Relance apres la reponse : c'est ce qui evite que la conversation
+      // retombe apres deux phrases. Une seule question a la fois, jamais deux.
+      const relances = topic.relances || [];
+      if (relances.length && relanceIndex < relances.length) {
+        const relance = relances[relanceIndex];
+        relanceIndex += 1;
+        setTimeout(() => {
+          if (!talkView.hidden) creatureSays(relance);
+        }, 2600);
+      }
+    } catch (error) {
+      pending.remove();
+      talkLine('Je n’ai pas bien entendu. Voulez-vous répéter ?', 'pet');
+    } finally {
+      talking = false;
+    }
+  }
+
+  talkWrite.addEventListener('click', () => {
+    talkInputRow.hidden = !talkInputRow.hidden;
+    if (!talkInputRow.hidden) talkField.focus();
+  });
+  talkSend.addEventListener('click', () => sendTalk(talkField.value.trim()));
+  talkField.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendTalk(talkField.value.trim());
+  });
+  talkMic.addEventListener('click', () => {
+    voice.unlock();
+    // Le micro passe par le meme module que le reste : une seule voie d'ecoute
+    // a maintenir, et la voix de la creature se coupe pendant qu'on parle.
+    if (onListen) onListen((heard) => sendTalk(heard));
+  });
+  talkAgain.addEventListener('click', () => say(lastSaid));
+  talkOther.addEventListener('click', () => startTalk());
+  talkQuit.addEventListener('click', () => {
+    voice.stop();
+    renderList();
+  });
 
   /* ---------------------------------------------------------------- dessins */
 
@@ -419,6 +588,7 @@ export function createGamesUi({ getPet, voice, voiceProfile, onCelebrate, onEnco
     tutor.cancel();
     voice.stop();
     session = null;
+    topic = null;
     panel.hidden = true;
     if (onClose) onClose(false);
   }

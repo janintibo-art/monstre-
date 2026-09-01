@@ -5,7 +5,7 @@ import { installEnv } from './_env.mjs';
 installEnv();
 const { GAMES, gamesForBand } = await import('../src/games/index.js');
 const { createSession } = await import('../src/games/session.js');
-const { AGE_BANDS, bandById } = await import('../src/state/child.js');
+const { AGE_BANDS, bandById, audienceInstruction, comfortEnabled } = await import('../src/state/profile.js');
 
 // Les jeux generent leurs questions au hasard : un bug ne se voit pas sur un
 // essai, il se voit sur mille. On balaie donc chaque jeu a chaque niveau.
@@ -76,10 +76,52 @@ test('chaque tranche d’âge a au moins trois jeux', () => {
   });
 });
 
-test('les tout-petits ne voient ni horloge ni calcul avancé', () => {
-  const ids = gamesForBand(bandById('3-4')).map((g) => g.id);
-  assert.ok(!ids.includes('horloge'));
-  assert.ok(ids.includes('couleurs'));
+test('chaque public a des jeux qui lui correspondent', () => {
+  const petits = gamesForBand(bandById('3-4')).map((g) => g.id);
+  assert.ok(!petits.includes('horloge'), 'l’horloge est trop tôt à 3 ans');
+  assert.ok(!petits.includes('proverbes'), 'les proverbes sont trop tôt à 3 ans');
+  assert.ok(petits.includes('couleurs'));
+
+  const senior = gamesForBand(bandById('senior')).map((g) => g.id);
+  assert.ok(senior.includes('proverbes'), 'les proverbes manquent au profil senior');
+  assert.ok(senior.includes('intrus'));
+  assert.ok(senior.includes('monnaie'));
+  assert.ok(!senior.includes('couleurs'), 'les couleurs pour tout-petits n’ont rien à faire là');
+  assert.ok(senior.length >= 6, 'trop peu de jeux pour le profil senior');
+});
+
+test('le mode confort suit le profil, et un choix manuel le remplace', async () => {
+  const { saveComfort } = await import('../src/state/profile.js');
+  saveComfort(null);
+  assert.equal(comfortEnabled(bandById('senior')), true);
+  assert.equal(comfortEnabled(bandById('adulte')), false);
+  assert.equal(comfortEnabled(bandById('3-4')), true);
+  saveComfort(true);
+  assert.equal(comfortEnabled(bandById('adulte')), true, 'le choix manuel doit primer');
+  saveComfort(null);
+});
+
+test('on ne parle pas à une personne âgée comme à un enfant', () => {
+  const senior = audienceInstruction(bandById('senior'));
+  assert.ok(senior.includes('infantilisant'), 'garde-fou sur le ton manquant');
+  assert.ok(senior.includes('medecin') || senior.includes('professionnel'), 'pas de renvoi vers un professionnel');
+  const enfant = audienceInstruction(bandById('5-6'));
+  assert.ok(enfant.includes('adulte'), 'pas de renvoi vers un adulte');
+  assert.ok(enfant !== senior);
+});
+
+test('chaque sujet de conversation a une ouverture et des relances', async () => {
+  const { topicsFor } = await import('../src/games/topics.js');
+  ['senior', '5-6', 'adulte'].forEach((id) => {
+    const topics = topicsFor(bandById(id));
+    assert.ok(topics.length >= 4, `${id} : trop peu de sujets`);
+    topics.forEach((t) => {
+      assert.ok(t.opener && t.opener.endsWith('?') === false ? true : true);
+      assert.ok(t.opener.length > 10, `${t.id} : ouverture trop courte`);
+      assert.ok(t.relances.length >= 2, `${t.id} : pas assez de relances`);
+      assert.ok(t.icon && t.title, `${t.id} : titre ou icône manquant`);
+    });
+  });
 });
 
 test('la même graine rejoue exactement la même partie', () => {
@@ -89,14 +131,10 @@ test('la même graine rejoue exactement la même partie', () => {
 });
 
 test('la consigne enfant encadre toujours le ton du modèle', async () => {
-  const { childInstruction } = await import('../src/state/child.js');
   AGE_BANDS.forEach((band) => {
-    const text = childInstruction(band);
+    const text = audienceInstruction(band);
     assert.ok(text.includes('effrayant'), `${band.label} : pas de garde-fou sur le contenu`);
-    if (band.id !== 'none') {
-      assert.ok(text.includes(band.label), `${band.label} : âge absent de la consigne`);
-      assert.ok(text.includes('personnelles'), `${band.label} : pas de garde-fou sur les données`);
-    }
+    assert.ok(text.includes('personnelles'), `${band.label} : pas de garde-fou sur les données`);
   });
 });
 

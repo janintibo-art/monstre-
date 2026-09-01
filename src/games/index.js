@@ -7,6 +7,12 @@ import calcul from './list/calcul.js';
 import suites from './list/suites.js';
 import memoire from './list/memoire.js';
 import horloge from './list/horloge.js';
+import proverbes from './list/proverbes.js';
+import intrus from './list/intrus.js';
+import capitales from './list/capitales.js';
+import synonymes from './list/synonymes.js';
+import monnaie from './list/monnaie.js';
+import anagrammes from './list/anagrammes.js';
 
 // Catalogue des jeux educatifs.
 //
@@ -22,7 +28,13 @@ export const GAMES = [
   calcul,
   suites,
   memoire,
-  horloge
+  horloge,
+  intrus,
+  proverbes,
+  synonymes,
+  anagrammes,
+  monnaie,
+  capitales
 ];
 
 export function gameById(id) {

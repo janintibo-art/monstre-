@@ -29,7 +29,7 @@ import { createVoice, voiceProfile } from './audio/voice.js';
 import { createListener } from './audio/listen.js';
 import { createGamesUi } from './ui/games.js';
 import { createGuide } from './ui/guide.js';
-import { currentBand } from './state/child.js';
+import { currentBand, applyComfort } from './state/profile.js';
 import { createHud } from './ui/hud.js';
 import { createActionBar } from './ui/actions.js';
 import { createChat } from './ui/chat.js';
@@ -74,6 +74,7 @@ const REDUCED_MOTION =
 
 async function boot() {
   lockLandscape();
+  applyComfort();
   const canvas = document.getElementById('scene');
   // Les textures sont facultatives ; les modeles se chargent a la demande,
   // stade par stade. Ce qui manque est remplace par la version generee par code.
@@ -203,6 +204,7 @@ async function boot() {
     onMemoryChange: () => save(pet),
     onGuide: () => guide.open(),
     onAgeChange: () => {
+      applyComfort();
       // Les jeux proposes changent avec l'age : on rafraichit si le panneau est
       // deja ouvert, sinon la liste resterait celle de l'ancienne tranche.
       if (games.isOpen) games.open();
@@ -271,17 +273,17 @@ async function boot() {
   // Clavier et micro aboutissent au meme endroit : une seule voie de reponse,
   // donc un seul comportement a maintenir.
   let answering = false;
-  async function answer(message) {
+  async function answer(message, options = {}) {
     if (answering) return null; // double envoi : on ignore le second
     answering = true;
     try {
-      return await answerInner(message);
+      return await answerInner(message, options);
     } finally {
       answering = false;
     }
   }
 
-  async function answerInner(message) {
+  async function answerInner(message, { silent = false } = {}) {
     remember(pet.memory, 'talk');
     applyEffects(pet.needs, { affection: 4 });
     if (monster) monster.react('pet', 0.8);
@@ -292,9 +294,11 @@ async function boot() {
     const learned = learnFrom(pet.memory, message);
 
     const { text, source } = await speak(message, pet, decision.emotion);
-    recordSpeech(pet.memory, 'pet', text);
 
-    say(text, 5200);
+    // En mode papoter, le panneau affiche et lit lui-meme : une bulle en plus
+    // sur la scene ferait doublon, et deux voix se chevaucheraient.
+    if (silent) recordSpeech(pet.memory, 'pet', text);
+    else say(text, 5200);
 
     // Le joueur a choisi un fournisseur distant et c'est le local qui a repondu :
     // il doit le savoir, sinon il croit parler a un modele qui n'est pas la.
@@ -332,6 +336,10 @@ async function boot() {
   const chat = createChat(answer);
 
   // --- Micro ---
+  // Quand la conversation guidee ecoute, le texte lui revient a elle plutot
+  // qu'au fil de discussion ordinaire.
+  let talkTarget = null;
+
   const listener = createListener({
     onPartial: (text) => {
       hud.showThought(`« ${text} »`);
@@ -339,9 +347,15 @@ async function boot() {
     onFinal: async (text) => {
       hud.showThought('');
       if (!text) return;
+      if (talkTarget) {
+        const target = talkTarget;
+        talkTarget = null;
+        target(text);
+        return;
+      }
       chat.append(text, 'you');
       const reply = await answer(text);
-      chat.append(reply, 'pet');
+      if (reply) chat.append(reply, 'pet');
     },
     onState: (active) => {
       actionBar.setListening(active);
@@ -352,6 +366,7 @@ async function boot() {
     },
     onError: (message) => {
       actionBar.setListening(false);
+      talkTarget = null;
       hud.showThought('');
       hud.showBubble(`Je n'entends rien : ${message}`, 5000);
       chat.open();
@@ -431,6 +446,13 @@ async function boot() {
     getPet: () => pet,
     voice,
     voiceProfile,
+    onAnswer: answer,
+    onListen: (onHeard) => {
+      // Le micro des jeux passe par le meme module que le reste : une seule
+      // voie d'ecoute a maintenir, et les memes garde-fous.
+      talkTarget = onHeard;
+      listener.start();
+    },
     onCelebrate: (big = false) => {
       if (!monster) return;
       monster.react('pet', 1.2);

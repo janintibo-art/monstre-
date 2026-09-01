@@ -1115,3 +1115,111 @@ select {
     height: 120px;
   }
 }
+
+/* -------------------------------------------------------------------------
+   Mode confort. Activé automatiquement pour les tout-petits et les profils
+   seniors, forçable à la main. Il agrandit le texte et les cibles sans
+   changer la mise en page : ce n'est pas une interface séparée à maintenir,
+   c'est la même avec d'autres proportions.
+   ------------------------------------------------------------------------- */
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  font-size: 14px;
+  color: var(--bone);
+  cursor: pointer;
+}
+
+.switch input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--glow);
+  flex: none;
+}
+
+.confort .panel__body,
+.confort .guide-body p,
+.confort .hint {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.confort .game-prompt {
+  font-size: 28px;
+}
+
+.confort .game-feedback {
+  font-size: 19px;
+}
+
+.confort .choice {
+  min-height: 110px;
+  font-size: 30px;
+  border-width: 3px;
+}
+
+/* Deux colonnes au maximum en mode confort : trois petites cases sont plus
+   difficiles à viser que deux grandes. */
+.confort .game-choices,
+.confort .game-choices--color {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.confort .choice__tag {
+  font-size: 13px;
+  padding: 3px 10px;
+}
+
+.confort .game-card {
+  min-height: 84px;
+}
+
+.confort .game-card__body strong {
+  font-size: 20px;
+}
+
+.confort .game-card__skill {
+  font-size: 14px;
+}
+
+.confort .line {
+  font-size: 17px;
+  line-height: 1.5;
+  max-width: 92%;
+}
+
+.confort .row button,
+.confort .guide-read,
+.confort #btn-test,
+.confort #btn-models,
+.confort #btn-voice-test,
+.confort #btn-guide,
+.confort #btn-memories {
+  min-height: 52px;
+  font-size: 16px;
+}
+
+.confort input[type='text'],
+.confort input[type='url'],
+.confort input[type='password'],
+.confort select {
+  font-size: 17px;
+  min-height: 52px;
+}
+
+.confort .guide-head {
+  min-height: 64px;
+}
+
+.confort .guide-head__title {
+  font-size: 18px;
+}
+
+/* Carte de discussion : elle ouvre la liste, on la distingue des jeux. */
+.game-card--talk {
+  border-color: rgba(111, 227, 196, 0.4);
+  background: linear-gradient(180deg, rgba(111, 227, 196, 0.1), var(--ink-2));
+}

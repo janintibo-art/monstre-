@@ -1,5 +1,5 @@
 import { loadConfig, ask } from '../ai/dialogue/providers.js';
-import { currentBand, childInstruction } from '../state/child.js';
+import { currentBand, audienceInstruction } from '../state/profile.js';
 
 // Le coup de pouce du monstre pendant un jeu.
 //
@@ -21,7 +21,7 @@ function systemPrompt(pet, game) {
   const band = currentBand();
   return [
     `Tu es ${pet.name}, une petite creature de compagnie qui joue avec un enfant.`,
-    childInstruction(band),
+    audienceInstruction(band),
     `Vous jouez au jeu « ${game.name} » (${game.skill}).`,
     "Ton role : aider l'enfant a COMPRENDRE, jamais lui donner la reponse.",
     'Une seule phrase, tres courte, encourageante, sans emoji.',

@@ -4,7 +4,16 @@ import { BIOMES, biomeById, loadBiomePreference, saveBiomePreference, pickBiome 
 import { CYCLE_MODES } from '../game/daylight.js';
 import { knownFacts, forget, daysTogether, playerName } from '../ai/memory.js';
 import { exportSave, parseImport } from '../state/save.js';
-import { AGE_BANDS, bandById, loadChild, saveChild } from '../state/child.js';
+import {
+  AGE_BANDS,
+  bandById,
+  loadProfile,
+  saveProfile,
+  loadComfort,
+  saveComfort,
+  comfortEnabled,
+  applyComfort
+} from '../state/profile.js';
 
 // Reglages et bapteme. Regle de base : un seul panneau ouvert a la fois,
 // et tout panneau doit pouvoir se fermer. Un ecran bloque est un bug.
@@ -32,6 +41,8 @@ export function createPanels({
   const guideBtn = document.getElementById('btn-guide');
   const ageSelect = document.getElementById('field-age');
   const ageHelp = document.getElementById('age-help');
+  const comfortToggle = document.getElementById('field-comfort');
+  const comfortHelp = document.getElementById('comfort-help');
   const cycleSelect = document.getElementById('field-cycle');
   const biomeSelect = document.getElementById('field-biome');
   const voiceSelect = document.getElementById('field-voice');
@@ -80,16 +91,33 @@ export function createPanels({
   });
 
   function refreshAge() {
-    const band = bandById(loadChild().age);
+    const band = bandById(loadProfile().age);
     ageSelect.value = band.id;
     ageHelp.textContent = band.description;
+    comfortToggle.checked = comfortEnabled(band);
+    comfortHelp.textContent =
+      loadComfort() === null
+        ? 'Réglé automatiquement selon l’âge choisi.'
+        : 'Réglage manuel : il ne suivra plus l’âge.';
   }
 
   ageSelect.addEventListener('change', () => {
-    saveChild({ age: ageSelect.value });
+    saveProfile({ age: ageSelect.value });
+    // Changer de tranche remet le confort sur « automatique » : sinon un
+    // reglage pris pour un enfant resterait accroche a un profil adulte.
+    saveComfort(null);
     refreshAge();
+    applyComfort();
     if (onAgeChange) onAgeChange(bandById(ageSelect.value));
   });
+
+  comfortToggle.addEventListener('change', () => {
+    // On enregistre un choix explicite : il prend le pas sur la tranche d'age.
+    saveComfort(comfortToggle.checked);
+    applyComfort();
+    refreshAge();
+  });
+
   refreshAge();
 
   guideBtn.addEventListener('click', () => {

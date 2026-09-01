@@ -284,9 +284,39 @@ npm run android:sync && npm run assets
 └── vite.config.js
 ```
 
-## Les jeux éducatifs
+## Pour qui
 
-Le bouton **🎓 Jeux** ouvre neuf jeux, chacun avec sa propre mécanique :
+Le **profil du joueur**, dans les réglages, va de 3 ans à « Confort ». Il règle
+les jeux proposés, leur difficulté, le débit de la voix, la taille du texte et
+des boutons, et le ton de la créature quand une IA est branchée — avec une
+consigne qui lui interdit explicitement d'être infantilisante avec une personne
+âgée.
+
+Le mode **confort** (texte et cibles agrandis, deux colonnes au lieu de trois)
+s'active automatiquement pour les tout-petits et le profil senior, et se force à
+la main pour tout le monde.
+
+## Discuter, pas seulement jouer
+
+La première carte de l'écran Jeux est **Papoter avec moi**. La créature propose
+un sujet et pose la première question : les saisons, la cuisine, le métier qu'on
+a fait, les voyages, la famille, l'école. Puis elle relance d'elle-même, une
+question à la fois.
+
+C'est délibéré : devant un champ de saisie vide, beaucoup de gens ne trouvent
+rien à dire et referment. Le sujet lève cet obstacle. Une fois sur trois, il
+vient de ce que la créature a retenu des conversations précédentes.
+
+Les jeux y mènent aussi. Après un proverbe, une ville ou un prix d'autrefois, un
+bouton **En parler** enchaîne sur la discussion — le jeu devient un prétexte à
+se raconter.
+
+Micro et clavier passent par la même voie que le reste : même mémoire, même IA,
+mêmes garde-fous.
+
+## Les jeux
+
+Le bouton **🎓 Jeux** ouvre quinze jeux, chacun avec sa propre mécanique :
 
 | Jeu | Compétence | Âges |
 | --- | --- | --- |
@@ -299,6 +329,17 @@ Le bouton **🎓 Jeux** ouvre neuf jeux, chacun avec sa propre mécanique :
 | Que vient après ? | Logique | 5 et + |
 | Répète après moi | Mémoire | 4 et + |
 | Quelle heure est-il ? | Temps | 6 et + |
+| Trouvez l'intrus | Logique | 5 et + |
+| Complétez le proverbe | Langue | 12 et + |
+| Les mots (synonymes, contraires) | Langue | 8 et + |
+| Mots mélangés | Langue | 8 et + |
+| Rendre la monnaie | Calcul | 8 et + |
+| Géographie | Culture | 9 et + |
+
+Les six derniers sont pensés pour les adultes et les personnes âgées : on n'y
+teste pas une capacité, on réveille un savoir déjà là. Trouver la fin d'un
+proverbe qu'on connaît depuis soixante ans fait plaisir, et « rendre la
+monnaie » est le même calcul que 20 − 13,40 mais il a du sens.
 
 L'âge indiqué dans les réglages choisit les jeux **et** leur difficulté : le
 calcul va des additions jusqu'à dix aux divisions, l'horloge des heures pleines
@@ -322,7 +363,8 @@ réponse — et le bouton « Pourquoi ? » développe l'explication. Une répons
 distante qui arrive après que l'enfant a répondu est jetée.
 
 Pour ajouter un jeu : un fichier dans `src/games/list/`, un import dans
-`src/games/index.js`. Sa tranche d'âge suffit à le faire apparaître.
+`src/games/index.js`. Sa tranche d'âge suffit à le faire apparaître. Un champ
+`talk` optionnel dans une question fait apparaître le bouton « En parler ».
 
 ## Le guide intégré
 

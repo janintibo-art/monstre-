@@ -71,6 +71,28 @@ export const GUIDE = [
     ]
   },
   {
+    id: 'papoter',
+    icon: '💬',
+    title: 'Discuter avec elle',
+    body: [
+      'Dans « Jeux », la première carte est **Papoter avec moi**. La créature propose un sujet et pose la première question : les saisons, la cuisine, le métier qu’on a fait, les voyages, la famille.',
+      'C’est fait exprès. Devant un champ vide, on ne sait pas quoi écrire et on referme. Là, il n’y a qu’à répondre — au micro ou au clavier, au choix.',
+      'Elle relance ensuite d’elle-même, une question à la fois. Et de temps en temps, elle revient sur ce que vous lui avez raconté les fois précédentes : c’est le sujet marqué d’un cœur.',
+      'Certaines questions de jeu ouvrent aussi sur une discussion. Après un proverbe ou une ville, un bouton « En parler » apparaît.'
+    ]
+  },
+  {
+    id: 'profil',
+    icon: '👓',
+    title: 'Adapter à qui joue',
+    body: [
+      'Dans les réglages, **Profil du joueur** va de 3 ans à « Confort ». Ça change trois choses : les jeux proposés, leur difficulté, et la façon dont la créature parle.',
+      'Le profil **Confort** agrandit le texte et les boutons, ralentit un peu la voix, et met en avant les jeux calmes : proverbes, intrus, vocabulaire, géographie, rendre la monnaie. Aucun chronomètre nulle part, dans aucun jeu, quel que soit le profil.',
+      'La case **Texte et boutons agrandis** peut être cochée séparément : on peut avoir cinquante ans et préférer de gros caractères.',
+      'Quand une IA est branchée, le profil règle aussi son ton. Elle ne parle pas à une personne âgée comme à un enfant de six ans — et la consigne lui interdit explicitement d’être infantilisante.'
+    ]
+  },
+  {
     id: 'ia',
     icon: '🧠',
     title: 'Le « cerveau » et la clé d’API',

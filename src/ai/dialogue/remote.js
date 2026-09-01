@@ -1,7 +1,7 @@
 import { describe } from '../personality.js';
 import { NEED_LABELS } from '../needs.js';
 import { favouriteCare, digest, lastExchanges, playerName } from '../memory.js';
-import { currentBand, childInstruction } from '../../state/child.js';
+import { currentBand, audienceInstruction } from '../../state/profile.js';
 
 // Branchement facultatif vers un vrai modele de langage.
 //
@@ -46,7 +46,7 @@ export function buildContext(pet) {
   lines.push('');
   // L'age renseigne encadre le ton autant que le contenu. Il ne quitte
   // l'appareil que sous cette forme : une consigne, jamais une donnee brute.
-  lines.push(childInstruction(currentBand()));
+  lines.push(audienceInstruction(currentBand()));
   lines.push('');
   lines.push('Reponds en francais, en une ou deux phrases courtes, a la premiere personne.');
   lines.push(
