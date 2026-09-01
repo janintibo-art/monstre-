@@ -444,6 +444,7 @@ select {
   text-decoration: underline;
 }
 
+#btn-voice-test,
 #btn-test {
   background: transparent;
   border: 1px solid var(--glow);

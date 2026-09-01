@@ -87,6 +87,24 @@ maintenant, sans une seule image.
 
 ---
 
+## La voix
+
+Deux modes, réglables dans **··· → Voix**, sans aucun fichier audio.
+
+- **Babil** (par défaut) — des bips générés à la volée en Web Audio, une syllabe
+  à la fois, avec une intonation qui descend en fin de phrase et monte pour une
+  question. Fonctionne partout, y compris hors ligne et sans moteur vocal.
+- **Synthèse vocale** — la voix du système prononce vraiment les mots, via la
+  Web Speech API. Demande un moteur vocal installé sur l'appareil ; à défaut, le
+  babil prend le relais automatiquement.
+
+La hauteur et le débit viennent de la créature : un nouveau-né parle haut et
+vite, un adulte plus bas et plus lentement, et le timbre découle du génome. La
+tête bouge en rythme avec le niveau sonore.
+
+Sur mobile, le son reste bloqué tant que l'écran n'a pas été touché une fois :
+c'est une règle du navigateur, pas un bug.
+
 ## Comment l'IA fonctionne
 
 Elle est en deux couches, et la première suffit à faire vivre la créature.
@@ -167,8 +185,8 @@ suivre détaillée : [docs/IA-GRATUITE.md](docs/IA-GRATUITE.md).
 
 ## Prochaines étapes possibles
 
-1. **Son** — dépose des fichiers dans `public/assets/audio/` et branche un petit
-   mixer ; c'est ce qui manque le plus à la sensation de présence.
+1. **Ambiance sonore** — la voix est là, mais pas les bruits de pas, le vent, ni
+   la musique. Dépose des fichiers dans `public/assets/audio/`.
 2. **Décor** — remplacer le sol circulaire par une vraie pièce, ou charger un
    modèle glTF pour le monstre si tu préfères le sculpter dans Blender plutôt
    que le générer par code (`GLTFLoader` s'ajoute en trois lignes dans `monster.js`).

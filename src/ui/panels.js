@@ -1,15 +1,18 @@
 import { PROVIDERS, loadConfig, saveConfig, testConnection } from '../ai/dialogue/index.js';
+import { VOICE_MODES, voiceProfile } from '../audio/voice.js';
 
 // Reglages et bapteme. Regle de base : un seul panneau ouvert a la fois,
 // et tout panneau doit pouvoir se fermer. Un ecran bloque est un bug.
 
-export function createPanels({ onRename, onReset, onNamed, getPet }) {
+export function createPanels({ onRename, onReset, onNamed, getPet, voice }) {
   const menu = document.getElementById('menu');
   const menuBtn = document.getElementById('btn-menu');
   const menuClose = document.getElementById('menu-close');
   const nameField = document.getElementById('field-name');
   const resetBtn = document.getElementById('btn-reset');
 
+  const voiceSelect = document.getElementById('field-voice');
+  const voiceTest = document.getElementById('btn-voice-test');
   const providerSelect = document.getElementById('field-provider');
   const providerHelp = document.getElementById('provider-help');
   const keyRow = document.getElementById('row-key');
@@ -26,6 +29,26 @@ export function createPanels({ onRename, onReset, onNamed, getPet }) {
   const namingField = document.getElementById('naming-field');
   const namingConfirm = document.getElementById('naming-confirm');
   const namingLater = document.getElementById('naming-later');
+
+  // -------------------------------------------------------------------- voix
+  Object.keys(VOICE_MODES).forEach((id) => {
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = VOICE_MODES[id];
+    voiceSelect.appendChild(option);
+  });
+  voiceSelect.value = voice.mode;
+
+  voiceSelect.addEventListener('change', () => {
+    voice.setMode(voiceSelect.value);
+    voice.unlock();
+  });
+
+  voiceTest.addEventListener('click', () => {
+    voice.unlock();
+    const pet = getPet();
+    voice.speak(`Bonjour, je suis ${pet.name}.`, voiceProfile(pet));
+  });
 
   // ------------------------------------------------------------ fournisseurs
   Object.keys(PROVIDERS).forEach((id) => {

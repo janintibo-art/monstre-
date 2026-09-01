@@ -207,6 +207,14 @@ export function createRig(model) {
     add('head', 0, shake * 0.22, 0);
   }
 
+  function poseSpeak(t, level) {
+    // Pas d'os de machoire sur ces squelettes : la parole passe par un
+    // hochement de tete et une respiration du torse cales sur le niveau sonore.
+    add('head', -level * 0.16 + Math.sin(t * 13) * level * 0.05, Math.sin(t * 7) * level * 0.06, 0);
+    add('neck', -level * 0.06, 0, 0);
+    add('spine02', -level * 0.05, 0, 0);
+  }
+
   function poseGesture(t, amount) {
     // Salut de la main, module par `amount` pour entrer et sortir en douceur.
     add('armR', -1.6 * amount, 0, -0.6 * amount);
@@ -226,7 +234,8 @@ export function createRig(model) {
       lookYaw = 0,
       lookPitch = 0,
       reaction = null,
-      gesture = 0
+      gesture = 0,
+      speaking = 0
     } = state;
 
     clear();
@@ -248,6 +257,7 @@ export function createRig(model) {
     if (reaction === 'pet') posePet(time);
     if (reaction === 'wash') poseWash(time);
     if (gesture > 0.01) poseGesture(time, gesture);
+    if (speaking > 0.01) poseSpeak(time, Math.min(1, speaking));
 
     // Lissage : on rejoint la pose cible au lieu d'y sauter, sinon chaque
     // changement de comportement provoquerait un a-coup.

@@ -14,6 +14,7 @@ import { remember } from './ai/memory.js';
 import { speak, spontaneousLine } from './ai/dialogue/index.js';
 import { load, save, reset, autosave, SAVE_KEY } from './state/save.js';
 import { advance, hatch, createPet } from './state/pet.js';
+import { createVoice, voiceProfile } from './audio/voice.js';
 import { createHud } from './ui/hud.js';
 import { createActionBar } from './ui/actions.js';
 import { createChat } from './ui/chat.js';
@@ -53,6 +54,13 @@ async function boot() {
   const world = createWorld(canvas, textures);
   const particles = createParticles(world.scene);
   const hud = createHud();
+  const voice = createVoice();
+
+  // Tout ce que la creature dit passe par ici : bulle a l'ecran ET voix.
+  function say(text, duration) {
+    hud.showBubble(text, duration);
+    if (pet.hatched) voice.speak(text, voiceProfile(pet));
+  }
 
   let egg = null;
   let monster = null;
@@ -118,7 +126,7 @@ async function boot() {
       world.scene.add(monster.group);
       currentModelUrl = url;
       particles.burst(monster.headWorldPosition(), 26, 0xa98bff, 2);
-      hud.showBubble('Je me sens... différent.', 4000);
+      say('Je me sens... différent.', 4000);
     } finally {
       swapping = false;
     }
@@ -130,6 +138,7 @@ async function boot() {
   // ------------------------------------------------------------- interface
   const panels = createPanels({
     getPet: () => pet,
+    voice,
     onRename: (name) => {
       pet.name = name;
       save(pet);
@@ -157,7 +166,7 @@ async function boot() {
       pet.name = name;
       panels.syncName(name);
       remember(pet.memory, 'named', { name });
-      hud.showBubble(`${name}… d’accord. C’est moi.`);
+      say(`${name}… d’accord. C’est moi.`);
       save(pet);
     }
   });
@@ -167,7 +176,7 @@ async function boot() {
     remember(pet.memory, 'talk');
     applyEffects(pet.needs, { affection: 4 });
     const { text } = await speak(message, pet, decision.emotion);
-    hud.showBubble(text, 5200);
+    say(text, 5200);
     return text;
   });
 
@@ -183,7 +192,8 @@ async function boot() {
       asleep = !asleep;
       actionBar.setSleepLabel(asleep);
       brain.forceAction(asleep ? 'sleep' : 'idle', 4);
-      hud.showBubble(asleep ? 'Bonne nuit…' : 'Déjà le matin ?');
+      if (asleep) voice.stop();
+      say(asleep ? 'Bonne nuit…' : 'Déjà le matin ?');
       return;
     }
 
@@ -202,12 +212,13 @@ async function boot() {
       const color = care.id === 'pet' ? 0xff8fb1 : care.id === 'wash' ? 0x8fd4ff : 0x6fe3c4;
       particles.burst(head, 18, color, 1.6);
     }
-    if (care.line) hud.showBubble(care.line, 2600);
+    if (care.line) say(care.line, 2600);
     save(pet);
   });
 
   // -------------------------------------------------------------- pointeur
   function onPointerDown(event) {
+    voice.unlock(); // le son reste bloque tant que l'ecran n'a pas ete touche
     const x = event.clientX;
     const y = event.clientY;
     pointerActive = 2.5;
@@ -402,7 +413,8 @@ async function boot() {
         action: decision.action,
         emotion: decision.emotion,
         target: moveTarget,
-        lookAt: lookTarget
+        lookAt: lookTarget,
+        speaking: voice.level()
       });
 
       hud.placeBubble(world.toScreen(monster.headWorldPosition()));
@@ -411,7 +423,7 @@ async function boot() {
       chatterTimer -= dt;
       if (chatterTimer <= 0) {
         chatterTimer = 18 + Math.random() * 26;
-        if (!chat.isOpen && !sleeping) hud.showBubble(spontaneousLine(pet, decision.emotion));
+        if (!chat.isOpen && !sleeping) say(spontaneousLine(pet, decision.emotion));
       }
     }
 
@@ -446,10 +458,7 @@ async function boot() {
   if (offlineSeconds > 900 && pet.hatched) {
     const hours = Math.floor(offlineSeconds / 3600);
     setTimeout(() => {
-      hud.showBubble(
-        hours >= 1 ? `Tu es parti ${hours} h. J’ai compté.` : 'Te revoilà. Enfin.',
-        5000
-      );
+      say(hours >= 1 ? `Tu es parti ${hours} h. J’ai compté.` : 'Te revoilà. Enfin.', 5000);
     }, 1200);
   }
 }

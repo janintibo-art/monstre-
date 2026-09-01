@@ -213,7 +213,13 @@ export function createModelMonster(gltf, genome) {
   }
 
   function update(dt, time, ctx = {}) {
-    const { action = 'idle', emotion = 'calme', target = null, lookAt = null } = ctx;
+    const {
+      action = 'idle',
+      emotion = 'calme',
+      target = null,
+      lookAt = null,
+      speaking = 0
+    } = ctx;
     const asleep = action === 'sleep';
 
     currentScale = lerp(currentScale, scaleTarget, Math.min(dt * 1.2, 1));
@@ -315,7 +321,8 @@ export function createModelMonster(gltf, genome) {
         lookYaw,
         lookPitch,
         reaction,
-        gesture: Math.min(1, gestureTime / 0.6)
+        gesture: Math.min(1, gestureTime / 0.6),
+        speaking
       });
     }
 
