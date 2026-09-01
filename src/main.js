@@ -284,35 +284,74 @@ async function boot() {
   }
 
   // ------------------------------------------------------ cible de deplacement
+  // La cible du deplacement depend du comportement. Une errance credible n'est
+  // pas une suite de points aleatoires : il faut des pauses, des trajets courts
+  // et parfois un long, sinon la creature a l'air de patrouiller.
+  let orbitAngle = 0;
+
+  function wander(dt, { near = false } = {}) {
+    if (wanderTimer > 0) return;
+    const roll = Math.random();
+    if (roll < 0.32) {
+      // Pause sur place : c'est ce qui rend le reste vivant.
+      moveTarget.copy(monster.group.position);
+      wanderTimer = 1.6 + Math.random() * 3.4;
+      return;
+    }
+    const angle = Math.random() * Math.PI * 2;
+    const radius = near ? 0.6 + Math.random() * 1.4 : 1 + Math.random() * 3.4;
+    moveTarget.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+    wanderTimer = 2 + Math.random() * 3;
+  }
+
   function updateTarget(action, dt) {
     wanderTimer -= dt;
     switch (action) {
       case 'follow':
         moveTarget.copy(pointerTarget);
         break;
+
       case 'beg':
       case 'seekAttention':
-        // Il vient au premier plan, face a la camera.
-        moveTarget.set(0, 0, 2.1);
-        break;
-      case 'sulk':
-        moveTarget.set(Math.sin(pet.seed) * 3.2, 0, -3);
-        break;
-      case 'sleep':
-        moveTarget.copy(monster.group.position);
-        break;
-      case 'dance':
-      case 'play':
-      case 'explore':
-      default:
+        // Il vient au premier plan, mais pas toujours exactement au meme
+        // endroit : un leger decalage evite l'effet de rail.
         if (wanderTimer <= 0) {
-          const angle = Math.random() * Math.PI * 2;
-          const radius = 1 + Math.random() * 3.4;
-          moveTarget.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
-          wanderTimer = action === 'idle' ? 5 + Math.random() * 5 : 2 + Math.random() * 3;
+          moveTarget.set((Math.random() - 0.5) * 1.2, 0, 1.8 + Math.random() * 0.6);
+          wanderTimer = 3 + Math.random() * 3;
         }
         break;
+
+      case 'sulk':
+        // Il s'eloigne et reste dos tourne, dans un coin.
+        if (wanderTimer <= 0) {
+          const a = Math.PI + (Math.random() - 0.5) * 1.2;
+          moveTarget.set(Math.cos(a) * 3.4, 0, Math.sin(a) * 3.4 - 1.5);
+          wanderTimer = 5 + Math.random() * 4;
+        }
+        break;
+
+      case 'sleep':
+      case 'dance':
+        moveTarget.copy(monster.group.position);
+        break;
+
+      case 'play':
+        // Tourne autour du joueur en zigzag : lisible et joyeux.
+        orbitAngle += dt * (1.4 + Math.random() * 0.2);
+        moveTarget.set(Math.cos(orbitAngle) * 2.2, 0, Math.sin(orbitAngle) * 1.6 + 0.4);
+        break;
+
+      case 'explore':
+        wander(dt);
+        break;
+
+      default:
+        wander(dt, { near: true });
+        break;
     }
+
+    // Il ne sort jamais de l'aire de jeu.
+    moveTarget.clampLength(0, 5);
   }
 
   // -------------------------------------------------------------- boucle

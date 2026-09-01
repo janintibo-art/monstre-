@@ -150,8 +150,16 @@ suivre détaillée : [docs/IA-GRATUITE.md](docs/IA-GRATUITE.md).
   éclats de coquille et gerbe de particules.
 - Monstre 3D entièrement généré par code depuis un génome : couleur, cornes,
   oreilles, longueur de queue, taches bioluminescentes, silhouette trapue ou non.
-- Animations : respiration, clignements, regard qui suit le doigt, sautillement,
-  balancement de queue selon l'humeur, bouderie dos tourné, danse.
+- **Animation procédurale du squelette** (`src/game/rig.js`) : les modèles
+  exportés n'ont que `Walking` et `Running`, tout le reste est calculé os par os
+  — respiration, report de poids, regard réparti entre nuque et tête, sommeil
+  recroquevillé, bouderie épaules rentrées, danse, mendicité bras tendus,
+  mastication, salut de la main. Cette couche s'ajoute par-dessus les clips
+  quand il y en a un, et prend tout en charge quand il n'y en a pas.
+- Locomotion : accélération progressive, pivot sur place avant de partir,
+  inclinaison dans les virages, vitesse de lecture du clip calée sur la vitesse
+  réelle (plus de patinage), errance avec pauses, orbites en jeu, retrait au
+  fond de la scène en bouderie.
 - Quatre stades de croissance, atteints d'autant plus vite que la créature est
   bien traitée.
 - Soins avec temps de recharge, réactions physiques et dérive de caractère.

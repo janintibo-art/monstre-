@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { lerp, clamp, createRng } from '../core/rng.js';
 import { STAGE_SCALE } from './monster.js';
+import { createRig } from './rig.js';
 
 // Chargement des modeles Blender. Si un .glb est absent ou illisible, on
 // renvoie null et le jeu retombe sur la creature generee par code.
@@ -113,6 +114,10 @@ export function createModelMonster(gltf, genome) {
   holder.add(model);
   const bounds = fitToHeight(holder, model, 1.5);
 
+  // Couche d'animation os par os : elle fournit tout ce que les clips exportes
+  // n'ont pas (repos, sommeil, bouderie, danse, regard, gestes).
+  const rig = createRig(model);
+
   // Si le modele contient des animations Blender, on les utilise.
   // Sinon tout est anime au niveau de l'objet entier.
   const mixer = gltf.animations && gltf.animations.length ? new THREE.AnimationMixer(model) : null;
@@ -171,6 +176,7 @@ export function createModelMonster(gltf, genome) {
 
   // Geste ponctuel joue par-dessus, pour les caresses et les repas.
   function playGesture(keywords) {
+    gestureTime = 1.2; // pilote aussi le geste procedural
     if (!mixer) return;
     const found = findClip(keywords);
     if (!found) return;
@@ -187,6 +193,8 @@ export function createModelMonster(gltf, genome) {
   let hop = 0;
   let reaction = null;
   let reactionTime = 0;
+  let gestureTime = 0;
+  let speed = 0;
   const head = new THREE.Vector3();
 
   function setStage(stage) {
@@ -211,21 +219,36 @@ export function createModelMonster(gltf, genome) {
     currentScale = lerp(currentScale, scaleTarget, Math.min(dt * 1.2, 1));
     root.scale.setScalar(currentScale);
 
-    // Deplacement au sol
+    // Deplacement au sol. La vitesse monte et retombe progressivement, et la
+    // creature pivote avant d'avancer : un demi-tour instantane se voit tout de
+    // suite comme une glissade.
     let moving = false;
-    if (target && !asleep) {
+    let heading = 0;
+    if (target && !asleep && action !== 'dance') {
       const dx = target.x - root.position.x;
       const dz = target.z - root.position.z;
       const dist = Math.hypot(dx, dz);
-      if (dist > 0.2) {
-        moving = true;
-        const speed = action === 'play' || action === 'dance' ? 2 : 1.1;
-        root.position.x += (dx / dist) * speed * dt;
-        root.position.z += (dz / dist) * speed * dt;
+      if (dist > 0.22) {
         const wanted = Math.atan2(dx, dz);
         const diff = ((wanted - facing + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-        facing += diff * Math.min(dt * 5, 1);
+        facing += diff * Math.min(dt * 4.5, 1);
+        heading = diff;
+
+        // Tant qu'il n'est pas oriente, il tourne sur place.
+        const aligned = Math.max(0, 1 - Math.abs(diff) / 1.2);
+        const top = action === 'play' ? 2.1 : action === 'explore' ? 0.9 : 1.25;
+        const wish = top * aligned * Math.min(1, dist / 0.6);
+        speed = lerp(speed, wish, Math.min(dt * 3.5, 1));
+        if (speed > 0.05) {
+          moving = true;
+          root.position.x += Math.sin(facing) * speed * dt;
+          root.position.z += Math.cos(facing) * speed * dt;
+        }
+      } else {
+        speed = lerp(speed, 0, Math.min(dt * 6, 1));
       }
+    } else {
+      speed = lerp(speed, 0, Math.min(dt * 6, 1));
     }
 
     if (action === 'sulk') {
@@ -240,26 +263,61 @@ export function createModelMonster(gltf, genome) {
     root.rotation.y = facing;
 
     if (mixer) {
-      playFor(action);
+      playFor(moving ? (speed > 1.6 ? 'play' : 'follow') : action);
+      // Le clip suit la vitesse reelle : plus de patinage quand il ralentit.
+      if (currentClip) {
+        const clipAction = mixer.clipAction(currentClip);
+        clipAction.timeScale = moving ? clamp(0.6 + speed * 0.7, 0.6, 2.2) : 1;
+      }
       mixer.update(dt);
     }
+
+    // Inclinaison dans les virages, comme un coureur qui prend l'appui.
+    const bank = clamp(heading * Math.min(speed, 1.6) * 0.35, -0.3, 0.3);
 
     // Animation d'objet : respiration, sautillement, inclinaison.
     // Elle s'ajoute aux clips Blender sans les contrarier.
     const breath = Math.sin(time * (asleep ? 1.1 : 2.2));
     const excited = emotion === 'joyeux' || emotion === 'excite';
-    anim.scale.y = 1 + breath * (asleep ? 0.05 : 0.028);
-    anim.scale.x = 1 - breath * 0.015;
+    const body = rig ? 0.35 : 1; // le squelette fait deja le gros du travail
+    anim.scale.y = 1 + breath * (asleep ? 0.05 : 0.028) * body;
+    anim.scale.x = 1 - breath * 0.015 * body;
     anim.scale.z = anim.scale.x;
 
     hop = moving && !mixer ? Math.abs(Math.sin(time * 8)) : lerp(hop, 0, Math.min(dt * 5, 1));
     const bounce = action === 'dance' ? Math.abs(Math.sin(time * 6)) * 0.2 : 0;
     root.position.y = hop * 0.1 + bounce;
 
-    anim.rotation.x = asleep ? 0.35 : moving && !mixer ? 0.1 : Math.sin(time * 0.7) * 0.03;
-    anim.rotation.z = excited ? Math.sin(time * 7) * 0.05 : Math.sin(time * 0.9) * 0.02;
+    anim.rotation.x = (asleep ? 0.2 : moving && !mixer ? 0.1 : Math.sin(time * 0.7) * 0.03) * body;
+    anim.rotation.z = bank + (excited ? Math.sin(time * 7) * 0.05 : Math.sin(time * 0.9) * 0.02) * body;
 
     if (asleep) root.position.y -= 0.04;
+
+    // Regard : angles relatifs a l'orientation du corps.
+    let lookYaw = 0;
+    let lookPitch = 0;
+    if (lookAt && !asleep) {
+      const dx = lookAt.x - root.position.x;
+      const dz = lookAt.z - root.position.z;
+      lookYaw = clamp(((Math.atan2(dx, dz) - facing + Math.PI * 3) % (Math.PI * 2)) - Math.PI, -1.1, 1.1);
+      const eye = bounds.height * 0.82;
+      lookPitch = clamp(-(lookAt.y - eye) / Math.max(0.6, Math.hypot(dx, dz)), -0.4, 0.4);
+    }
+
+    gestureTime = Math.max(0, gestureTime - dt);
+
+    if (rig) {
+      rig.apply(dt, time, {
+        action,
+        emotion,
+        moving,
+        clipActive: Boolean(mixer && currentClip),
+        lookYaw,
+        lookPitch,
+        reaction,
+        gesture: Math.min(1, gestureTime / 0.6)
+      });
+    }
 
     // Reactions ponctuelles
     if (reaction) {
