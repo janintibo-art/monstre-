@@ -84,6 +84,17 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
   // silhouette teintée — la lumière rasante du matin et celle du couchant ne
   // se déduisent pas d'une même image par un filtre.
   //
+  // Les images fournies sont des **silhouettes en niveaux de gris** : aucune
+  // couleur, une vingtaine de paliers qui correspondent aux plans de
+  // profondeur — sombre au premier plan, clair au fond.
+  //
+  // Les afficher telles quelles donne une masse grise. Le gris est en réalité
+  // une **clé de profondeur** : on le remappe entre deux couleurs fournies par
+  // l'heure du jour, la teinte du premier plan et celle du lointain. Les
+  // silhouettes proches restent sombres, les crêtes lointaines se fondent dans
+  // le ciel — c'est la perspective atmosphérique, et elle suit le couchant
+  // sans qu'on ait à redessiner quoi que ce soit.
+  //
   // Le haut des images est transparent : le dôme de ciel et les étoiles
   // apparaissent au travers.
   const horizonMat = new THREE.ShaderMaterial({
@@ -101,7 +112,10 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
       presence: { value: 0 },
       // Couleur de la brume, pour fondre le bas du paysage dans la distance
       // au lieu de le poser sur le sol par une ligne nette.
-      brume: { value: new THREE.Color(0x0b0f1e) }
+      brume: { value: new THREE.Color(0x0b0f1e) },
+      // Les deux bornes de la perspective atmosphérique.
+      proche: { value: new THREE.Color(0x241a2e) },
+      loin: { value: new THREE.Color(0xc98a5e) }
     },
     vertexShader: `
       varying vec2 vUv;
@@ -117,6 +131,8 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
       uniform vec3 teinte;
       uniform float presence;
       uniform vec3 brume;
+      uniform vec3 proche;
+      uniform vec3 loin;
       varying vec2 vUv;
       void main() {
         vec4 a = texture2D(mapA, vUv);
@@ -124,11 +140,14 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
         vec4 c = mix(a, b, melange);
         if (c.a < 0.01) discard;
 
-        // La courbe tonale délave le fond : on lui rend un peu de saturation
-        // avant de l'envoyer, sinon le paysage lointain paraît terne à côté du
-        // décor proche, qui bénéficie de la lumière directe.
-        float luma = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
-        vec3 vive = mix(vec3(luma), c.rgb, 1.25);
+        // Le gris sert de clé de profondeur. Les images vont de 0,18 à 0,93 :
+        // on étale cette plage sur toute la course entre les deux couleurs,
+        // sinon la moitié du dégradé serait inutilisée et tout se ressemblerait.
+        float profondeur = clamp((dot(c.rgb, vec3(0.299, 0.587, 0.114)) - 0.18) / 0.75, 0.0, 1.0);
+
+        // Courbe légèrement accentuée : les plans lointains se dissipent plus
+        // vite que les proches ne s'assombrissent, comme dans l'air réel.
+        vec3 vive = mix(proche, loin, pow(profondeur, 0.8));
         vive *= teinte;
 
         // Le pied du paysage se noie dans la brume : sans cela, la base du

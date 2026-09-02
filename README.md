@@ -635,9 +635,23 @@ présents en plusieurs exemplaires.
 ## L'horizon
 
 Chaque décor a **trois paysages de fond** — matin, midi, soir — fondus l'un dans
-l'autre au fil de la journée. Ce n'est pas une silhouette teintée : la lumière
-rasante du matin et celle du couchant ne se déduisent pas d'une même image par
-un filtre.
+l'autre au fil de la journée.
+
+Ce sont des **silhouettes en niveaux de gris**, sans aucune couleur, avec une
+vingtaine de paliers correspondant aux plans de profondeur : sombre au premier
+plan, clair au fond. Les afficher telles quelles donne une masse grise — c'est
+l'erreur que j'ai faite pendant plusieurs versions.
+
+Le gris est en réalité une **clé de profondeur**. Il est remappé entre deux
+couleurs fournies par l'heure : la teinte du premier plan, tirée du sol
+assombri, et celle du lointain, tirée du ciel au ras de l'horizon. Les
+silhouettes proches restent sombres, les crêtes lointaines se dissolvent dans le
+ciel. C'est la perspective atmosphérique, et elle suit le couchant sans qu'une
+seule image ait à être redessinée : au crépuscule, des plans violets devant un
+fond orangé.
+
+La nuit, ciel et sol tombent tous deux au noir ; un bleu très sourd sert de
+plancher au lointain pour que la ligne de crête reste lisible sous les étoiles.
 
 Ils sont portés par un cylindre vu de l'intérieur, répété **quatre fois** autour
 de la scène. Ce nombre décide de tout : la hauteur perçue du paysage ne dépend

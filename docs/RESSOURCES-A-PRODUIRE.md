@@ -78,9 +78,15 @@ entrées dans `src/game/biomes.js`.
 
 ## Lot 3 — La profondeur ✅ fait (v36)
 
-> **Douze horizons livrés** : quatre décors × trois moments de la journée. Bien
-> mieux que les silhouettes que j'avais demandées — avec trois images par décor,
-> on peut les fondre l'une dans l'autre au lieu de teinter la même.
+> **Douze horizons livrés** : quatre décors × trois moments de la journée, en
+> silhouettes de gris étagées — exactement le cahier des charges. Le moteur se
+> sert du niveau de gris comme d'une clé de profondeur et le recolore selon
+> l'heure.
+>
+> **Pour en ajouter** : garde le principe des paliers de gris nettement
+> séparés, du plus sombre au premier plan au plus clair au fond. La couleur est
+> ajoutée par le jeu ; une image déjà coloriée se battrait avec le cycle
+> jour/nuit.
 
 ### Ancienne demande, conservée pour mémoire
 

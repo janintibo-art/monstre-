@@ -216,6 +216,9 @@ function makePalette() {
 // Les moments fournis sont matin, midi et soir. La nuit n'a pas d'image
 // propre : on reprend celle du soir en l'assombrissant, ce qui est cohérent —
 // un paysage nocturne, c'est un paysage de fin de jour privé de lumière.
+// Bleu de nuit servant de plancher au lointain de l'horizon.
+const NUIT_HORIZON = new THREE.Color(0x2c3a5c);
+
 const HORIZON_ETAPES = [
   { at: 0.0, moment: 'soir' },
   { at: 0.24, moment: 'matin' },
@@ -342,6 +345,26 @@ export function createDaylight(world) {
       );
       horizonMat.uniforms.presence.value = 1;
       horizonMat.uniforms.brume.value.copy(env.fog.color);
+
+      // Les deux bornes de la perspective atmosphérique.
+      //
+      // Le premier plan tire vers la couleur du sol assombrie : c'est une
+      // silhouette, elle reçoit peu de lumière. Le lointain tire vers le ciel
+      // au ras de l'horizon, de sorte que les crêtes les plus éloignées s'y
+      // dissolvent. Au couchant, on obtient donc des plans violets devant un
+      // fond orangé — sans redessiner une seule image.
+      horizonMat.uniforms.proche.value
+        .copy(palette.fog)
+        .lerp(palette.skyBottom, 0.25)
+        .multiplyScalar(0.55);
+
+      horizonMat.uniforms.loin.value
+        .copy(palette.skyBottom)
+        .lerp(palette.sun, 0.35 * (1 - palette.stars))
+        // La nuit, le ciel et le sol tombent tous deux au noir : sans ce
+        // relèvement, la ligne de crête s'effacerait complètement. Un bleu très
+        // sourd suffit à la faire lire sous les étoiles.
+        .lerp(NUIT_HORIZON, palette.stars * 0.55);
     }
 
     env.stars.material.opacity = palette.stars * 0.9;
