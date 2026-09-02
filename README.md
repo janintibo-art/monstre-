@@ -703,8 +703,19 @@ plein midi. Il fournit son sol, sa couleur d'accent et une teinte d'atmosphère
 mélangée au ciel à hauteur de 16 à 26 % : assez pour reconnaître le lieu, pas
 assez pour nier l'heure qu'il est. Autour de l'aire de jeu, des arbres sont plantés
 sur un anneau, avec une trouée côté caméra pour ne jamais masquer la créature.
-Trois modèles — arbre, plante, champignon — répartis en quantités différentes
-selon le décor : neuf champignons au sous-bois, deux arbres seulement sur
+**Une maison** par décor — chaumière feuillue au sous-bois et sur la terre
+sèche, maison de pierre ailleurs. Elle est posée à un **endroit fixe**, jamais
+tirée au hasard : c'est un repère, et surtout c'est là que la créature va
+dormir. Quand le sommeil la prend, elle rentre chez elle et s'y couche ; elle
+marche tant qu'elle n'est pas arrivée, plutôt que de traverser le terrain en
+position de sommeil.
+
+**Une île flottante** dérive lentement dans le ciel de chaque décor, en montant
+et descendant doucement. Elle donne une profondeur que le sol seul ne peut pas
+produire — et une île immobile aurait l'air posée sur un socle invisible.
+
+Puis trois modèles — arbre, plante, champignon — répartis en quantités
+différentes selon le décor : neuf champignons au sous-bois, deux arbres seulement sur
 l'éboulis. Chacun a son amplitude de balancement, parce qu'un champignon ne
 bouge pas comme un arbre. Chaque modèle passe par un `InstancedMesh` : un seul
 appel de rendu quel qu'en soit le nombre.

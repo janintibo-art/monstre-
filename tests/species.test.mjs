@@ -104,3 +104,33 @@ test('les modèles de décor sont opaques et à double face', async () => {
     );
   });
 });
+
+test('chaque décor a sa maison et son île, et les modèles existent', async () => {
+  const { BIOMES, DECOR_MODELS } = await import('../src/game/biomes.js');
+
+  BIOMES.forEach((biome) => {
+    const reperes = biome.decor.filter((d) => d.landmark);
+    assert.equal(reperes.length, 1, `${biome.id} : il faut une maison et une seule`);
+    // Un repère tiré au hasard ne serait pas un repère : la créature doit y
+    // aller dormir et le joueur doit le retrouver au même endroit.
+    assert.equal(reperes[0].sway, 0, `${biome.id} : la maison se balance`);
+    assert.equal(
+      reperes[0].radius[0],
+      reperes[0].radius[1],
+      `${biome.id} : la maison change de place d’une partie à l’autre`
+    );
+    assert.ok(typeof reperes[0].angle === 'number', `${biome.id} : angle de la maison non fixé`);
+
+    const ciel = biome.decor.filter((d) => d.altitude);
+    assert.ok(ciel.length >= 1, `${biome.id} : rien dans le ciel`);
+    ciel.forEach((d) => assert.ok(d.orbit > 0, `${biome.id} : objet du ciel immobile`));
+
+    biome.decor.forEach((d) => {
+      assert.ok(DECOR_MODELS[d.model], `${biome.id} : modèle inconnu « ${d.model} »`);
+      assert.ok(
+        existsSync(`./public/${DECOR_MODELS[d.model]}`),
+        `${biome.id} : fichier absent pour « ${d.model} »`
+      );
+    });
+  });
+});

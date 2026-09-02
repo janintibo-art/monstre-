@@ -24,6 +24,7 @@ function firstMesh(object) {
 
 export function createDecor(scene) {
   const groups = []; // { mesh, items:[...] }
+  let landmark = null;
 
   function clear() {
     groups.forEach((g) => {
@@ -31,6 +32,7 @@ export function createDecor(scene) {
       g.mesh.geometry.dispose();
     });
     groups.length = 0;
+    landmark = null;
   }
 
   async function build(biome, seed, base = import.meta.env.BASE_URL || './') {
@@ -93,23 +95,52 @@ export function createDecor(scene) {
       const items = [];
 
       for (let i = 0; i < entry.count; i += 1) {
-        let angle = ((i + rng() * 0.7) / entry.count) * Math.PI * 2 + planIndex * 0.9;
-        const front = Math.atan2(Math.sin(angle), Math.cos(angle));
-        if (Math.abs(front - Math.PI / 2) < OPENING) angle += OPENING * 1.8;
+        // Un repère — la maison — est posé à un endroit fixe, jamais au hasard :
+        // la créature doit pouvoir y aller dormir, et le joueur doit le
+        // retrouver au même endroit d'une fois sur l'autre.
+        let angle = entry.landmark
+          ? entry.angle || -0.9
+          : ((i + rng() * 0.7) / entry.count) * Math.PI * 2 + planIndex * 0.9;
+
+        if (!entry.landmark) {
+          const front = Math.atan2(Math.sin(angle), Math.cos(angle));
+          if (Math.abs(front - Math.PI / 2) < OPENING) angle += OPENING * 1.8;
+        }
 
         const radius = entry.radius[0] + rng() * (entry.radius[1] - entry.radius[0]);
         const height = (entry.height[0] + rng() * (entry.height[1] - entry.height[0])) * unit;
+        const altitude = entry.altitude
+          ? entry.altitude[0] + rng() * (entry.altitude[1] - entry.altitude[0])
+          : -0.05;
 
-        position.set(Math.cos(angle) * radius, -0.05, Math.sin(angle) * radius);
+        position.set(Math.cos(angle) * radius, altitude, Math.sin(angle) * radius);
         quaternion.setFromEuler(new THREE.Euler(0, rng() * Math.PI * 2, 0));
         scale.set(height * (0.92 + rng() * 0.16), height, height * (0.92 + rng() * 0.16));
         matrix.compose(position, quaternion, scale);
         mesh.setMatrixAt(i, matrix);
 
+        if (entry.landmark) {
+          // Le point d'accueil se trouve devant la façade, entre la maison et
+          // le centre de la scène : la créature s'y arrête au lieu d'entrer
+          // dans le mur.
+          landmark = {
+            position: position.clone(),
+            devant: new THREE.Vector3(
+              Math.cos(angle) * (radius - 1.4),
+              0,
+              Math.sin(angle) * (radius - 1.4)
+            )
+          };
+        }
+
         items.push({
           position: position.clone(),
           baseY: quaternion.clone(),
           scale: scale.clone(),
+          orbit: entry.orbit || 0,
+          derive: rng() * Math.PI * 2,
+          rayon: radius,
+          altitude,
           phase: rng() * Math.PI * 2,
           // Un champignon ne se balance pas comme un arbre : l'amplitude vient
           // du type de decor, pas d'une valeur unique pour tout le monde.
@@ -132,7 +163,20 @@ export function createDecor(scene) {
       if (!g.items.length) return;
       for (let i = 0; i < g.items.length; i += 1) {
         const item = g.items[i];
-        if (item.amount < 0.001) continue;
+        if (item.amount < 0.001 && !item.orbit) continue;
+
+        // Les objets du ciel dérivent lentement autour de la scène et montent
+        // et descendent : une île immobile aurait l'air posée sur un socle
+        // invisible.
+        if (item.orbit) {
+          const a = item.derive + time * item.orbit;
+          item.position.set(
+            Math.cos(a) * item.rayon,
+            item.altitude + Math.sin(time * 0.25 + item.phase) * 0.5,
+            Math.sin(a) * item.rayon
+          );
+        }
+
         const wind = Math.sin(time * 0.7 + item.phase) * item.amount;
         const gust = Math.sin(time * 1.9 + item.phase * 1.7) * item.amount * 0.4;
         axis.set(gust, 0, wind);
@@ -144,5 +188,13 @@ export function createDecor(scene) {
     });
   }
 
-  return { build, update, clear };
+  return {
+    build,
+    update,
+    clear,
+    // Position d'accueil devant la maison, ou null si le décor n'en a pas.
+    get home() {
+      return landmark ? landmark.devant : null;
+    }
+  };
 }

@@ -26,6 +26,7 @@ export const GUIDE = [
     body: [
       'Les cinq petites fioles en haut à gauche sont ses besoins : faim, énergie, propreté, jeu et affection. Elles se vident toutes seules avec le temps, même quand l’application est fermée.',
       'Les boutons en bas servent à les remplir. Nourrir, jouer à la balle, laver, câliner, dormir.',
+      'Quand elle a sommeil, elle rentre dormir devant sa maison. Elle est toujours au même endroit du décor.',
       'Une fiole qui devient orange puis qui clignote veut dire que c’est urgent. Un monstre bien traité grandit plus vite qu’un monstre négligé — mais il ne peut pas mourir, et il ne perd jamais tout d’un coup, même si tu pars plusieurs jours.'
     ]
   },

@@ -875,7 +875,15 @@ async function boot() {
         }
         break;
 
-      case 'sleep':
+      case 'sleep': {
+        // Elle rentre dormir devant sa maison. Une créature qui s'endort au
+        // milieu du terrain n'a nulle part où être ; là, elle a un chez-elle.
+        const chez = decor.home;
+        if (chez) moveTarget.copy(chez);
+        else moveTarget.copy(monster.group.position);
+        break;
+      }
+
       case 'dance':
         moveTarget.copy(monster.group.position);
         break;
@@ -959,8 +967,20 @@ async function boot() {
       const foodAt = kitchen.target;
       if (foodAt) lookTarget.set(foodAt.x, 0.4, foodAt.z);
 
+      // Tant qu'elle n'est pas arrivée chez elle, elle marche : jouer la pose
+      // de sommeil en traversant le terrain serait absurde.
+      let posture = decision.action;
+      if (foodAt) posture = 'follow';
+      else if (decision.action === 'sleep' && decor.home) {
+        const reste = Math.hypot(
+          decor.home.x - monster.group.position.x,
+          decor.home.z - monster.group.position.z
+        );
+        if (reste > 0.6) posture = 'follow';
+      }
+
       monster.update(dt, time, {
-        action: foodAt ? 'follow' : decision.action,
+        action: posture,
         emotion: decision.emotion,
         target: moveTarget,
         lookAt: lookTarget,

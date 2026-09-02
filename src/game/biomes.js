@@ -20,6 +20,12 @@ export const BIOMES = [
     mood: 0x2f7a4a,
     moodMix: 0.16,
     decor: [
+      // La maison est un repère : toujours au même endroit, jamais tirée au
+      // hasard. C'est là que la créature va dormir.
+      { model: 'maison', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
+      // L'île dérive lentement dans le ciel. Elle donne au décor une profondeur
+      // que le sol seul ne peut pas produire.
+      { model: 'ile', count: 1, radius: [17, 17], height: [5.5, 5.5], altitude: [10, 10], orbit: 0.012, sway: 0 },
       { model: 'arbre', count: 5, radius: [7.5, 10], height: [3.6, 5.4], sway: 0.02 },
       { model: 'plante', count: 7, radius: [6.4, 8.6], height: [0.7, 1.2], sway: 0.045 },
       { model: 'champignon', count: 4, radius: [6.2, 8], height: [0.4, 0.7], sway: 0.008 }
@@ -35,6 +41,12 @@ export const BIOMES = [
     mood: 0x1d6a68,
     moodMix: 0.26,
     decor: [
+      // La maison est un repère : toujours au même endroit, jamais tirée au
+      // hasard. C'est là que la créature va dormir.
+      { model: 'chaumiere', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
+      // L'île dérive lentement dans le ciel. Elle donne au décor une profondeur
+      // que le sol seul ne peut pas produire.
+      { model: 'ile', count: 1, radius: [17, 17], height: [5.5, 5.5], altitude: [10, 10], orbit: 0.012, sway: 0 },
       { model: 'arbre', count: 7, radius: [7, 9.6], height: [4, 6], sway: 0.022 },
       { model: 'champignon', count: 9, radius: [6, 8.4], height: [0.5, 1.1], sway: 0.01 },
       { model: 'plante', count: 6, radius: [6.2, 8.2], height: [0.8, 1.4], sway: 0.05 }
@@ -50,6 +62,12 @@ export const BIOMES = [
     mood: 0x5a3f7a,
     moodMix: 0.22,
     decor: [
+      // La maison est un repère : toujours au même endroit, jamais tirée au
+      // hasard. C'est là que la créature va dormir.
+      { model: 'maison', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
+      // L'île dérive lentement dans le ciel. Elle donne au décor une profondeur
+      // que le sol seul ne peut pas produire.
+      { model: 'ile', count: 1, radius: [17, 17], height: [5.5, 5.5], altitude: [10, 10], orbit: 0.012, sway: 0 },
       { model: 'arbre', count: 2, radius: [8, 10], height: [3.2, 4.4], sway: 0.018 },
       { model: 'champignon', count: 6, radius: [6.2, 8.6], height: [0.5, 0.9], sway: 0.008 },
       { model: 'plante', count: 3, radius: [6.4, 8], height: [0.6, 1], sway: 0.04 }
@@ -65,6 +83,12 @@ export const BIOMES = [
     mood: 0x8a5a30,
     moodMix: 0.18,
     decor: [
+      // La maison est un repère : toujours au même endroit, jamais tirée au
+      // hasard. C'est là que la créature va dormir.
+      { model: 'chaumiere', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
+      // L'île dérive lentement dans le ciel. Elle donne au décor une profondeur
+      // que le sol seul ne peut pas produire.
+      { model: 'ile', count: 1, radius: [17, 17], height: [5.5, 5.5], altitude: [10, 10], orbit: 0.012, sway: 0 },
       { model: 'arbre', count: 3, radius: [7.6, 10], height: [3, 4.6], sway: 0.025 },
       { model: 'plante', count: 4, radius: [6.4, 8.4], height: [0.6, 1], sway: 0.05 },
       { model: 'champignon', count: 2, radius: [6.4, 8], height: [0.4, 0.6], sway: 0.008 }
@@ -85,6 +109,9 @@ export function horizonUrl(biome, moment, base = import.meta.env.BASE_URL || './
 
 export const DECOR_MODELS = {
   arbre: 'assets/models/decor/arbre.glb',
+  maison: 'assets/models/decor/maison.glb',
+  chaumiere: 'assets/models/decor/chaumiere.glb',
+  ile: 'assets/models/decor/ile.glb',
   plante: 'assets/models/decor/plante.glb',
   champignon: 'assets/models/decor/champignon.glb'
 };
