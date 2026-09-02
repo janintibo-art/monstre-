@@ -139,8 +139,10 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
         // le pilote, la fonction renvoie 1 partout, et c'est toute la bande qui
         // se noie dans la brume au lieu de son seul pied. Pour inverser, on
         // soustrait à 1, on n'échange pas les bornes.
-        float bas = 1.0 - smoothstep(0.02, 0.30, vUv.y);
-        vive = mix(vive, brume, bas * 0.8);
+        // La bande ne montre qu'un mince bandeau au-dessus du sol : à 0,30, le
+        // fondu couvrait presque tout ce qu'on en voit. Ramené à 0,12.
+        float bas = 1.0 - smoothstep(0.02, 0.12, vUv.y);
+        vive = mix(vive, brume, bas * 0.7);
 
         gl_FragColor = vec4(vive, c.a * presence);
       }
@@ -171,9 +173,21 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
   // du cylindre : une seule fois, l'image serait étirée de façon grotesque ;
   // trois fois, le rapport hauteur/largeur retombe juste et l'on n'en voit
   // jamais deux copies à la fois dans le champ.
+  // État du fond, consultable depuis les réglages. Un shader qui ne compile pas
+  // ou une image absente ne produisent aucun message : sans ce compte rendu, la
+  // seule façon de savoir est de regarder l'écran et de deviner.
+  const horizonEtat = { images: 0, visible: false, shader: 'non compilé' };
+
+  horizonMat.onBeforeCompile = () => {
+    horizonEtat.shader = 'compilé';
+  };
+
   function setHorizon(textures) {
-    const valides = textures && textures.matin && textures.midi && textures.soir;
+    const noms = ['matin', 'midi', 'soir'];
+    horizonEtat.images = noms.filter((n) => textures && textures[n]).length;
+    const valides = horizonEtat.images === noms.length;
     horizon.visible = Boolean(valides);
+    horizonEtat.visible = horizon.visible;
     if (!valides) return;
     ['matin', 'midi', 'soir'].forEach((moment) => {
       const texture = textures[moment];
@@ -534,6 +548,7 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
     ground,
     env,
     setHorizon,
+    horizonEtat,
     playBounds,
     clampToArena,
     setFocus,

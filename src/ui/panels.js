@@ -19,6 +19,7 @@ import {
 // et tout panneau doit pouvoir se fermer. Un ecran bloque est un bug.
 
 export function createPanels({
+  getHorizonState,
   onRename,
   onReset,
   onNamed,
@@ -54,6 +55,7 @@ export function createPanels({
   const comfortHelp = document.getElementById('comfort-help');
   const cycleSelect = document.getElementById('field-cycle');
   const biomeSelect = document.getElementById('field-biome');
+  const horizonEtat = document.getElementById('horizon-etat');
   const voiceSelect = document.getElementById('field-voice');
   const voiceTest = document.getElementById('btn-voice-test');
   const providerSelect = document.getElementById('field-provider');
@@ -451,6 +453,12 @@ export function createPanels({
       refreshProviderUI();
       refreshProfile();
       refreshOverlay();
+      // Compte rendu du fond : trois images chargées et shader compilé, ou la
+      // raison précise du contraire.
+      if (getHorizonState) {
+        const etat = getHorizonState();
+        horizonEtat.textContent = `Fond de décor : ${etat.images}/3 images, shader ${etat.shader}, ${etat.visible ? 'affiché' : 'masqué'}.`;
+      }
       menu.hidden = false;
     }
     notify();

@@ -346,6 +346,7 @@ async function boot() {
 
   // ------------------------------------------------------------- interface
   const panels = createPanels({
+    getHorizonState: () => world.horizonEtat,
     getPet: () => pet,
     voice,
     onMemoryChange: () => save(pet),
