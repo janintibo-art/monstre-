@@ -649,8 +649,17 @@ images est respecté.
 Le pied du paysage se noie dans la brume : sans cela, la base du relief tranche
 net sur le sol, comme un décor découpé et posé là.
 
-> **Piège rencontré.** Ce fondu était écrit `smoothstep(0.30, 0.02, y)`, bornes
-> à l'envers. La spécification GLSL déclare le résultat **indéfini** quand la
+> **Deux pièges, et une leçon de méthode.** L'horizon a manqué pendant quatre
+> versions parce que le shader **utilisait** un uniforme `brume` sans jamais le
+> **déclarer**. La compilation GLSL échouait, et Three.js se contente alors de
+> ne rien afficher : pas de plantage, pas de trace visible, l'objet disparaît.
+> J'ai passé deux versions à corriger des symptômes — l'échelle, puis les
+> bornes du fondu — sans voir que le shader ne compilait plus du tout. Un test
+> vérifie désormais que chaque uniforme employé dans un shader y est déclaré,
+> et j'ai contrôlé qu'il échoue bien si l'on réintroduit le défaut.
+>
+> Second piège, réel lui aussi : ce fondu était écrit `smoothstep(0.30, 0.02, y)`,
+> bornes à l'envers. La spécification GLSL déclare le résultat **indéfini** quand la
 > première borne dépasse la seconde : selon le pilote, la fonction renvoie 1
 > partout, et c'est toute la bande qui se noie dans la brume au lieu de son seul
 > pied. L'horizon disparaissait entièrement, sans le moindre message d'erreur.

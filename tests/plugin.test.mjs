@@ -202,3 +202,36 @@ test('le flou d’arrière-plan reste réservé aux surfaces peu nombreuses', ()
     });
   });
 });
+
+test('chaque uniforme utilisé dans un shader y est aussi déclaré', () => {
+  // Un identifiant employé sans déclaration fait échouer la compilation GLSL.
+  // Three.js le signale dans la console, mais l'objet disparaît simplement de
+  // la scène : aucun plantage, aucune trace visible. L'horizon a manqué pendant
+  // quatre versions à cause d'un `uniform vec3 brume;` oublié.
+  const source = readFileSync('src/game/world.js', 'utf8');
+
+  const materiaux = [...source.matchAll(/new THREE\.ShaderMaterial\(\{[\s\S]*?\n  \}\);/g)];
+  assert.ok(materiaux.length >= 2, 'aucun shader trouvé : le test ne vérifie rien');
+
+  materiaux.forEach(([bloc]) => {
+    const noms = [...bloc.matchAll(/^\s{6}(\w+):\s*\{\s*value:/gm)].map((m) => m[1]);
+    const vertex = (bloc.match(/vertexShader:\s*`([\s\S]*?)`/) || [])[1] || '';
+    const fragment = (bloc.match(/fragmentShader:\s*`([\s\S]*?)`/) || [])[1] || '';
+
+    noms.forEach((nom) => {
+      [
+        ['vertex', vertex],
+        ['fragment', fragment]
+      ].forEach(([quel, code]) => {
+        // On retire les commentaires : ils citent souvent les noms d'uniformes.
+        const corps = code.replace(/\/\/.*/g, '');
+        const utilise = new RegExp(`\\b${nom}\\b`).test(corps.replace(/uniform[^;]+;/g, ''));
+        const declare = new RegExp(`uniform\\s+\\w+\\s+${nom}\\s*;`).test(corps);
+        assert.ok(
+          !utilise || declare,
+          `shader ${quel} : « ${nom} » est utilisé mais jamais déclaré`
+        );
+      });
+    });
+  });
+});

@@ -116,6 +116,7 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
       uniform float melange;
       uniform vec3 teinte;
       uniform float presence;
+      uniform vec3 brume;
       varying vec2 vUv;
       void main() {
         vec4 a = texture2D(mapA, vUv);
