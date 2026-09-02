@@ -106,3 +106,25 @@ test('la distance d’édition s’arrête au seuil', () => {
   assert.equal(H.distance('chat', 'chats'), 1);
   assert.ok(H.distance('chat', 'bibliotheque', 3) > 3);
 });
+
+test('le délai avant le premier mot est bien plus long que celui du silence', async () => {
+  const { readFileSync } = await import('node:fs');
+  const source = readFileSync('src/audio/listen.js', 'utf8');
+
+  const premier = Number((source.match(/const PREMIER_MOT_MS = (\d+)/) || [])[1]);
+  const lent = Number((source.match(/slow:\s*(\d+)/) || [])[1]);
+
+  // Entre l'appui sur le micro et le premier mot, il se passe facilement
+  // plusieurs secondes : on réfléchit, on approche le téléphone. Armer le
+  // compte à rebours de fin de phrase dès le départ terminait la session sur
+  // « je n'ai rien entendu » avant qu'on ait ouvert la bouche.
+  assert.ok(premier >= 8000, 'délai avant le premier mot trop court');
+  assert.ok(premier > lent * 3, 'le délai d’attente doit être bien plus long que celui du silence');
+});
+
+test('le compte à rebours court ne s’arme qu’après avoir capté un mot', async () => {
+  const { readFileSync } = await import('node:fs');
+  const source = readFileSync('src/audio/listen.js', 'utf8');
+  const fonction = source.slice(source.indexOf('function bumpSilence'), source.indexOf('function capter'));
+  assert.match(fonction, /entendu\s*\?/, 'le délai ne dépend pas de ce qui a été capté');
+});

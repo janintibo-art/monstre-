@@ -170,6 +170,13 @@ précision réelle, c'est ce qu'on fait de sa sortie (`src/audio/hearing.js`) :
   inconnu tel quel que le transformer en un autre mot légitime.
 - **Les nombres en toutes lettres.** « quatre-vingt-dix-neuf » devient 99,
   indispensable pour répondre à un calcul à la voix.
+- **Une longue attente avant le premier mot.** Dix secondes, contre 1,7 à 2,6 s
+  pour le silence qui clôt une phrase. Ce sont deux choses différentes : entre
+  l'appui sur le micro et le premier mot, il se passe facilement plusieurs
+  secondes — on réfléchit, on approche le téléphone. Armer le compte à rebours
+  de fin de phrase dès le départ terminait la session sur « je n'ai rien
+  entendu » avant qu'on ait ouvert la bouche. C'est le défaut qui a rendu le
+  micro inutilisable jusqu'en v56.
 - **Le découpage sur le silence.** Le moteur coupe à la première pause. Une
   personne âgée qui cherche son mot, un enfant qui hésite, et la phrase part en
   morceaux. On accumule les fragments et on ne conclut qu'après un vrai

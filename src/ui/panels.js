@@ -20,6 +20,7 @@ import {
 
 export function createPanels({
   getHorizonState,
+  getMicState,
   onRename,
   onReset,
   onNamed,
@@ -58,6 +59,7 @@ export function createPanels({
   const cycleSelect = document.getElementById('field-cycle');
   const biomeSelect = document.getElementById('field-biome');
   const horizonEtat = document.getElementById('horizon-etat');
+  const microEtat = document.getElementById('micro-etat');
   const voiceSelect = document.getElementById('field-voice');
   const voiceTest = document.getElementById('btn-voice-test');
   const providerSelect = document.getElementById('field-provider');
@@ -465,6 +467,15 @@ export function createPanels({
       if (getHorizonState) {
         const etat = getHorizonState();
         horizonEtat.textContent = `Fond de décor : ${etat.images}/3 images, shader ${etat.shader}, ${etat.visible ? 'affiché' : 'masqué'}.`;
+      }
+      if (getMicState) {
+        const etat = getMicState();
+        const noms = {
+          native: 'moteur du téléphone',
+          browser: 'moteur du navigateur',
+          aucun: 'aucun moteur disponible'
+        };
+        microEtat.textContent = `Micro : ${noms[etat.moteur] || etat.moteur}.`;
       }
       menu.hidden = false;
     }

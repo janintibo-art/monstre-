@@ -60,12 +60,27 @@ export const SILENCE_MS = {
   slow: 2600
 };
 
+// Délai avant le PREMIER mot. Il n'a rien à voir avec le silence qui clôt une
+// phrase : entre le moment où l'on appuie sur le micro et celui où l'on
+// commence à parler, il se passe facilement trois à cinq secondes — on réfléchit,
+// on cherche ses mots, on approche le téléphone.
+//
+// C'est le défaut qui rendait le micro inutilisable : le compte à rebours de
+// silence était armé dès le démarrage, et la session se terminait sur « je n'ai
+// rien entendu » avant même qu'on ait ouvert la bouche.
+const PREMIER_MOT_MS = 10000;
+
 export function createListener({ onPartial, onFinal, onState, onError, getContext }) {
   let listening = false;
   let browser = null;
   let mode = null;
-  let pieces = [];
+  // Segments déjà terminés, et transcription en cours. Bien plus lisible que
+  // l'ancien tableau indexé à la main, où l'on écrasait des cases au jugé.
+  let segments = [];
+  let courant = '';
+  let entendu = false; // a-t-on capté au moins un mot ?
   let alternatives = [];
+  let moteur = 'aucun';
   let silenceTimer = null;
   let hardTimer = null;
   let expected = null;
@@ -83,15 +98,36 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
     hardTimer = null;
   }
 
-  // Repart le compte à rebours de silence à chaque fragment entendu.
+  // Repart le compte à rebours à chaque fragment entendu. Tant que rien n'a
+  // été capté, c'est le délai long qui s'applique.
   function bumpSilence() {
     clearTimeout(silenceTimer);
-    silenceTimer = setTimeout(() => finish(), SILENCE_MS[pace] || SILENCE_MS.normal);
+    const delai = entendu ? SILENCE_MS[pace] || SILENCE_MS.normal : PREMIER_MOT_MS;
+    silenceTimer = setTimeout(() => finish(), delai);
+  }
+
+  // Enregistre un fragment. `definitif` clôt le segment en cours.
+  function capter(texte, definitif = false) {
+    const propre = String(texte || '').trim();
+    if (!propre) return;
+    entendu = true;
+    if (definitif) {
+      segments.push(propre);
+      courant = '';
+    } else {
+      courant = propre;
+    }
+    if (onPartial) onPartial([...segments, courant].filter(Boolean).join(' '));
+    bumpSilence();
   }
 
   function finish() {
     clearTimers();
-    const assembled = pieces.join(' ').replace(/\s+/g, ' ').trim();
+    const assembled = [...segments, courant]
+      .filter(Boolean)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     const list = alternatives.length
       ? alternatives
       : assembled
@@ -110,7 +146,9 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
     const lexicon = context.lexicon || contextLexicon({});
     const result = understand(list, lexicon, { numbers: Boolean(context.numbers) });
 
-    pieces = [];
+    segments = [];
+    courant = '';
+    entendu = false;
     alternatives = [];
 
     if (!result.confident) {
@@ -136,14 +174,11 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
     await plugin.removeAllListeners().catch(() => {});
     await plugin.addListener('partialResults', (data) => {
       const matches = (data && data.matches) || [];
-      const text = matches[0];
-      if (!text) return;
+      if (!matches[0]) return;
       // Le natif renvoie la phrase complète en cours, pas un ajout : on
-      // remplace le dernier fragment plutôt que d'empiler des répétitions.
-      pieces[pieces.length ? pieces.length - 1 : 0] = text;
+      // remplace la transcription courante plutôt que d'empiler des répétitions.
       alternatives = matches.map((m, i) => ({ text: m, confidence: 1 - i * 0.12 }));
-      if (onPartial) onPartial(pieces.join(' '));
-      bumpSilence();
+      capter(matches[0], false);
     });
     await plugin.addListener('listeningState', (data) => {
       if (data && data.status === 'stopped' && listening) {
@@ -166,11 +201,8 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
       .then((result) => {
         const matches = (result && result.matches) || [];
         if (matches.length) {
-          pieces[pieces.length ? pieces.length - 1 : 0] = matches[0];
           alternatives = matches.map((m, i) => ({ text: m, confidence: 1 - i * 0.12 }));
-          if (onPartial) onPartial(pieces.join(' '));
-          pieces.push(''); // le fragment suivant ira dans une case neuve
-          bumpSilence();
+          capter(matches[0], true);
         }
       })
       .catch(() => {
@@ -199,7 +231,6 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
         const result = event.results[i];
         const text = result[0].transcript.trim();
         if (!text) continue;
-        pieces[i] = text;
         if (result.isFinal) {
           alternatives = Array.from(result)
             .map((alt, rank) => ({
@@ -208,9 +239,8 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
             }))
             .filter((a) => a.text);
         }
+        capter(text, result.isFinal);
       }
-      if (onPartial) onPartial(pieces.filter(Boolean).join(' '));
-      bumpSilence();
     };
     browser.onerror = (event) => {
       if (event.error === 'no-speech') return; // le silence s'en chargera
@@ -248,13 +278,16 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
   // `options.pace` règle la patience, `options.expected` sert au contexte.
   async function start(options = {}) {
     if (listening) return;
-    pieces = [];
+    segments = [];
+    courant = '';
+    entendu = false;
     alternatives = [];
     pace = options.pace || 'normal';
     expected = options.expected || null;
 
     const kind = await supported();
     mode = kind;
+    moteur = kind || 'aucun';
     if (kind === 'native') await startNative(nativePlugin);
     else if (kind === 'browser') startBrowser(browserEngine());
     else onError("Ce téléphone n'a pas de reconnaissance vocale disponible.");
@@ -293,6 +326,11 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
     submit,
     toggle,
     supported,
+    // Consultable depuis les réglages : savoir quel moteur répond évite de
+    // chercher un défaut de compréhension là où il n'y a pas de micro du tout.
+    get etat() {
+      return { moteur, ecoute: listening, entendu };
+    },
     get listening() {
       return listening;
     }
