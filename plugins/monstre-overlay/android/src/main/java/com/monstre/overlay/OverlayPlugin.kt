@@ -27,15 +27,22 @@ class OverlayPlugin : Plugin() {
     private fun alarms(): AlarmManager =
         context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
+    // Les valeurs sont lues avec les méthodes `opt*` de org.json, dont JSObject
+    // hérite. Elles sont garanties par la plateforme Android et renvoient une
+    // valeur par défaut au lieu de lever une exception.
+    //
+    // `JSObject.getInteger()` n'existe pas — contrairement à `PluginCall`, qui
+    // l'expose. Les deux classes se ressemblent assez pour qu'on s'y trompe, et
+    // la compilation Kotlin s'arrête net dessus.
     private fun pendingFor(id: String, data: JSObject?): PendingIntent {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             action = "com.monstre.overlay.RAPPEL.$id"
-            putExtra(OverlayService.EXTRA_TEXT, data?.getString("text") ?: "Rendez-vous")
-            putExtra(OverlayService.EXTRA_WHEN, data?.getString("when") ?: "")
-            putExtra(OverlayService.EXTRA_SPRITE, data?.getString("sprite") ?: "")
+            putExtra(OverlayService.EXTRA_TEXT, data?.optString("text", "Rendez-vous") ?: "Rendez-vous")
+            putExtra(OverlayService.EXTRA_WHEN, data?.optString("when", "") ?: "")
+            putExtra(OverlayService.EXTRA_SPRITE, data?.optString("sprite", "") ?: "")
             putExtra(
                 OverlayService.EXTRA_TIMEOUT,
-                (data?.getInteger("timeoutMs") ?: 180000).toLong()
+                (data?.optInt("timeoutMs", 180000) ?: 180000).toLong()
             )
         }
         return PendingIntent.getBroadcast(
@@ -78,7 +85,8 @@ class OverlayPlugin : Plugin() {
     @PluginMethod
     fun schedule(call: PluginCall) {
         val id = call.getString("id") ?: return call.reject("id manquant")
-        val at = call.getLong("at") ?: return call.reject("date manquante")
+        val at = call.data.optLong("at", 0L)
+        if (at <= 0L) return call.reject("date manquante")
         if (at <= System.currentTimeMillis()) {
             call.resolve(JSObject().put("scheduled", false).put("reason", "date passee"))
             return
@@ -117,10 +125,10 @@ class OverlayPlugin : Plugin() {
             return
         }
         val intent = Intent(context, OverlayService::class.java).apply {
-            putExtra(OverlayService.EXTRA_TEXT, call.getString("text") ?: "Coucou")
-            putExtra(OverlayService.EXTRA_WHEN, call.getString("when") ?: "")
-            putExtra(OverlayService.EXTRA_SPRITE, call.getString("sprite") ?: "")
-            putExtra(OverlayService.EXTRA_TIMEOUT, (call.getInteger("timeoutMs") ?: 60000).toLong())
+            putExtra(OverlayService.EXTRA_TEXT, call.data.optString("text", "Coucou"))
+            putExtra(OverlayService.EXTRA_WHEN, call.data.optString("when", ""))
+            putExtra(OverlayService.EXTRA_SPRITE, call.data.optString("sprite", ""))
+            putExtra(OverlayService.EXTRA_TIMEOUT, call.data.optInt("timeoutMs", 60000).toLong())
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(intent)
         else context.startService(intent)

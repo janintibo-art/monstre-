@@ -303,12 +303,29 @@ class OverlayService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
 
-        val builder = Notification.Builder(this, CHANNEL_ID)
+        // Deux précautions de compilation :
+        //
+        // Le constructeur avec canal n'existe qu'à partir d'Android 8. La
+        // version minimale du module est plus basse, il faut donc les deux
+        // chemins — le compilateur Kotlin ne vérifie pas les niveaux d'API,
+        // mais l'appel planterait à l'exécution sur un vieil appareil.
+        //
+        // Et `addAction` avec un identifiant d'icône entier est préféré à
+        // `Action.Builder(null, ...)` : passer `null` nu à ce constructeur est
+        // ambigu en Kotlin, deux surcharges y correspondent.
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, CHANNEL_ID)
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(this)
+        }
+
+        builder
             .setContentTitle(reminderText)
             .setContentText(reminderWhen)
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
             .setOngoing(true)
-            .addAction(Notification.Action.Builder(null, "C'est noté", stopPI).build())
+            .addAction(0, "C'est noté", stopPI)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(NOTIF_ID, builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)

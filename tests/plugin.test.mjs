@@ -78,6 +78,42 @@ test('le manifeste déclare le service et les récepteurs', () => {
   });
 });
 
+test('le Kotlin n’utilise que des accesseurs qui existent vraiment', () => {
+  const source = readFileSync(
+    `${RACINE}/android/src/main/java/com/monstre/overlay/OverlayPlugin.kt`,
+    'utf8'
+  );
+
+  // `JSObject` hérite de org.json.JSONObject et n'expose pas `getInteger` ni
+  // `getLong` — contrairement à `PluginCall`, qui lui ressemble beaucoup. La
+  // confusion coûte une compilation entière.
+  const lignes = source.split('\n').filter((l) => !l.trim().startsWith('//'));
+  lignes.forEach((ligne) => {
+    ['data?.getInteger', 'data.getInteger', 'data?.getLong', 'data.getLong'].forEach((interdit) => {
+      assert.ok(
+        !ligne.includes(interdit),
+        `accesseur inexistant sur JSObject : ${interdit} — utiliser optInt / optLong`
+      );
+    });
+  });
+});
+
+test('les appels réservés aux versions récentes d’Android sont protégés', () => {
+  const source = readFileSync(
+    `${RACINE}/android/src/main/java/com/monstre/overlay/OverlayService.kt`,
+    'utf8'
+  );
+  // Notification.Builder(contexte, canal) demande Android 8. La version
+  // minimale du module est plus basse : l'appel doit être encadré.
+  if (source.includes('Notification.Builder(this, CHANNEL_ID)')) {
+    assert.match(
+      source,
+      /Build\.VERSION\.SDK_INT >= Build\.VERSION_CODES\.O[\s\S]{0,200}Notification\.Builder\(this, CHANNEL_ID\)/,
+      'constructeur de notification non protégé par une vérification de version'
+    );
+  }
+});
+
 test('chaque espèce a sa planche de marche', async () => {
   const { SPECIES } = await import('../src/game/species.js');
   SPECIES.forEach((s) => {

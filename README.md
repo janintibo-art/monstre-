@@ -425,6 +425,10 @@ attendre un vrai rendez-vous. Sans elle, la notification suffit.
 > Kotlin, et son `build.gradle` racine est régénéré à chaque compilation. Le
 > module apporte donc le sien, via un bloc `buildscript` local.
 >
+> `JSObject` hérite de `org.json.JSONObject` et n'expose pas `getInteger` — à
+> la différence de `PluginCall`, qui lui ressemble beaucoup. Le module n'utilise
+> donc que les méthodes `opt*` de la plateforme, garanties partout.
+>
 > Enfin, à l'intérieur d'un bloc `android { }`, le nom `compileSdkVersion` ne
 > désigne pas la variable du projet mais une **méthode dépréciée** du greffon
 > Android. Groovy résout la méthode en priorité, et Gradle échoue en affirmant
