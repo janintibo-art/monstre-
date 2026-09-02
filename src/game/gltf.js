@@ -108,7 +108,9 @@ function prepare(object, anisotropie = 4) {
     // si on laisse le culling automatique faire son travail.
     child.frustumCulled = false;
     if (child.material) {
-      child.material.side = THREE.FrontSide;
+      // Le sens des faces est laissé tel que le modèle le déclare. Forcer
+      // FrontSide sur un maillage marqué `doubleSided` fait disparaître toutes
+      // les faces dont l'orientation s'est inversée à la simplification.
       // Textures nettes sous un angle rasant, et cotes ombres moins delaves.
       if (child.material.map) child.material.map.anisotropy = anisotropie;
       if (child.material.roughness !== undefined) {

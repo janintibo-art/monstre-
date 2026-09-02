@@ -65,9 +65,19 @@ export function createDecor(scene) {
       const material = Array.isArray(source.material)
         ? source.material[0].clone()
         : source.material.clone();
-      material.side = THREE.FrontSide;
-      // Le decor est vu de loin et de biais : c'est la ou l'anisotropie change
-      // le plus, elle evite le fourmillement sur les feuillages.
+      // On NE force PAS FrontSide.
+      //
+      // Ces modèles déclarent `doubleSided: true`, et pour une bonne raison :
+      // moins de 60 % de leurs triangles sont orientés vers l'extérieur. La
+      // simplification du maillage inverse le sens de certaines faces, ce que
+      // le rendu ne peut pas deviner. En supprimant les faces arrière, on
+      // effaçait donc près de la moitié du feuillage — d'où les trous par
+      // lesquels on voyait le ciel.
+      //
+      // Le surcoût du double affichage est réel mais modeste ; un arbre troué
+      // ne l'est pas.
+      material.transparent = false;
+      material.depthWrite = true;
       if (material.map) material.map.anisotropy = 16;
 
       const mesh = new THREE.InstancedMesh(geometry, material, entry.count);

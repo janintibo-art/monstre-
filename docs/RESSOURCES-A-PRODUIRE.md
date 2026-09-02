@@ -18,6 +18,9 @@ je recompresse avec `tools/decimate_glb.py`. Ne perds pas de temps à optimiser.
   pose au sol et met à l'échelle tout seul.
 - **Pas de transparence** : les feuilles en plans alpha rendent mal ici, il faut
   du volume. C'est ce qui avait raté sur ton premier arbre.
+- **Laisse Meshy cocher « double face »** s'il le propose. La simplification du
+  maillage inverse le sens de certaines faces, et un modèle à face simple
+  se retrouve troué.
 - Pas d'animation nécessaire, sauf mention contraire.
 
 **Images** — PNG si transparence, sinon JPEG. Toujours en puissance de deux

@@ -70,3 +70,37 @@ test('les images d’horizon ont bien un haut transparent', async () => {
     assert.ok([4, 6].includes(typeCouleur), `${biome.id} : image sans transparence`);
   });
 });
+
+test('le code ne force jamais le sens des faces sur les modèles', async () => {
+  const { readFileSync } = await import('node:fs');
+  // Les modèles Meshy déclarent `doubleSided: true` parce que la simplification
+  // du maillage inverse le sens de certaines faces. Forcer FrontSide efface
+  // toutes celles qui pointent « vers l'intérieur » — près de la moitié du
+  // feuillage d'un arbre. Le trou dans la canopée vient de là.
+  ['src/game/decor.js', 'src/game/gltf.js'].forEach((fichier) => {
+    const lignes = readFileSync(fichier, 'utf8')
+      .split('\n')
+      .filter((l) => !l.trim().startsWith('//'));
+    lignes.forEach((ligne) => {
+      assert.ok(
+        !/material\.side\s*=/.test(ligne),
+        `${fichier} : le sens des faces est forcé — laisser le modèle décider`
+      );
+    });
+  });
+});
+
+test('les modèles de décor sont opaques et à double face', async () => {
+  const { readFileSync } = await import('node:fs');
+  ['arbre', 'plante', 'champignon'].forEach((nom) => {
+    const donnees = readFileSync(`public/assets/models/decor/${nom}.glb`);
+    const longueur = donnees.readUInt32LE(12);
+    const json = JSON.parse(donnees.toString('utf8', 20, 20 + longueur));
+    const materiau = json.materials[0];
+    assert.equal(materiau.doubleSided, true, `${nom} : faces simples, trous probables`);
+    assert.ok(
+      !materiau.alphaMode || materiau.alphaMode === 'OPAQUE',
+      `${nom} : transparence déclarée, tri des faces hasardeux`
+    );
+  });
+});

@@ -561,6 +561,12 @@ Quelques réglages qui pèsent lourd sur l'aspect :
   plus de répétitions. À 6,5, le bord du disque dessinait une courbe nette au
   milieu de l'image, comme une petite planète ; il passe maintenant derrière le
   décor et l'horizon, à densité de texels identique.
+- **Le sens des faces n'est jamais forcé.** Les modèles Meshy déclarent
+  `doubleSided: true` pour une bonne raison : moins de 60 % des triangles d'un
+  arbre sont orientés vers l'extérieur, la simplification du maillage en inverse
+  beaucoup. Supprimer les faces arrière effaçait donc près de la moitié du
+  feuillage, et l'on voyait le ciel au travers. Un test refuse désormais toute
+  ligne qui impose `material.side`.
 - **Ombres en 2048** avec un décalage le long de la normale, qui supprime les
   rayures sur les surfaces éclairées de biais. Les créatures et le décor
   reçoivent les ombres autant qu'ils en projettent : sans cela, un bras devant
