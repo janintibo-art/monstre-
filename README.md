@@ -21,9 +21,20 @@ Aucune dépendance lourde : `three` en production, `vite`, `electron`,
 ## Vérifier
 
 ```bash
-npm test          # 22 tests : sauvegarde, migrations, progression, mémoire
+npm test          # 99 tests
 npm run check     # + détection des identifiants non déclarés
 ```
+
+> **Un module Capacitor ne doit jamais être renvoyé par une fonction `async`.**
+> JavaScript interroge `.then` sur la valeur produite pour savoir si c'est une
+> promesse ; le module étant un proxy, il transforme cette question en appel
+> natif, qui échoue. Le rejet part alors sans que personne l'attende, et le
+> symptôme apparaît très loin de la cause. Quatre modules avaient ce défaut, un
+> test l'interdit désormais.
+>
+> À noter : ce bug ne pouvait pas se voir en local, où `node_modules` est absent
+> — l'import échoue, le module vaut `null`, aucun appel n'est tenté. Il n'est
+> apparu qu'en intégration, avec les dépendances installées.
 
 Les tests couvrent la logique pure — création, éclosion, stades, besoins,
 extraction de faits, oubli, migrations de sauvegarde, valeurs corrompues,

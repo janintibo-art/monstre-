@@ -11,8 +11,17 @@ import { formatWhen } from './parse.js';
 let plugin = null;
 let checked = false;
 
-async function getPlugin() {
-  if (checked) return plugin;
+// ⚠️ Un module Capacitor ne doit JAMAIS être renvoyé par une fonction `async`.
+//
+// Ce qu'il renvoie est un proxy : toute propriété qu'on lui demande devient un
+// appel natif. Or JavaScript, en résolvant une fonction asynchrone, interroge
+// `.then` sur la valeur produite pour savoir si c'est une promesse. Le proxy
+// répond donc « la méthode then n'existe pas », et le rejet part sans que
+// personne l'attende.
+//
+// On garde donc le module dans une variable et l'on ne renvoie rien.
+async function chargerPlugin() {
+  if (checked) return;
   checked = true;
   try {
     const module = await import('@capacitor/local-notifications');
@@ -20,20 +29,26 @@ async function getPlugin() {
   } catch {
     plugin = null;
   }
+}
+
+// Renvoie le module, ou null. Volontairement synchrone : l'appelant doit avoir
+// appelé `chargerPlugin()` juste avant.
+function api() {
   return plugin;
 }
 
 export async function available() {
-  return Boolean(await getPlugin());
+  await chargerPlugin();
+  return Boolean(api());
 }
 
 export async function ensurePermission() {
-  const api = await getPlugin();
-  if (!api) return false;
+  await chargerPlugin();
+  if (!api()) return false;
   try {
-    const status = await api.checkPermissions();
+    const status = await api().checkPermissions();
     if (status.display === 'granted') return true;
-    const asked = await api.requestPermissions();
+    const asked = await api().requestPermissions();
     return asked.display === 'granted';
   } catch {
     return false;
@@ -49,13 +64,13 @@ function numericId(id) {
 }
 
 export async function schedule(reminder, petName = 'Ton monstre') {
-  const api = await getPlugin();
-  if (!api) return false;
+  await chargerPlugin();
+  if (!api()) return false;
   const when = triggerTime(reminder.at, reminder.lead);
   if (when <= Date.now()) return false;
 
   try {
-    await api.schedule({
+    await api().schedule({
       notifications: [
         {
           id: numericId(reminder.id),
@@ -81,10 +96,10 @@ export async function schedule(reminder, petName = 'Ton monstre') {
 }
 
 export async function cancel(reminder) {
-  const api = await getPlugin();
-  if (!api) return;
+  await chargerPlugin();
+  if (!api()) return;
   try {
-    await api.cancel({ notifications: [{ id: numericId(reminder.id) }] });
+    await api().cancel({ notifications: [{ id: numericId(reminder.id) }] });
   } catch {
     /* rien a faire */
   }
@@ -93,8 +108,8 @@ export async function cancel(reminder) {
 // Rebranche toutes les notifications. Utile au démarrage : Android efface les
 // notifications programmées au redémarrage du téléphone.
 export async function rescheduleAll(reminders, petName) {
-  const api = await getPlugin();
-  if (!api) return 0;
+  await chargerPlugin();
+  if (!api()) return 0;
   let count = 0;
   for (const reminder of reminders) {
     if (reminder.done) continue;
@@ -105,10 +120,10 @@ export async function rescheduleAll(reminders, petName) {
 
 // Ouvre l'application sur le bon pense-bête quand on touche la notification.
 export async function onTap(handler) {
-  const api = await getPlugin();
-  if (!api) return;
+  await chargerPlugin();
+  if (!api()) return;
   try {
-    await api.addListener('localNotificationActionPerformed', (event) => {
+    await api().addListener('localNotificationActionPerformed', (event) => {
       const id = event?.notification?.extra?.reminderId;
       if (id) handler(id);
     });

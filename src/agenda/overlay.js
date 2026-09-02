@@ -15,31 +15,44 @@ const DUREE_MS = 3 * 60 * 1000; // au-delà, elle rentre d'elle-même
 let plugin = null;
 let checked = false;
 
-async function getPlugin() {
-  if (checked) return plugin;
+// ⚠️ Un module Capacitor ne doit JAMAIS être renvoyé par une fonction `async`.
+//
+// Ce qu'il renvoie est un proxy : toute propriété qu'on lui demande devient un
+// appel natif. Or JavaScript, en résolvant une fonction asynchrone, interroge
+// `.then` sur la valeur produite pour savoir si c'est une promesse. Le proxy
+// répond donc « la méthode then n'existe pas », et le rejet part sans que
+// personne l'attende.
+//
+// On garde donc le module dans une variable et l'on ne renvoie rien.
+async function chargerPlugin() {
+  if (checked) return;
   checked = true;
   try {
     const module = await import('monstre-overlay');
-    plugin = module.MonstreOverlay || null;
-    if (plugin) {
-      const { supported } = await plugin.isSupported();
-      if (!supported) plugin = null;
+    const candidat = module.MonstreOverlay || null;
+    if (candidat) {
+      const { supported } = await candidat.isSupported();
+      plugin = supported ? candidat : null;
     }
   } catch {
     plugin = null;
   }
+}
+
+function api() {
   return plugin;
 }
 
 export async function available() {
-  return Boolean(await getPlugin());
+  await chargerPlugin();
+  return Boolean(api());
 }
 
 export async function hasPermission() {
-  const api = await getPlugin();
-  if (!api) return false;
+  await chargerPlugin();
+  if (!api()) return false;
   try {
-    const { granted } = await api.hasPermission();
+    const { granted } = await api().hasPermission();
     return Boolean(granted);
   } catch {
     return false;
@@ -50,10 +63,10 @@ export async function hasPermission() {
 // une boîte de dialogue : Android impose de passer par ses réglages. On y
 // emmène l'utilisateur, et on revérifie à son retour.
 export async function requestPermission() {
-  const api = await getPlugin();
-  if (!api) return false;
+  await chargerPlugin();
+  if (!api()) return false;
   try {
-    const { granted } = await api.requestPermission();
+    const { granted } = await api().requestPermission();
     return Boolean(granted);
   } catch {
     return false;
@@ -66,15 +79,15 @@ function spriteFor(speciesFolder) {
 }
 
 export async function schedule(reminder, speciesFolder) {
-  const api = await getPlugin();
-  if (!api) return false;
+  await chargerPlugin();
+  if (!api()) return false;
   if (!(await hasPermission())) return false;
 
   const at = triggerTime(reminder.at, reminder.lead);
   if (at <= Date.now()) return false;
 
   try {
-    const { scheduled } = await api.schedule({
+    const { scheduled } = await api().schedule({
       id: reminder.id,
       at,
       text: reminder.subject || 'Rendez-vous',
@@ -89,18 +102,18 @@ export async function schedule(reminder, speciesFolder) {
 }
 
 export async function cancel(reminder) {
-  const api = await getPlugin();
-  if (!api) return;
+  await chargerPlugin();
+  if (!api()) return;
   try {
-    await api.cancel({ id: reminder.id });
+    await api().cancel({ id: reminder.id });
   } catch {
     /* rien a faire */
   }
 }
 
 export async function rescheduleAll(reminders, speciesFolder) {
-  const api = await getPlugin();
-  if (!api) return 0;
+  await chargerPlugin();
+  if (!api()) return 0;
   let count = 0;
   for (const reminder of reminders) {
     if (reminder.done) continue;
@@ -112,10 +125,10 @@ export async function rescheduleAll(reminders, speciesFolder) {
 // Affichage immédiat : c'est le bouton d'essai des réglages, pour vérifier que
 // l'autorisation fonctionne sans attendre un vrai rendez-vous.
 export async function preview(text, speciesFolder) {
-  const api = await getPlugin();
-  if (!api) return false;
+  await chargerPlugin();
+  if (!api()) return false;
   try {
-    const { shown } = await api.show({
+    const { shown } = await api().show({
       text: text || 'Coucou, je me promène.',
       when: 'Touche-moi pour que je rentre',
       sprite: spriteFor(speciesFolder),

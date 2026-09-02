@@ -24,19 +24,27 @@ import { understand, contextLexicon } from './hearing.js';
 let nativePlugin = null;
 let nativeChecked = false;
 
-async function getNative() {
-  if (nativeChecked) return nativePlugin;
+// ⚠️ Un module Capacitor ne doit JAMAIS être renvoyé par une fonction `async`.
+//
+// Ce qu'il renvoie est un proxy : toute propriété qu'on lui demande devient un
+// appel natif. Or JavaScript, en résolvant une fonction asynchrone, interroge
+// `.then` sur la valeur produite pour savoir si c'est une promesse. Le proxy
+// répond donc « la méthode then n'existe pas », et le rejet part sans que
+// personne l'attende.
+//
+// On garde donc le module dans une variable et l'on ne renvoie rien.
+async function chargerNatif() {
+  if (nativeChecked) return;
   nativeChecked = true;
   try {
     const module = await import('@capacitor-community/speech-recognition');
-    const plugin = module.SpeechRecognition;
-    const status = await plugin.available();
+    const candidat = module.SpeechRecognition;
+    const status = await candidat.available();
     const ok = typeof status === 'boolean' ? status : status && status.available;
-    nativePlugin = ok ? plugin : null;
+    nativePlugin = ok ? candidat : null;
   } catch {
     nativePlugin = null;
   }
-  return nativePlugin;
 }
 
 function browserEngine() {
@@ -231,7 +239,8 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
   /* ------------------------------------------------------------ public */
 
   async function supported() {
-    if (await getNative()) return 'native';
+    await chargerNatif();
+    if (nativePlugin) return 'native';
     if (browserEngine()) return 'browser';
     return null;
   }

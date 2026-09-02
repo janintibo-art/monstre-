@@ -58,3 +58,41 @@ test('le manifeste est bien la source du verrou par défaut', () => {
     'orientation figée dans un seul sens'
   );
 });
+
+test('aucun module Capacitor n’est renvoyé par une fonction asynchrone', () => {
+  // JavaScript interroge `.then` sur la valeur produite par une fonction
+  // `async` pour savoir si c'est une promesse. Un module Capacitor est un
+  // proxy : il transforme cette question en appel natif, qui échoue. Le rejet
+  // part alors sans que personne l'attende, et le vrai symptôme apparaît
+  // ailleurs — ici, trois jobs de compilation en échec.
+  const fichiers = [
+    'src/core/orientation.js',
+    'src/agenda/notify.js',
+    'src/agenda/overlay.js',
+    'src/audio/listen.js'
+  ];
+
+  fichiers.forEach((fichier) => {
+    const source = readFileSync(fichier, 'utf8');
+    // On repère les fonctions asynchrones et l'on vérifie qu'aucune ne renvoie
+    // la variable qui contient le module.
+    const asynchrones = source.match(/async function[\s\S]*?\n}/g) || [];
+    asynchrones.forEach((bloc) => {
+      ['return plugin;', 'return nativePlugin;', 'return candidat;'].forEach((interdit) => {
+        assert.ok(
+          !bloc.includes(interdit),
+          `${fichier} : une fonction async renvoie le module Capacitor (${interdit})`
+        );
+      });
+    });
+  });
+});
+
+test('demander l’orientation ne rejette jamais, même sans module natif', async () => {
+  // Hors Android il n'y a rien à verrouiller : l'appel doit se taire, pas
+  // faire tomber l'application.
+  await assert.doesNotReject(() => O.setScreenOpen('essai', true));
+  await assert.doesNotReject(() => O.setScreenOpen('essai', false));
+  await assert.doesNotReject(() => O.lockLandscape());
+  await assert.doesNotReject(() => O.unlockOrientation());
+});

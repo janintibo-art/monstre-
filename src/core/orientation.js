@@ -18,8 +18,17 @@ let checked = false;
 let etatVoulu = null; // 'paysage' | 'libre'
 const ouverts = new Set();
 
-async function getPlugin() {
-  if (checked) return plugin;
+// ⚠️ Un module Capacitor ne doit JAMAIS être renvoyé par une fonction `async`.
+//
+// Ce qu'il renvoie est un proxy : toute propriété qu'on lui demande devient un
+// appel natif. Or JavaScript, en résolvant une fonction asynchrone, interroge
+// `.then` sur la valeur produite pour savoir si c'est une promesse. Le proxy
+// répond donc « la méthode then n'existe pas », et le rejet part sans que
+// personne l'attende.
+//
+// On garde donc le module dans une variable et l'on ne renvoie rien.
+async function chargerPlugin() {
+  if (checked) return;
   checked = true;
   try {
     const module = await import('@capacitor/screen-orientation');
@@ -27,17 +36,16 @@ async function getPlugin() {
   } catch {
     plugin = null;
   }
-  return plugin;
 }
 
 async function appliquer(etat) {
   if (etat === etatVoulu) return;
   etatVoulu = etat;
-  const api = await getPlugin();
-  if (!api) return; // navigateur ou Windows : rien à verrouiller
   try {
-    if (etat === 'paysage') await api.lock({ orientation: 'landscape' });
-    else await api.unlock();
+    await chargerPlugin();
+    if (!plugin) return; // navigateur ou Windows : rien à verrouiller
+    if (etat === 'paysage') await plugin.lock({ orientation: 'landscape' });
+    else await plugin.unlock();
   } catch {
     // Sur certaines plateformes l'appel échoue sans conséquence : le manifeste
     // garde le comportement par défaut, on n'insiste pas.
