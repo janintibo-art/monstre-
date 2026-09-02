@@ -365,18 +365,23 @@ export function createDaylight(world) {
       // au ras de l'horizon, de sorte que les crêtes les plus éloignées s'y
       // dissolvent. Au couchant, on obtient donc des plans violets devant un
       // fond orangé — sans redessiner une seule image.
+      // Premier plan nettement plus sombre que le ciel, lointain nettement
+      // plus sombre que lui aussi. Une silhouette dont la teinte lointaine
+      // égale celle du ciel disparaît dedans : c'est physiquement juste, mais
+      // il ne reste alors rien à voir.
       horizonMat.uniforms.proche.value
         .copy(palette.fog)
-        .lerp(palette.skyBottom, 0.25)
-        .multiplyScalar(0.55);
+        .lerp(palette.skyBottom, 0.15)
+        .multiplyScalar(0.32);
 
       horizonMat.uniforms.loin.value
         .copy(palette.skyBottom)
-        .lerp(palette.sun, 0.35 * (1 - palette.stars))
+        .lerp(palette.sun, 0.15 * (1 - palette.stars))
+        .multiplyScalar(0.82)
         // La nuit, le ciel et le sol tombent tous deux au noir : sans ce
         // relèvement, la ligne de crête s'effacerait complètement. Un bleu très
         // sourd suffit à la faire lire sous les étoiles.
-        .lerp(NUIT_HORIZON, palette.stars * 0.55);
+        .lerp(NUIT_HORIZON, palette.stars * 0.6);
     }
 
     env.starMat.uniforms.presence.value = palette.stars;

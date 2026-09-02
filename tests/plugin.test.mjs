@@ -264,3 +264,34 @@ test('l’ambiance sonore ne démarre jamais d’elle-même', () => {
     'l’ambiance doit démarrer depuis un geste de l’utilisateur'
   );
 });
+
+test('l’horizon garde du contraste avec le ciel à toute heure', async () => {
+  const source = readFileSync('src/game/daylight.js', 'utf8');
+  const phases = [...source.matchAll(
+    /name: '([^']+)',\s*skyTop: (0x[0-9a-f]+),\s*skyBottom: (0x[0-9a-f]+),\s*fog: (0x[0-9a-f]+)[\s\S]*?stars: ([\d.]+),\s*sun: (0x[0-9a-f]+)/g
+  )];
+  assert.ok(phases.length >= 6, 'palette du cycle introuvable');
+
+  const rgb = (h) => [(h >> 16) & 255, (h >> 8) & 255, h & 255];
+  const melange = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+  const NUIT = rgb(0x2c3a5c);
+
+  phases.forEach(([, nom, , bas, brume, etoiles, soleil]) => {
+    const ciel = rgb(parseInt(bas, 16));
+    const st = Number(etoiles);
+    const proche = melange(rgb(parseInt(brume, 16)), ciel, 0.15).map((v) => v * 0.32);
+    const loin = melange(
+      melange(ciel, rgb(parseInt(soleil, 16)), 0.15 * (1 - st)).map((v) => v * 0.82),
+      NUIT,
+      st * 0.6
+    );
+
+    const ecart = (a, b) => a.reduce((s, v, i) => s + Math.abs(v - b[i]), 0) / 3;
+
+    // Si le lointain vaut le ciel, la silhouette s'y dissout et il ne reste
+    // rien à voir : c'est ce qui rendait la forêt orange sur ciel orange.
+    assert.ok(ecart(loin, ciel) > 12, `${nom} : le lointain se confond avec le ciel`);
+    // Et si les deux bornes se valent, il n'y a plus de profondeur.
+    assert.ok(ecart(proche, loin) > 25, `${nom} : plans proche et lointain indistincts`);
+  });
+});

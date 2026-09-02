@@ -198,9 +198,14 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
         // sinon la moitié du dégradé serait inutilisée et tout se ressemblerait.
         float profondeur = clamp((dot(c.rgb, vec3(0.299, 0.587, 0.114)) - 0.18) / 0.75, 0.0, 1.0);
 
-        // Courbe légèrement accentuée : les plans lointains se dissipent plus
-        // vite que les proches ne s'assombrissent, comme dans l'air réel.
-        vec3 vive = mix(proche, loin, pow(profondeur, 0.8));
+        // Exposant 2,0, et non 0,8.
+        //
+        // La masse d'un feuillage est en gris moyen : avec une courbe douce,
+        // presque tout basculait vers la couleur du lointain, et l'on obtenait
+        // une forêt orange sur un ciel orange. Une courbe accentuée réserve la
+        // teinte lointaine aux seules crêtes les plus claires ; tout le reste
+        // reste sombre et se détache.
+        vec3 vive = mix(proche, loin, pow(profondeur, 2.0));
         vive *= teinte;
 
         // Le pied du paysage se noie dans la brume : sans cela, la base du

@@ -714,7 +714,18 @@ l'erreur que j'ai faite pendant plusieurs versions.
 
 Le gris est en réalité une **clé de profondeur**. Il est remappé entre deux
 couleurs fournies par l'heure : la teinte du premier plan, tirée du sol
-assombri, et celle du lointain, tirée du ciel au ras de l'horizon. Les
+assombri, et celle du lointain, tirée du ciel au ras de l'horizon — mais toutes
+deux **nettement plus sombres que le ciel lui-même**. Une silhouette dont la
+teinte lointaine égale celle du ciel s'y dissout : c'est physiquement juste, mais
+il ne reste alors rien à voir.
+
+La courbe de remappage est en **puissance deux**. La masse d'un feuillage se
+situe en gris moyen : avec une courbe douce, presque tout basculait vers la
+couleur du lointain et l'on obtenait une forêt orange sur un ciel orange. Une
+courbe accentuée réserve la teinte lointaine aux seules crêtes les plus claires.
+
+Un test rejoue le calcul sur chaque phase du cycle et refuse tout réglage où le
+lointain se confondrait avec le ciel, ou les deux plans entre eux. Les
 silhouettes proches restent sombres, les crêtes lointaines se dissolvent dans le
 ciel. C'est la perspective atmosphérique, et elle suit le couchant sans qu'une
 seule image ait à être redessinée : au crépuscule, des plans violets devant un
