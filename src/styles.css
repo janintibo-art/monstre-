@@ -1674,3 +1674,23 @@ select {
   width: 1.2em;
   height: 1.2em;
 }
+
+/* Icône en tête d'un bouton de menu : elle précède le libellé, sans le pousser. */
+.bouton__icone {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+  vertical-align: -0.15em;
+}
+
+.bouton__icone .icone__image {
+  width: 1.35em;
+  height: 1.35em;
+}
+
+/* Les étoiles du bilan de partie. */
+.game-display--big .icone__image {
+  width: 34px;
+  height: 34px;
+  margin: 0 2px;
+}

@@ -10,6 +10,7 @@ import {
   INTERESTS
 } from '../state/profiles.js';
 import { AGE_BANDS, bandById } from '../state/profile.js';
+import { applyIcon } from './icons.js';
 
 // Choix et creation de profil.
 //
@@ -109,7 +110,7 @@ export function createProfilePicker({ onChoose, onToggle }) {
       const edit = document.createElement('button');
       edit.type = 'button';
       edit.className = 'profile-edit';
-      edit.textContent = '✎';
+      applyIcon(edit, 'modifier', '✎');
       edit.setAttribute('aria-label', `Modifier ${profile.name}`);
       edit.addEventListener('click', () => openForm(profile));
 

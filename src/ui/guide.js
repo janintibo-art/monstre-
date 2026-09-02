@@ -1,4 +1,5 @@
 import { GUIDE } from '../content/guide.js';
+import { applyIcon } from './icons.js';
 import { currentBand } from '../state/profiles.js';
 
 // Le guide. Un accordeon : une section ouverte a la fois, pour ne pas noyer.
@@ -95,7 +96,13 @@ export function createGuide({ voice, voiceProfile, getPet }) {
         const read = document.createElement('button');
         read.type = 'button';
         read.className = 'guide-read';
-        read.textContent = '🔊 Me le lire';
+        read.textContent = '';
+        const hp = document.createElement('span');
+        hp.className = 'bouton__icone';
+        applyIcon(hp, 'hautParleur', '🔊');
+        const dire = document.createElement('span');
+        dire.textContent = 'Me le lire';
+        read.append(hp, dire);
         read.addEventListener('click', () => {
           voice.unlock();
           const text = [section.title, section.intro || '', ...section.body]

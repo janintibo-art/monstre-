@@ -27,7 +27,12 @@ le résultat, et continuer.
 
 ---
 
-## Lot 1 — La barre d'actions ★★★ indispensable
+> **Lots 1, 2 et 3 livrés** (v62) : les 18 icônes sont en place. Elles sont
+> ramenées à 128 × 128 à l'installation — affichées entre 28 et 34 px, c'est
+> largement assez même sur un écran très dense, et cela divise leur poids par
+> trois.
+
+## Lot 1 — La barre d'actions ✅ fait
 
 Huit boutons, visibles en permanence, en bas de l'écran. **Si tu ne fais qu'un
 lot, c'est celui-là.**
@@ -45,7 +50,7 @@ lot, c'est celui-là.**
 
 ---
 
-## Lot 2 — Les boutons de réglages ★★ important
+## Lot 2 — Les boutons de réglages ✅ fait
 
 Sept icônes, dans les panneaux.
 
@@ -61,7 +66,7 @@ Sept icônes, dans les panneaux.
 
 ---
 
-## Lot 3 — Les états ★★ important
+## Lot 3 — Les états ✅ fait
 
 Trois petites images, mais elles portent une information.
 
@@ -73,7 +78,7 @@ Trois petites images, mais elles portent une information.
 
 ---
 
-## Lot 4 — Les jeux éducatifs ★ agréable
+## Lot 4 — Les jeux éducatifs ★★ prochain lot
 
 Quinze icônes, sur les cartes du menu des jeux. Elles gagneraient à former une
 famille cohérente : même épaisseur de trait, même palette.

@@ -3,6 +3,7 @@ import { createSession } from '../games/session.js';
 import { createTutor } from '../games/tutor.js';
 import { currentBand } from '../state/profiles.js';
 import { matchChoice } from '../audio/hearing.js';
+import { iconContent } from './icons.js';
 import { topicsFor, personalTopic } from '../games/topics.js';
 
 // Interface des jeux educatifs.
@@ -337,7 +338,11 @@ export function createGamesUi({
     promptEl.textContent = `${summary.correct} bonnes réponses sur ${summary.total}`;
     displayEl.hidden = false;
     displayEl.className = 'game-display game-display--big';
-    displayEl.textContent = '⭐'.repeat(Math.max(1, summary.correct));
+    // Une étoile par bonne réponse : l'icône maison si elle existe.
+    displayEl.textContent = '';
+    for (let i = 0; i < Math.max(1, summary.correct); i += 1) {
+      displayEl.appendChild(iconContent('etoile', '⭐'));
+    }
     feedbackEl.textContent = summary.message;
     say(`${summary.correct} sur ${summary.total}. ${summary.message}`);
     if (onCelebrate) onCelebrate(summary.correct >= summary.total * 0.8);
@@ -348,7 +353,11 @@ export function createGamesUi({
     const again = document.createElement('button');
     again.type = 'button';
     again.className = 'choice choice--text';
-    again.textContent = 'Rejouer';
+    again.textContent = '';
+    again.appendChild(iconContent('rejouer', '🔁'));
+    const motRejouer = document.createElement('span');
+    motRejouer.textContent = ' Rejouer';
+    again.appendChild(motRejouer);
     again.addEventListener('click', () => start(session.game));
 
     const back = document.createElement('button');

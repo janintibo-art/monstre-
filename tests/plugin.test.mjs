@@ -411,3 +411,31 @@ test('une icône manquante ne casse rien', async () => {
   assert.ok(poseEmoji >= 0 && poseEmoji < chargeImage, 'l’emoji doit être posé en premier');
   assert.match(fonction, /image\.onerror/, 'aucun repli si le fichier est absent');
 });
+
+test('les icônes livrées sont au bon format et au bon poids', async () => {
+  const { ICON_FILES } = await import('../src/ui/icons.js');
+  const { existsSync: existe, readFileSync: lire, statSync } = await import('node:fs');
+
+  let total = 0;
+  Object.entries(ICON_FILES).forEach(([id, fichier]) => {
+    const chemin = `public/assets/icons/${fichier}`;
+    if (!existe(chemin)) return; // une icône peut manquer, c'est prévu
+
+    const donnees = lire(chemin);
+    assert.equal(donnees.toString('ascii', 12, 16), 'IHDR', `${fichier} : PNG invalide`);
+
+    const largeur = donnees.readUInt32BE(16);
+    const hauteur = donnees.readUInt32BE(20);
+    assert.equal(largeur, hauteur, `${fichier} : pas carrée`);
+    assert.ok(largeur >= 96, `${fichier} : ${largeur} px, trop petite pour un écran dense`);
+    assert.ok(largeur <= 256, `${fichier} : ${largeur} px, inutilement lourde`);
+
+    // Type de couleur 6 = RVB + alpha. Sans transparence, l'icône s'affiche
+    // dans un carré blanc au milieu d'un bouton bleu nuit.
+    assert.equal(donnees[25], 6, `${fichier} : pas de canal de transparence`);
+
+    total += statSync(chemin).size;
+  });
+
+  assert.ok(total < 900_000, `${Math.round(total / 1000)} ko d’icônes, c’est trop pour un APK`);
+});

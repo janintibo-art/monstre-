@@ -3,6 +3,7 @@ import { VOICE_MODES, voiceProfile } from '../audio/voice.js';
 import { BIOMES, biomeById, loadBiomePreference, saveBiomePreference, pickBiome } from '../game/biomes.js';
 import { CYCLE_MODES } from '../game/daylight.js';
 import { knownFacts, forget, daysTogether, playerName } from '../ai/memory.js';
+import { applyIcon } from './icons.js';
 import { exportSave, parseImport } from '../state/save.js';
 import * as overlay from '../agenda/overlay.js';
 import { bandById, comfortEnabled, applyComfortClass } from '../state/profile.js';
@@ -101,9 +102,12 @@ export function createPanels({
   function refreshProfile() {
     const profile = getActiveProfile();
     const band = currentBand();
-    profilesBtn.textContent = profile
-      ? `👤 ${profile.avatar} ${profile.name} — changer de profil`
-      : '👤 Choisir un profil';
+    habillerBouton(
+      profilesBtn,
+      'profil',
+      '👤',
+      profile ? `${profile.avatar} ${profile.name} — changer de profil` : 'Choisir un profil'
+    );
     // La question « qui joue ? » ne peut être sautée qu'avec un seul profil :
     // avec plusieurs, la poser est exactement l'intérêt d'en avoir plusieurs.
     ambienceToggle.checked = localStorage.getItem('monstre.ambiance') !== '0';
@@ -148,6 +152,22 @@ export function createPanels({
   });
 
   refreshOverlay();
+
+  // Les boutons des réglages passent aussi aux icônes maison. Le libellé reste
+  // du texte : ce sont des lignes de menu, pas des pictogrammes.
+  function habillerBouton(bouton, id, emoji, texte) {
+    if (!bouton) return;
+    bouton.textContent = '';
+    const icone = document.createElement('span');
+    icone.className = 'bouton__icone';
+    applyIcon(icone, id, emoji);
+    const libelle = document.createElement('span');
+    libelle.textContent = texte;
+    bouton.append(icone, libelle);
+  }
+
+  habillerBouton(agendaBtn, 'agenda', '📅', 'Mes pense-bêtes');
+  habillerBouton(guideBtn, 'guide', '📖', 'Comment ça marche ?');
 
   agendaBtn.addEventListener('click', () => {
     closeAll();
