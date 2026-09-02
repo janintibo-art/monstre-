@@ -97,7 +97,10 @@ export function createWorld(canvas, textures = {}, biome = null) {
       mapB: { value: null },
       melange: { value: 0 },
       teinte: { value: new THREE.Color(1, 1, 1) },
-      presence: { value: 0 }
+      presence: { value: 0 },
+      // Couleur de la brume, pour fondre le bas du paysage dans la distance
+      // au lieu de le poser sur le sol par une ligne nette.
+      brume: { value: new THREE.Color(0x0b0f1e) }
     },
     vertexShader: `
       varying vec2 vUv;
@@ -124,8 +127,14 @@ export function createWorld(canvas, textures = {}, biome = null) {
         // décor proche, qui bénéficie de la lumière directe.
         float luma = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
         vec3 vive = mix(vec3(luma), c.rgb, 1.25);
+        vive *= teinte;
 
-        gl_FragColor = vec4(vive * teinte, c.a * presence);
+        // Le pied du paysage se noie dans la brume : sans cela, la base du
+        // relief tranche net sur le sol, comme un décor découpé et posé là.
+        float bas = smoothstep(0.30, 0.02, vUv.y);
+        vive = mix(vive, brume, bas * 0.85);
+
+        gl_FragColor = vec4(vive, c.a * presence);
       }
     `
   });

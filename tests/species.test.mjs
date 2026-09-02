@@ -105,6 +105,46 @@ test('les modèles de décor sont opaques et à double face', async () => {
   });
 });
 
+test('aucun décor ne dépasse le budget de triangles d’un téléphone', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { BIOMES, DECOR_MODELS } = await import('../src/game/biomes.js');
+
+  function triangles(fichier) {
+    const donnees = readFileSync(`./public/${fichier}`);
+    const longueur = donnees.readUInt32LE(12);
+    const json = JSON.parse(donnees.toString('utf8', 20, 20 + longueur));
+    const primitive = json.meshes[0].primitives[0];
+    return json.accessors[primitive.indices].count / 3;
+  }
+
+  const cout = {};
+  Object.entries(DECOR_MODELS).forEach(([nom, fichier]) => {
+    cout[nom] = triangles(fichier);
+  });
+
+  // Un million de triangles par image, en double face, met à genoux un
+  // téléphone de milieu de gamme. Le rang lointain avait fait passer le
+  // sous-bois à 1,6 million : c'est ce que ce test empêche de reproduire.
+  BIOMES.forEach((biome) => {
+    const total = biome.decor.reduce((somme, d) => somme + cout[d.model] * d.count, 0);
+    assert.ok(
+      total < 1_000_000,
+      `${biome.id} : ${Math.round(total / 1000)}k triangles de décor, c’est trop pour un téléphone`
+    );
+  });
+});
+
+test('le rang lointain utilise bien les modèles allégés', async () => {
+  const { BIOMES } = await import('../src/game/biomes.js');
+  BIOMES.forEach((biome) => {
+    biome.decor.forEach((d) => {
+      if (d.radius[0] >= 12 && !d.altitude && !d.landmark) {
+        assert.match(d.model, /_loin$/, `${biome.id} : « ${d.model} » au loin en pleine résolution`);
+      }
+    });
+  });
+});
+
 test('chaque décor a sa maison et son île, et les modèles existent', async () => {
   const { BIOMES, DECOR_MODELS } = await import('../src/game/biomes.js');
 

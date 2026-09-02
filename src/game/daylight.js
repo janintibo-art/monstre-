@@ -330,15 +330,18 @@ export function createDaylight(world) {
       horizonMat.uniforms.mapB.value = jeu[paire.b] || jeu.midi;
       horizonMat.uniforms.melange.value = paire.k;
 
-      // De 1 en plein jour à 0,3 en pleine nuit, avec une dérive bleutée.
+      // De 1 en plein jour à 0,55 en pleine nuit. Descendre plus bas écrasait
+      // le relief : l'image du soir est déjà sombre, la multiplier par 0,3 n'en
+      // laissait qu'une masse grise.
       const nuit = palette.stars;
-      const luminosite = 1 - nuit * 0.7;
+      const luminosite = 1 - nuit * 0.45;
       horizonMat.uniforms.teinte.value.setRGB(
         luminosite * (1 - nuit * 0.1),
         luminosite * (1 - nuit * 0.05),
         luminosite * (1 + nuit * 0.12)
       );
       horizonMat.uniforms.presence.value = 1;
+      horizonMat.uniforms.brume.value.copy(env.fog.color);
     }
 
     env.stars.material.opacity = palette.stars * 0.9;

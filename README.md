@@ -614,6 +614,11 @@ répétitions, le paysage occupait 47 % de la hauteur d'écran et écrasait la
 scène ; à quatre, 36 %, ce qui laisse respirer le ciel, et le rapport 4:1 des
 images est respecté.
 
+Le pied du paysage se noie dans la brume : sans cela, la base du relief tranche
+net sur le sol, comme un décor découpé et posé là. Et la nuit, l'assombrissement
+s'arrête à 55 % — descendre plus bas écrasait le relief, l'image du soir étant
+déjà sombre.
+
 Le haut des images est transparent, donc le dôme de ciel et les étoiles
 apparaissent au travers. Un peu de saturation leur est rendue dans le shader :
 la courbe tonale filmique délave le lointain, qui paraîtrait terne à côté du
@@ -713,6 +718,22 @@ position de sommeil.
 **Une île flottante** dérive lentement dans le ciel de chaque décor, en montant
 et descendant doucement. Elle donne une profondeur que le sol seul ne peut pas
 produire — et une île immobile aurait l'air posée sur un socle invisible.
+
+**Trois plans de profondeur.** Le décor proche à 6–10 unités, un **rang lointain**
+à 12–22, puis l'horizon à 30. Sans le rang du milieu, le regard sautait d'un
+plan à l'autre et le fond paraissait vide.
+
+Le rang lointain utilise des **modèles allégés** — 6 000 triangles au lieu de
+48 000, textures en 512. À quinze unités, personne ne compte les feuilles, mais
+le processeur graphique compte les triangles : sans cela, le sous-bois passait à
+**1,6 million de triangles par image**, ce qui met à genoux un téléphone de
+milieu de gamme. On est redescendu à 900 000. Un test refuse tout décor qui
+dépasse le million, et un autre vérifie que rien au-delà de douze unités n'est
+en pleine résolution.
+
+La brume étage les trois plans : au crépuscule, le décor proche est net, le rang
+lointain à 44 % de brume, le bord du sol à 94 %. C'est ce dégradé qui donne la
+distance.
 
 Puis trois modèles — arbre, plante, champignon — répartis en quantités
 différentes selon le décor : neuf champignons au sous-bois, deux arbres seulement sur

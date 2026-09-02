@@ -20,6 +20,11 @@ export const BIOMES = [
     mood: 0x2f7a4a,
     moodMix: 0.16,
     decor: [
+      // Rang lointain : mêmes modèles, plus loin et plus grands. Il comble le
+      // vide entre le décor proche et l'horizon, là où le regard sautait d'un
+      // plan à l'autre.
+      { model: 'arbre_loin', count: 9, radius: [13, 21], height: [5, 8], sway: 0.014 },
+      { model: 'plante_loin', count: 8, radius: [12, 19], height: [1.4, 2.4], sway: 0.03 },
       // La maison est un repère : toujours au même endroit, jamais tirée au
       // hasard. C'est là que la créature va dormir.
       { model: 'maison', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
@@ -41,6 +46,8 @@ export const BIOMES = [
     mood: 0x1d6a68,
     moodMix: 0.26,
     decor: [
+      { model: 'arbre_loin', count: 12, radius: [12, 20], height: [6, 9.5], sway: 0.016 },
+      { model: 'champignon_loin', count: 10, radius: [12, 19], height: [1.2, 2.2], sway: 0.006 },
       // La maison est un repère : toujours au même endroit, jamais tirée au
       // hasard. C'est là que la créature va dormir.
       { model: 'chaumiere', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
@@ -62,6 +69,8 @@ export const BIOMES = [
     mood: 0x5a3f7a,
     moodMix: 0.22,
     decor: [
+      { model: 'champignon_loin', count: 8, radius: [13, 21], height: [1.2, 2], sway: 0.006 },
+      { model: 'arbre_loin', count: 4, radius: [14, 22], height: [4, 6], sway: 0.012 },
       // La maison est un repère : toujours au même endroit, jamais tirée au
       // hasard. C'est là que la créature va dormir.
       { model: 'maison', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
@@ -83,6 +92,8 @@ export const BIOMES = [
     mood: 0x8a5a30,
     moodMix: 0.18,
     decor: [
+      { model: 'arbre_loin', count: 5, radius: [13, 21], height: [4, 6.5], sway: 0.018 },
+      { model: 'plante_loin', count: 6, radius: [12, 20], height: [1.2, 2], sway: 0.035 },
       // La maison est un repère : toujours au même endroit, jamais tirée au
       // hasard. C'est là que la créature va dormir.
       { model: 'chaumiere', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
@@ -109,6 +120,12 @@ export function horizonUrl(biome, moment, base = import.meta.env.BASE_URL || './
 
 export const DECOR_MODELS = {
   arbre: 'assets/models/decor/arbre.glb',
+  // Versions allégées, réservées au rang lointain : à quinze unités, personne
+  // ne compte les feuilles, mais le processeur graphique, lui, compte les
+  // triangles. Sans elles, le sous-bois passait à 1,6 million par image.
+  arbre_loin: 'assets/models/decor/arbre_loin.glb',
+  plante_loin: 'assets/models/decor/plante_loin.glb',
+  champignon_loin: 'assets/models/decor/champignon_loin.glb',
   maison: 'assets/models/decor/maison.glb',
   chaumiere: 'assets/models/decor/chaumiere.glb',
   ile: 'assets/models/decor/ile.glb',
