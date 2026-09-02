@@ -30,7 +30,45 @@ const FICHIERS = {
   etoile: 'etoile.png',
   microActif: 'micro-actif.png',
   soleil: 'soleil.png',
-  alerte: 'alerte.png'
+  alerte: 'alerte.png',
+
+  // Les jeux. La clé reprend l'identifiant du jeu, sauf deux dont le nom de
+  // fichier décrit mieux le sujet que l'identifiant interne.
+  'jeu:couleurs': 'jeu-couleurs.png',
+  'jeu:compter': 'jeu-compter.png',
+  'jeu:formes': 'jeu-formes.png',
+  'jeu:lettres': 'jeu-lettres.png',
+  'jeu:comparer': 'jeu-comparer.png',
+  'jeu:calcul': 'jeu-calcul.png',
+  'jeu:suites': 'jeu-suites.png',
+  'jeu:memoire': 'jeu-memoire.png',
+  'jeu:horloge': 'jeu-horloge.png',
+  'jeu:intrus': 'jeu-intrus.png',
+  'jeu:proverbes': 'jeu-proverbes.png',
+  'jeu:synonymes': 'jeu-mots.png',
+  'jeu:anagrammes': 'jeu-anagrammes.png',
+  'jeu:monnaie': 'jeu-monnaie.png',
+  'jeu:capitales': 'jeu-geographie.png'
+};
+
+// Avatars de profil.
+//
+// La clé reste l'emoji : c'est lui qui est enregistré dans les profils
+// existants. Changer d'identifiant obligerait à migrer toutes les sauvegardes
+// pour un simple habillage.
+const AVATARS = {
+  '🦊': 'avatar-renard.png',
+  '🐢': 'avatar-tortue.png',
+  '🦉': 'avatar-hibou.png',
+  '🐙': 'avatar-pieuvre.png',
+  '🦜': 'avatar-perroquet.png',
+  '🐝': 'avatar-abeille.png',
+  '🦋': 'avatar-papillon.png',
+  '🐳': 'avatar-baleine.png',
+  '🦔': 'avatar-herisson.png',
+  '🐰': 'avatar-lapin.png',
+  '🌻': 'avatar-tournesol.png',
+  '⭐': 'avatar-etoile.png'
 };
 
 // Résultat de la recherche, mis en cache : inutile de retenter un fichier dont
@@ -39,7 +77,12 @@ const connu = new Map();
 
 function url(id) {
   const base = import.meta.env.BASE_URL || './';
+  if (AVATARS[id]) return `${base}assets/avatars/${AVATARS[id]}`;
   return `${base}${BASE}${FICHIERS[id]}`;
+}
+
+function connuePour(id) {
+  return Boolean(FICHIERS[id] || AVATARS[id]);
 }
 
 // Crée le contenu d'un bouton : l'emoji d'abord, remplacé par l'image si elle
@@ -49,7 +92,7 @@ export function iconContent(id, emoji) {
   span.className = 'icone';
   span.textContent = emoji;
 
-  if (!FICHIERS[id] || connu.get(id) === false) return span;
+  if (!connuePour(id) || connu.get(id) === false) return span;
 
   const image = new Image();
   image.alt = '';
@@ -76,4 +119,12 @@ export function applyIcon(element, id, emoji) {
   element.appendChild(iconContent(id, emoji));
 }
 
+// Contenu d'un avatar : même mécanique, même repli sur l'emoji.
+export function avatarContent(emoji) {
+  const span = iconContent(emoji, emoji);
+  span.classList.add('avatar');
+  return span;
+}
+
 export const ICON_FILES = FICHIERS;
+export const AVATAR_FILES = AVATARS;

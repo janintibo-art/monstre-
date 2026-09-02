@@ -10,7 +10,7 @@ import {
   INTERESTS
 } from '../state/profiles.js';
 import { AGE_BANDS, bandById } from '../state/profile.js';
-import { applyIcon } from './icons.js';
+import { applyIcon, avatarContent } from './icons.js';
 
 // Choix et creation de profil.
 //
@@ -75,7 +75,7 @@ export function createProfilePicker({ onChoose, onToggle }) {
 
       const avatar = document.createElement('span');
       avatar.className = 'profile-card__avatar';
-      avatar.textContent = profile.avatar;
+      avatar.appendChild(avatarContent(profile.avatar));
 
       const body = document.createElement('span');
       body.className = 'profile-card__body';
@@ -179,7 +179,7 @@ export function createProfilePicker({ onChoose, onToggle }) {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'avatar-choice';
-      button.textContent = emoji;
+      button.appendChild(avatarContent(emoji));
       button.setAttribute('aria-label', `Choisir ${emoji}`);
       if (draft.avatar === emoji) button.classList.add('avatar-choice--on');
       button.addEventListener('click', () => {

@@ -1009,8 +1009,13 @@ L'emoji est posé d'abord, l'image le remplace seulement si elle se charge — o
 n'affiche donc jamais un bouton vide, et l'on peut livrer les icônes cinq par
 cinq.
 
-La liste complète, classée par priorité, avec les noms de fichiers attendus et
-une invite prête à coller : [docs/ICONES-A-PRODUIRE.md](docs/ICONES-A-PRODUIRE.md).
+**33 icônes et 12 avatars** sont en place : la barre d'actions, les boutons de
+réglages, les états, les quinze jeux et les portraits de profil. L'emoji reste
+l'identifiant enregistré pour les avatars — changer de clé aurait obligé à
+migrer toutes les sauvegardes pour un simple habillage.
+
+La liste complète, avec les noms de fichiers et les contraintes :
+[docs/ICONES-A-PRODUIRE.md](docs/ICONES-A-PRODUIRE.md).
 
 ## Contribuer des ressources
 

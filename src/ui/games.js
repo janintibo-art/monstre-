@@ -127,7 +127,7 @@ export function createGamesUi({
 
       const icon = document.createElement('span');
       icon.className = 'game-card__icon';
-      icon.textContent = game.icon;
+      icon.appendChild(iconContent(`jeu:${game.id}`, game.icon));
 
       const body = document.createElement('span');
       body.className = 'game-card__body';

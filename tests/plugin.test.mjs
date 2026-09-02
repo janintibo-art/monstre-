@@ -439,3 +439,34 @@ test('les icônes livrées sont au bon format et au bon poids', async () => {
 
   assert.ok(total < 900_000, `${Math.round(total / 1000)} ko d’icônes, c’est trop pour un APK`);
 });
+
+test('chaque jeu et chaque avatar a son image déclarée', async () => {
+  const { ICON_FILES, AVATAR_FILES } = await import('../src/ui/icons.js');
+  const { GAMES } = await import('../src/games/index.js');
+  const { AVATARS } = await import('../src/state/profiles.js');
+  const { existsSync: existe } = await import('node:fs');
+
+  // Le nom de fichier ne suit pas toujours l'identifiant interne — « synonymes »
+  // s'appelle « jeu-mots », « capitales » s'appelle « jeu-geographie ». C'est
+  // exactement le genre d'écart qui passe inaperçu jusqu'à l'écran.
+  GAMES.forEach((jeu) => {
+    const fichier = ICON_FILES[`jeu:${jeu.id}`];
+    assert.ok(fichier, `aucune icône déclarée pour le jeu « ${jeu.id} »`);
+    assert.ok(existe(`public/assets/icons/${fichier}`), `${fichier} : fichier absent`);
+  });
+
+  AVATARS.forEach((emoji) => {
+    const fichier = AVATAR_FILES[emoji];
+    assert.ok(fichier, `aucun portrait pour l’avatar ${emoji}`);
+    assert.ok(existe(`public/assets/avatars/${fichier}`), `${fichier} : fichier absent`);
+  });
+});
+
+test('aucun texte ne suppose que la personne a un chat', () => {
+  // Un exemple dans un champ doit inspirer, pas exclure : tout le monde n'a
+  // pas d'animal, et ceux qui en ont n'ont pas tous un chat.
+  ['index.html', 'src/content/guide.js'].forEach((fichier) => {
+    const texte = readFileSync(fichier, 'utf8');
+    assert.ok(!/ton chat|votre chat|mon chat/i.test(texte), `${fichier} : suppose un chat`);
+  });
+});

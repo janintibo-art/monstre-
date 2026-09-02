@@ -1694,3 +1694,33 @@ select {
   height: 34px;
   margin: 0 2px;
 }
+
+/* Avatars : plus grands que les icônes d'interface, ce sont des portraits. */
+.avatar .icone__image {
+  width: 1.55em;
+  height: 1.55em;
+}
+
+.profile-card__avatar .icone__image,
+.avatar-choice .avatar .icone__image {
+  width: 42px;
+  height: 42px;
+}
+
+.confort .profile-card__avatar .icone__image,
+.confort .avatar-choice .avatar .icone__image {
+  width: 54px;
+  height: 54px;
+}
+
+/* Icône d'une carte de jeu : elle porte l'identité du jeu, elle mérite
+   d'être vue. */
+.game-card__icon .icone__image {
+  width: 40px;
+  height: 40px;
+}
+
+.confort .game-card__icon .icone__image {
+  width: 52px;
+  height: 52px;
+}

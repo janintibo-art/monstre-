@@ -49,7 +49,7 @@ export const GUIDE = [
       'La première fois, le téléphone demande l’autorisation d’utiliser le micro : il faut accepter, sinon le bouton ne pourra rien entendre.',
       'Si elle comprend mal, elle demande de répéter plutôt que de répondre à côté. Et tu peux appuyer une seconde fois sur le micro pour dire « j’ai fini » sans attendre.',
       'Dans les jeux, un bouton « Répondre à la voix » permet de dire la réponse au lieu de la toucher. C’est là que la reconnaissance est la plus sûre, parce qu’elle sait déjà quelles réponses sont possibles.',
-      'Elle retient ce que tu lui racontes : ton prénom, ce que tu aimes, ta ville, le nom de ton chat. Elle le ressort plus tard, toute seule.'
+      'Elle retient ce que tu lui racontes : ton prénom, ce que tu aimes, ta ville, le nom de ton animal. Elle le ressort plus tard, toute seule.'
     ]
   },
   {

@@ -106,7 +106,7 @@ export function createPanels({
       profilesBtn,
       'profil',
       '👤',
-      profile ? `${profile.avatar} ${profile.name} — changer de profil` : 'Choisir un profil'
+      profile ? `${profile.name} — changer de profil` : 'Choisir un profil'
     );
     // La question « qui joue ? » ne peut être sautée qu'avec un seul profil :
     // avec plusieurs, la poser est exactement l'intérêt d'en avoir plusieurs.

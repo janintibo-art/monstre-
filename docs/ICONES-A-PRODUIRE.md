@@ -27,7 +27,16 @@ le résultat, et continuer.
 
 ---
 
-> **Lots 1, 2 et 3 livrés** (v62) : les 18 icônes sont en place. Elles sont
+> **Les cinq lots sont livrés** (v63) : 33 icônes et 12 avatars.
+> Les icônes sont ramenées à 128 px, les avatars à 160 px — ils sont affichés
+> plus grands. Poids total : 1,3 Mo au lieu de 3,2.
+>
+> Deux noms de fichiers ne suivent pas l'identifiant interne du jeu :
+> `jeu-mots.png` sert au jeu « synonymes » et `jeu-geographie.png` au jeu
+> « capitales ». La correspondance est explicite dans `src/ui/icons.js`, et un
+> test vérifie que chaque jeu a bien son image.
+>
+> Ancienne note (v62) : les 18 icônes sont en place. Elles sont
 > ramenées à 128 × 128 à l'installation — affichées entre 28 et 34 px, c'est
 > largement assez même sur un écran très dense, et cela divise leur poids par
 > trois.
@@ -78,7 +87,7 @@ Trois petites images, mais elles portent une information.
 
 ---
 
-## Lot 4 — Les jeux éducatifs ★★ prochain lot
+## Lot 4 — Les jeux éducatifs ✅ fait
 
 Quinze icônes, sur les cartes du menu des jeux. Elles gagneraient à former une
 famille cohérente : même épaisseur de trait, même palette.
@@ -103,15 +112,20 @@ famille cohérente : même épaisseur de trait, même palette.
 
 ---
 
-## Lot 5 — Les avatars de profil ☆ facultatif
+## Lot 5 — Les avatars de profil ✅ fait
 
 Douze petites images pour se choisir une figure à la création du profil. Elles
 seraient plus jolies faites maison, mais les emoji tiennent très bien ici.
 
 Actuels : 🦊 🐢 🦉 🐙 🦜 🐝 🦋 🐳 🦔 🐰 🌻 ⭐
 
-Si tu les fais : **256 × 256**, fond transparent, dans `public/assets/avatars/`,
-nommés `avatar-renard.png`, `avatar-tortue.png`, etc.
+Livrés : `avatar-renard.png`, `avatar-tortue.png`, `avatar-hibou.png`,
+`avatar-pieuvre.png`, `avatar-perroquet.png`, `avatar-abeille.png`,
+`avatar-papillon.png`, `avatar-baleine.png`, `avatar-herisson.png`,
+`avatar-lapin.png`, `avatar-tournesol.png`, `avatar-etoile.png`.
+
+L'emoji reste l'identifiant enregistré dans les profils : changer de clé aurait
+obligé à migrer toutes les sauvegardes pour un simple habillage.
 
 ---
 
