@@ -24,7 +24,7 @@ import { AGE_BANDS, bandById } from '../state/profile.js';
 //   3. **Tout reste sur l'appareil.** C'est ecrit sur l'ecran, pas cache dans
 //      une politique de confidentialite.
 
-export function createProfilePicker({ onChoose }) {
+export function createProfilePicker({ onChoose, onToggle }) {
   const panel = document.getElementById('profiles');
   const listView = document.getElementById('profiles-list');
   const formView = document.getElementById('profiles-form');
@@ -250,10 +250,12 @@ export function createProfilePicker({ onChoose }) {
     canClose = closable && listProfiles().length > 0;
     renderList();
     panel.hidden = false;
+    if (onToggle) onToggle(true);
   }
 
   function close() {
     panel.hidden = true;
+    if (onToggle) onToggle(false);
   }
 
   return {

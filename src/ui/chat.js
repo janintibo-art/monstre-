@@ -1,7 +1,7 @@
 // Panneau de conversation. Il ne connait rien de l'IA : il envoie le texte
 // et affiche ce qu'on lui rend.
 
-export function createChat(onSend) {
+export function createChat(onSend, onToggle) {
   const panel = document.getElementById('chat');
   const log = document.getElementById('chat-log');
   const field = document.getElementById('chat-field');
@@ -67,15 +67,18 @@ export function createChat(onSend) {
   });
   closeBtn.addEventListener('click', () => {
     panel.hidden = true;
+    if (onToggle) onToggle(false);
   });
 
   return {
     open() {
       panel.hidden = false;
       field.focus();
+      if (onToggle) onToggle(true);
     },
     close() {
       panel.hidden = true;
+      if (onToggle) onToggle(false);
     },
     append,
     notice,

@@ -1,19 +1,22 @@
-// Orientation de l'ecran.
+// Orientation de l'écran.
 //
-// Le jeu se verrouille en paysage : c'est la seule facon de voir la creature
-// correctement. En portrait, le champ horizontal est si etroit qu'il fallait
-// retrecir l'aire de jeu au point qu'elle ne servait plus a rien.
+// **Le jeu est en paysage, les écrans de lecture ne le sont pas.** La créature
+// a besoin de largeur ; une liste de réglages, un guide, une conversation ou un
+// formulaire de profil se lisent mieux à la verticale, et le clavier y prend
+// moins de place.
 //
-// Les panneaux — reglages, souvenirs, conversation — liberent le verrou : ce
-// sont des listes et des formulaires, ils se lisent mieux a la verticale et le
-// clavier y prend moins de place.
+// Le verrou paysage par défaut est posé dans le manifeste Android, donc appliqué
+// dès la création de la fenêtre. Ce module ne fait que le **lever** pendant
+// qu'un écran de lecture est ouvert, et le **remettre** quand tout est refermé.
 //
-// Sur navigateur et sur la version Windows, il n'y a rien a verrouiller : les
-// appels echouent silencieusement et le jeu fonctionne normalement.
+// Le suivi se fait par un ensemble de noms, pas par un booléen : plusieurs
+// écrans peuvent se succéder ou se chevaucher, et fermer le second ne doit pas
+// reverrouiller pendant que le premier est encore là.
 
 let plugin = null;
 let checked = false;
-let locked = false;
+let etatVoulu = null; // 'paysage' | 'libre'
+const ouverts = new Set();
 
 async function getPlugin() {
   if (checked) return plugin;
@@ -27,32 +30,42 @@ async function getPlugin() {
   return plugin;
 }
 
-export async function lockLandscape() {
-  if (locked) return;
-  locked = true;
+async function appliquer(etat) {
+  if (etat === etatVoulu) return;
+  etatVoulu = etat;
   const api = await getPlugin();
-  if (!api) return;
+  if (!api) return; // navigateur ou Windows : rien à verrouiller
   try {
-    await api.lock({ orientation: 'landscape' });
+    if (etat === 'paysage') await api.lock({ orientation: 'landscape' });
+    else await api.unlock();
   } catch {
-    /* navigateur ou plateforme sans verrou : on continue */
+    // Sur certaines plateformes l'appel échoue sans conséquence : le manifeste
+    // garde le comportement par défaut, on n'insiste pas.
   }
 }
 
-export async function unlockOrientation() {
-  if (!locked) return;
-  locked = false;
-  const api = await getPlugin();
-  if (!api) return;
-  try {
-    await api.unlock();
-  } catch {
-    /* rien a faire */
-  }
+export function lockLandscape() {
+  return appliquer('paysage');
 }
 
-// Appele par les panneaux : ouvert, on libere ; ferme, on reverrouille.
-export function setPanelOpen(open) {
-  if (open) unlockOrientation();
-  else lockLandscape();
+export function unlockOrientation() {
+  return appliquer('libre');
+}
+
+// Déclaré par chaque écran qui s'ouvre ou se ferme. Le nom sert à distinguer
+// les écrans entre eux ; sa valeur exacte n'a pas d'importance.
+export function setScreenOpen(nom, ouvert) {
+  if (ouvert) ouverts.add(nom);
+  else ouverts.delete(nom);
+  return ouverts.size ? unlockOrientation() : lockLandscape();
+}
+
+// Ancienne signature, conservée : un booléen unique pour l'ensemble des
+// panneaux de réglages.
+export function setPanelOpen(ouvert) {
+  return setScreenOpen('reglages', ouvert);
+}
+
+export function screensOpen() {
+  return [...ouverts];
 }

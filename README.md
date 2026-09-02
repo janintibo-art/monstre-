@@ -535,9 +535,16 @@ il ne reste que **deux unités de large** contre plus de neuf en paysage. Élarg
 l'angle pour compenser rapetissait la créature au point de perdre ce qu'on
 était venu regarder — cette compensation a donc été retirée.
 
-Les **panneaux libèrent le verrou** : réglages, souvenirs et conversation sont
-des listes et des formulaires, ils se lisent mieux à la verticale et le clavier
-y prend moins de place. Le verrou revient à la fermeture.
+**Le paysage vaut pour le jeu, pas pour les écrans de lecture.** Réglages,
+profils, conversation, jeux éducatifs, guide et pense-bête libèrent tous
+l'orientation : ce sont des listes et des formulaires, ils se lisent mieux à la
+verticale et le clavier y prend moins de place. Le verrou revient dès que le
+dernier est refermé.
+
+Le suivi passe par un ensemble de noms d'écrans, pas par un booléen : ouvrir les
+réglages, puis les souvenirs, puis refermer les souvenirs ne doit pas
+reverrouiller le paysage pendant que les réglages sont encore affichés. Un test
+couvre précisément ce cas.
 
 Il reste deux garde-fous, utiles quel que soit l'écran : l'aire de jeu est une
 ellipse calculée depuis le cadrage réel, et un rappel progressif ramène la

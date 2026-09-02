@@ -17,3 +17,4 @@ import './species.test.mjs';
 import './hearing.test.mjs';
 import './agenda.test.mjs';
 import './plugin.test.mjs';
+import './orientation.test.mjs';

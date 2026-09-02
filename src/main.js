@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { loadTextures, loadTexture } from './core/assets.js';
 import { createLoop } from './core/loop.js';
-import { lockLandscape, setPanelOpen } from './core/orientation.js';
+import { lockLandscape, setScreenOpen } from './core/orientation.js';
 import { createWorld } from './game/world.js';
 import { createEgg } from './game/egg.js';
 import { createMonster } from './game/monster.js';
@@ -114,6 +114,7 @@ function askProfile() {
   hideBoot();
   return new Promise((resolve) => {
     const picker = createProfilePicker({
+      onToggle: (open) => setScreenOpen('profils', open),
       onChoose: (profile, info) => {
         picker.close();
         resolve({ profile, ...info });
@@ -344,6 +345,7 @@ async function boot() {
       // plutot que de recabler le monde a chaud.
       save(pet);
       const picker = createProfilePicker({
+        onToggle: (open) => setScreenOpen('profils', open),
         onChoose: () => window.location.reload()
       });
       picker.open({ closable: true });
@@ -359,7 +361,7 @@ async function boot() {
       save(imported);
       window.location.reload(); // repartir propre est plus sur que recabler a chaud
     },
-    onPanelToggle: setPanelOpen,
+    onPanelToggle: (ouvert) => setScreenOpen('reglages', ouvert),
     onBiome: async (next) => {
       biome = next;
       const g = generation;
@@ -497,7 +499,7 @@ async function boot() {
     }
   }
 
-  const chat = createChat(answer);
+  const chat = createChat(answer, (open) => setScreenOpen('conversation', open));
 
   // --- Micro ---
   // Quand la conversation guidee ecoute, le texte lui revient a elle plutot
@@ -706,10 +708,10 @@ async function boot() {
 
   const recall = createRecall({ getPet: () => pet, voice, voiceProfile });
 
-  agenda.setToggleHandler((open) => panels.setExternalOpen(open));
+  agenda.setToggleHandler((open) => setScreenOpen('agenda', open));
 
-  games.setToggleHandler((open) => panels.setExternalOpen(open));
-  guide.setToggleHandler((open) => panels.setExternalOpen(open));
+  games.setToggleHandler((open) => setScreenOpen('jeux', open));
+  guide.setToggleHandler((open) => setScreenOpen('guide', open));
 
   // -------------------------------------------------------------- pointeur
   function onPointerDown(event) {
