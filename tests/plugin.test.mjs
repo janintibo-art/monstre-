@@ -335,3 +335,19 @@ test('la transition vers le relief est douce', async () => {
   }
   assert.ok(saut < 0.12, `marche de ${saut.toFixed(2)} unité à la jonction`);
 });
+
+test('les nappes de brume ne calculent pas de pixels invisibles', () => {
+  // Commentaires retirés d'abord : ils citent les noms de classes pour les
+  // expliquer, et une recherche naïve tombe dessus. Déjà rencontré avec le CSS.
+  const source = readFileSync('src/game/world.js', 'utf8').replace(/\/\/.*/g, '');
+  const bloc = source.slice(
+    source.indexOf('const brumes = new THREE.Group()'),
+    source.indexOf('scene.add(brumes)')
+  );
+
+  // Le masque du shader n'ouvre qu'un anneau : une géométrie carrée ferait
+  // calculer près d'un tiers des fragments pour rien, sur des surfaces vues de
+  // biais qui couvrent une grande part de l'écran.
+  assert.match(bloc, /RingGeometry/, 'les voiles devraient épouser la forme du masque');
+  assert.ok(!/PlaneGeometry/.test(bloc), 'un voile carré gaspille des fragments transparents');
+});

@@ -304,6 +304,17 @@ export function createDaylight(world) {
     env.skyMat.uniforms.sunColor.value.copy(palette.sun);
     env.skyMat.uniforms.sunPower.value = 0.5 + rasant * 0.9;
 
+    // Les nappes au ras du sol reprennent exactement la couleur de
+    // l'atmosphère. Elles sont discrètes à midi et plus présentes aux heures
+    // rasantes et la nuit : le décor gagne plusieurs plans sans devenir laiteux.
+    if (env.brumeMat) {
+      env.brumeMat.uniforms.couleur.value
+        .copy(env.fog.color)
+        .lerp(palette.skyBottom, 0.28);
+      env.brumeMat.uniforms.presence.value =
+        0.13 + palette.stars * 0.16 + rasant * 0.11;
+    }
+
     // Nuages : blancs en plein jour, teintés par le soleil quand il rase, à
     // peine visibles la nuit. Ils dérivent avec l'horloge du jeu.
     // En SECONDES, pas en images : incrémenter d'une unité par image donnait

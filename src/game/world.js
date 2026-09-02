@@ -568,6 +568,84 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
   ground.receiveShadow = true;
   scene.add(ground);
 
+  // Brume basse en plusieurs nappes. Le brouillard global donne de la
+  // profondeur aux objets, mais ne se voit pas dans les zones vides : le sol
+  // semblait donc rejoindre l'horizon d'un seul bloc. Ces voiles translucides
+  // occupent uniquement la périphérie de l'aire de jeu et dessinent de vrais
+  // plans intermédiaires, sans gêner la créature au centre.
+  const brumeMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    fog: false,
+    uniforms: {
+      temps: { value: 0 },
+      couleur: { value: new THREE.Color(0x8aa6bd) },
+      presence: { value: 0.18 }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float temps;
+      uniform vec3 couleur;
+      uniform float presence;
+      varying vec2 vUv;
+
+      float hache(vec2 p) {
+        return fract(sin(dot(p, vec2(41.7, 289.3))) * 45758.5453);
+      }
+      float bruit(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hache(i), hache(i + vec2(1.0, 0.0)), f.x),
+                   mix(hache(i + vec2(0.0, 1.0)), hache(i + vec2(1.0, 1.0)), f.x), f.y);
+      }
+      void main() {
+        vec2 centre = vUv - 0.5;
+        float rayon = length(centre) * 2.0;
+        // Rien dans la clairière ; la nappe se lève doucement à mi-distance
+        // puis s'efface avant le bord pour ne jamais former un disque visible.
+        float masque = smoothstep(0.30, 0.58, rayon) * (1.0 - smoothstep(0.82, 1.0, rayon));
+        vec2 derive = vUv * 7.0 + vec2(temps * 0.008, temps * 0.003);
+        float n = bruit(derive) * 0.62 + bruit(derive * 2.07 + 3.1) * 0.38;
+        float volutes = smoothstep(0.34, 0.78, n);
+        gl_FragColor = vec4(couleur, masque * volutes * presence);
+      }
+    `
+  });
+
+  const brumes = new THREE.Group();
+  [
+    { taille: 42, y: 0.18, rotation: 0 },
+    { taille: 48, y: 0.48, rotation: 1.9 }
+  ].forEach((nappe) => {
+    // Un anneau plutôt qu'un carré.
+    //
+    // Le masque du shader n'ouvre la nappe qu'entre 0,30 et 1,0 de la
+    // demi-largeur : le disque central et les quatre coins sont entièrement
+    // transparents, soit 29 % des pixels calculés pour rien. Ces voiles sont
+    // vus de biais et couvrent une grande surface d'écran ; sur un téléphone,
+    // ces 29 % se paient. La géométrie suit donc exactement le masque, à
+    // rendu strictement identique.
+    const demi = nappe.taille / 2;
+    const geometrie = new THREE.RingGeometry(demi * 0.28, demi, 64, 3);
+    // `RingGeometry` mappe ses UV sur le carré englobant, comme `PlaneGeometry` :
+    // le calcul de rayon du shader reste valable tel quel.
+    const voile = new THREE.Mesh(geometrie, brumeMat);
+    voile.rotation.x = -Math.PI / 2;
+    voile.rotation.z = nappe.rotation;
+    voile.position.y = nappe.y;
+    voile.renderOrder = 0;
+    brumes.add(voile);
+  });
+  scene.add(brumes);
+
   // Anneau lumineux qui delimite l'aire de jeu
   const ringMat = new THREE.MeshBasicMaterial({
     color: 0x6fe3c4,
@@ -779,6 +857,7 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
     // La camera suit la creature, avec du retard : elle ne peut plus sortir du
     // cadre, et le mouvement reste doux au lieu d'etre colle a elle.
     focus.lerp(focusTarget, Math.min(dt * 2.2, 1));
+    brumeMat.uniforms.temps.value += mouvementsReduits ? 0 : dt;
 
     const motion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1;
     const wantedX = parallax.x * 0.35 * motion + focus.x * FOLLOW;
@@ -848,6 +927,7 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
     rim,
     ringMat,
     groundMat,
+    brumeMat,
     horizonMat,
     moteMaterial
   };

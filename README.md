@@ -617,6 +617,22 @@ Quelques réglages qui pèsent lourd sur l'aspect :
   reçoivent les ombres autant qu'ils en projettent : sans cela, un bras devant
   le torse ne marque rien et le volume s'aplatit.
 
+## La brume basse
+
+Le brouillard global agit sur les objets, mais pas sur le vide : le sol semblait
+donc rejoindre l'horizon d'un seul bloc. Deux nappes translucides à ras de terre
+règlent ça — du bruit calculé, dérivant lentement, à la couleur exacte de
+l'atmosphère du moment, discrètes à midi et plus présentes aux heures rasantes
+et la nuit.
+
+Elles n'occupent que la périphérie : rien dans la clairière, la nappe se lève à
+mi-distance et s'efface avant le bord pour ne jamais former un disque visible.
+Combinées au relief, elles remplissent les creux et laissent les bosses émerger.
+
+Leur géométrie est un **anneau**, pas un carré : le masque du shader n'ouvre la
+nappe qu'entre 0,30 et 1,0 de la demi-largeur, soit 29 % de pixels calculés pour
+rien sur des surfaces vues de biais qui couvrent une grande part de l'écran.
+
 ## Le relief
 
 Le sol était un disque parfaitement plat — c'est ce qui donnait cet aspect de
