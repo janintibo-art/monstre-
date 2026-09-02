@@ -235,7 +235,6 @@ body {
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  backdrop-filter: blur(10px);
   transition: transform 140ms ease, border-color 140ms ease;
 }
 
@@ -1542,4 +1541,95 @@ select {
 
 .switch input:disabled + span {
   opacity: 0.45;
+}
+
+/* Finition visuelle v48 : verre profond, relief et micro-animations. */
+.ui::before, .ui::after { content: ''; position: fixed; pointer-events: none; }
+.ui::before {
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 44%, transparent 35%, rgba(4,7,16,.1) 68%, rgba(4,7,16,.55) 115%), linear-gradient(180deg, rgba(5,8,19,.32), transparent 22%, transparent 72%, rgba(5,8,19,.4));
+}
+/* Halo bas. Le `filter: blur` d'origine faisait recomposer une surface de
+   34 vh à chaque image pour un gain invisible : un dégradé radial est déjà
+   doux, on élargit simplement sa transition. */
+.ui::after {
+  left: 10%;
+  right: 10%;
+  bottom: -18vh;
+  height: 36vh;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, var(--glow-soft), transparent 72%);
+  opacity: 0.6;
+}
+/* La bulle est volontairement exclue de cette règle : son placement est calculé
+   en pixels par le jeu, à partir de la projection de la tête de la créature.
+   La repasser en `relative` la décalait de sa position réelle à l'écran. Elle
+   reçoit donc le z-index seul. */
+.topbar, .vials, .thought, .actionbar { position: relative; z-index: 1; }
+.bubble { z-index: 1; }
+.identity {
+  padding: 10px 15px 11px; border: 1px solid rgba(233,238,245,.16); border-radius: 18px;
+  background: linear-gradient(145deg, rgba(28,37,70,.72), rgba(13,19,39,.72));
+  box-shadow: 0 10px 34px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.06);
+  backdrop-filter: blur(14px) saturate(130%);
+}
+.identity__name { text-shadow: 0 2px 12px rgba(0,0,0,.48); }
+.icon-button {
+  background: linear-gradient(145deg, rgba(36,46,83,.76), rgba(13,19,39,.72));
+  backdrop-filter: blur(12px) saturate(130%);
+  box-shadow: 0 8px 24px rgba(0,0,0,.26), inset 0 1px rgba(255,255,255,.08);
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+.icon-button:hover { box-shadow: 0 0 0 1px var(--glow-soft), 0 8px 28px rgba(0,0,0,.32); transform: translateY(-1px); }
+.vials {
+  width: max-content; padding: 10px 12px 8px; border-radius: 18px;
+  border: 1px solid rgba(233,238,245,.1); background: rgba(9,14,29,.46);
+  backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,.18);
+}
+.vial__tube { box-shadow: inset 2px 0 3px rgba(255,255,255,.08), 0 0 10px rgba(0,0,0,.22); }
+.vial__tube::after {
+  content: ''; position: absolute; top: 5px; bottom: 5px; left: 2px; width: 2px;
+  border-radius: 2px; background: rgba(255,255,255,.22); z-index: 2;
+}
+.vial__fill::before {
+  content: ''; position: absolute; left: -20%; top: -3px; width: 140%; height: 6px;
+  border-radius: 50%; background: rgba(255,255,255,.65);
+  animation: liquid-wave 2.8s ease-in-out infinite alternate;
+}
+@keyframes liquid-wave { to { transform: translateX(12%) rotate(2deg); } }
+/* Pas de `backdrop-filter` ici, contrairement aux autres surfaces.
+   Le flou d'arrière-plan oblige le navigateur à relire et flouter la scène
+   composée sous chaque élément, à chaque image. Sur un panneau, cela concerne
+   une surface ; sur la barre d'actions, huit — au-dessus d'un rendu 3D qui
+   occupe déjà le processeur graphique. Un fond légèrement plus opaque donne le
+   même aspect de verre pour un coût nul. */
+.pebble {
+  background: linear-gradient(155deg, rgba(37, 47, 84, 0.93), rgba(12, 18, 38, 0.9));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28), inset 0 1px rgba(255, 255, 255, 0.08);
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+.pebble:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px var(--glow-soft), 0 14px 34px rgba(0,0,0,.36), 0 0 22px var(--glow-soft); }
+.pebble__icon { filter: drop-shadow(0 3px 5px rgba(0,0,0,.35)); }
+.panel {
+  background: linear-gradient(145deg, rgba(31,40,73,.28), transparent 34%), rgba(9,14,29,.94);
+  backdrop-filter: blur(24px) saturate(130%);
+  box-shadow: 0 -22px 70px rgba(0,0,0,.48), inset 0 1px rgba(255,255,255,.07);
+}
+.panel__head { padding-bottom: 12px; border-bottom: 1px solid rgba(233,238,245,.09); }
+.game-card, .profile-card {
+  background: linear-gradient(145deg, rgba(38,48,86,.82), rgba(18,24,48,.88));
+  box-shadow: 0 8px 24px rgba(0,0,0,.2), inset 0 1px rgba(255,255,255,.05);
+}
+.bubble { box-shadow: 0 14px 38px rgba(0,0,0,.46), 0 0 24px var(--glow-soft); }
+
+
+/* Mouvements réduits : on garde la profondeur, on retire ce qui bouge. */
+@media (prefers-reduced-motion: reduce) {
+  .vial__fill::before {
+    animation: none;
+  }
+
+  .ui::after {
+    opacity: 0.35;
+  }
 }

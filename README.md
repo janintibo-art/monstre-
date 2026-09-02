@@ -610,6 +610,28 @@ Quelques réglages qui pèsent lourd sur l'aspect :
   reçoivent les ombres autant qu'ils en projettent : sans cela, un bras devant
   le torse ne marque rien et le volume s'aplatit.
 
+## Les poussières lumineuses
+
+Une centaine de points dérivent lentement autour de l'aire de jeu, à la couleur
+d'accent du décor, plus visibles la nuit. Ils font que **le monde continue de
+respirer quand la créature est immobile** — c'est ce qui manquait aux moments
+calmes. Un seul objet, un seul appel de rendu, position mise à jour depuis
+l'horloge du jeu : ils s'arrêtent avec elle, au lieu de continuer seuls, et se
+figent en mode mouvements réduits.
+
+## L'interface
+
+Le style « verre » — dégradés, reflets intérieurs, ombres portées, ondulation du
+liquide dans les fioles — donne du relief sans masquer la scène.
+
+Une règle à connaître pour y toucher : **`backdrop-filter` est réservé aux
+surfaces peu nombreuses.** Il oblige le navigateur à relire et flouter la scène
+composée sous chaque élément, à chaque image. Sur un panneau, cela concerne une
+surface ; sur la barre d'actions, huit — au-dessus d'un rendu 3D qui occupe déjà
+le processeur graphique. Les boutons s'en passent et compensent par un fond plus
+opaque, pour un aspect identique. Un test refuse le flou sur les sélecteurs
+présents en plusieurs exemplaires.
+
 ## L'horizon
 
 Chaque décor a **trois paysages de fond** — matin, midi, soir — fondus l'un dans

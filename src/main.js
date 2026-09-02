@@ -173,7 +173,12 @@ async function boot() {
   let generation = 0;
   const stale = (g) => g !== generation;
 
-  const world = createWorld(canvas, { ...textures, ground: groundTexture }, biome);
+  const world = createWorld(
+    canvas,
+    { ...textures, ground: groundTexture },
+    biome,
+    { reducedMotion: REDUCED_MOTION }
+  );
 
   // Les trois images d'horizon du décor. Chargées à part : elles ne sont pas
   // indispensables au démarrage, et leur absence laisse simplement un ciel nu.

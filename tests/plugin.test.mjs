@@ -166,3 +166,39 @@ test('les appels smoothstep des shaders ont leurs bornes en ordre croissant', ()
     });
   });
 });
+
+test('la bulle de dialogue reste positionnée à l’écran', () => {
+  // Son emplacement est calculé en pixels par le jeu, depuis la projection de
+  // la tête de la créature. Une règle qui la repasse en `position: relative`
+  // la décale sans rien casser d'autre : le défaut passe inaperçu au relecteur
+  // et saute aux yeux à l'usage.
+  const css = readFileSync('src/styles.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const regles = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)];
+  let position = null;
+  regles.forEach(([, selecteurs, corps]) => {
+    if (!selecteurs.split(',').some((s) => s.trim() === '.bubble')) return;
+    const trouve = corps.match(/position:\s*(\w+)/);
+    if (trouve) position = trouve[1];
+  });
+  assert.equal(position, 'fixed', 'la bulle doit rester en position fixe');
+});
+
+test('le flou d’arrière-plan reste réservé aux surfaces peu nombreuses', () => {
+  // `backdrop-filter` oblige le navigateur à relire et flouter la scène sous
+  // chaque élément, à chaque image. Au-dessus d'un rendu 3D, huit boutons qui
+  // le demandent coûtent bien plus qu'un panneau qui le demande seul.
+  const css = readFileSync('src/styles.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const regles = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)];
+  const multiples = ['.pebble', '.choice', '.chip', '.game-card', '.agenda-item'];
+
+  regles.forEach(([, selecteurs, corps]) => {
+    if (!/backdrop-filter\s*:\s*(?!none)/.test(corps)) return;
+    selecteurs.split(',').forEach((brut) => {
+      const s = brut.trim();
+      assert.ok(
+        !multiples.includes(s),
+        `${s} apparaît en plusieurs exemplaires : pas de flou d’arrière-plan dessus`
+      );
+    });
+  });
+});

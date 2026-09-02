@@ -3,7 +3,8 @@ import * as THREE from 'three';
 // Le monde : un petit terrarium nocturne. Une seule lumiere directionnelle
 // porte les ombres, le reste n'est que remplissage colore.
 
-export function createWorld(canvas, textures = {}, biome = null) {
+export function createWorld(canvas, textures = {}, biome = null, options = {}) {
+  const mouvementsReduits = Boolean(options.reducedMotion);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
@@ -309,6 +310,54 @@ export function createWorld(canvas, textures = {}, biome = null) {
   ring.position.y = 0.01;
   scene.add(ring);
 
+  // Poussières lumineuses / lucioles : le monde continue de respirer même
+  // lorsque le monstre est immobile. Budget réduit pour rester fluide sur les
+  // téléphones modestes.
+  const moteCount = 92;
+  const motePositions = new Float32Array(moteCount * 3);
+  const moteOrigins = new Float32Array(moteCount * 3);
+  const motePhase = new Float32Array(moteCount);
+  for (let i = 0; i < moteCount; i += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 1.4 + Math.sqrt(Math.random()) * 8.8;
+    const p = i * 3;
+    moteOrigins[p] = Math.cos(angle) * radius;
+    moteOrigins[p + 1] = 0.25 + Math.random() * 3.8;
+    moteOrigins[p + 2] = Math.sin(angle) * radius;
+    motePositions[p] = moteOrigins[p];
+    motePositions[p + 1] = moteOrigins[p + 1];
+    motePositions[p + 2] = moteOrigins[p + 2];
+    motePhase[i] = Math.random() * Math.PI * 2;
+  }
+  const moteCanvas = document.createElement('canvas');
+  moteCanvas.width = 48;
+  moteCanvas.height = 48;
+  const moteCtx = moteCanvas.getContext('2d');
+  const moteGradient = moteCtx.createRadialGradient(24, 24, 0, 24, 24, 24);
+  moteGradient.addColorStop(0, 'rgba(255,255,255,1)');
+  moteGradient.addColorStop(0.18, 'rgba(255,255,255,.92)');
+  moteGradient.addColorStop(0.5, 'rgba(255,255,255,.2)');
+  moteGradient.addColorStop(1, 'rgba(255,255,255,0)');
+  moteCtx.fillStyle = moteGradient;
+  moteCtx.fillRect(0, 0, 48, 48);
+  const moteGeometry = new THREE.BufferGeometry();
+  moteGeometry.setAttribute('position', new THREE.BufferAttribute(motePositions, 3));
+  const moteMaterial = new THREE.PointsMaterial({
+    color: biome ? biome.accent : 0x6fe3c4,
+    map: new THREE.CanvasTexture(moteCanvas),
+    size: 0.13,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.52,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    fog: true
+  });
+  const motes = new THREE.Points(moteGeometry, moteMaterial);
+  motes.renderOrder = 2;
+  motes.frustumCulled = false;
+  scene.add(motes);
+
   // Applique un decor. Depuis l'ajout du cycle jour/nuit, la lumiere n'est plus
   // fixee ici : le decor ne fournit que son sol et sa couleur d'accent, l'heure
   // fait le reste. Sinon un decor imposerait une ambiance de nuit en plein midi.
@@ -331,6 +380,7 @@ export function createWorld(canvas, textures = {}, biome = null) {
     }
     ringMat.color.setHex(next.accent);
     rim.color.setHex(next.accent);
+    moteMaterial.color.setHex(next.accent);
   }
 
   if (biome) applyBiome(biome, textures.ground || null);
@@ -416,6 +466,8 @@ export function createWorld(canvas, textures = {}, biome = null) {
   });
   resize();
 
+  let horlogeMotes = 0;
+
   function update(dt) {
     // La camera suit la creature, avec du retard : elle ne peut plus sortir du
     // cadre, et le mouvement reste doux au lieu d'etre colle a elle.
@@ -436,6 +488,22 @@ export function createWorld(canvas, textures = {}, biome = null) {
 
     cameraTarget.set(focus.x * 0.85, 1, focus.z * 0.35);
     camera.lookAt(cameraTarget);
+
+    // Les poussières dérivent avec l'horloge du jeu, pas celle du navigateur :
+    // elles s'arrêtent donc si la boucle s'arrête, au lieu de continuer seules.
+    // En mouvements réduits, elles restent en place et se contentent de luire.
+    if (mouvementsReduits) return;
+    horlogeMotes += dt;
+    const t = horlogeMotes;
+    const positions = moteGeometry.attributes.position.array;
+    for (let i = 0; i < moteCount; i += 1) {
+      const p = i * 3;
+      const phase = motePhase[i];
+      positions[p] = moteOrigins[p] + Math.sin(t * 0.19 + phase) * 0.32;
+      positions[p + 1] = moteOrigins[p + 1] + Math.sin(t * 0.42 + phase * 1.7) * 0.18;
+      positions[p + 2] = moteOrigins[p + 2] + Math.cos(t * 0.16 + phase * 0.8) * 0.28;
+    }
+    moteGeometry.attributes.position.needsUpdate = true;
   }
 
   function render() {
@@ -454,7 +522,8 @@ export function createWorld(canvas, textures = {}, biome = null) {
     rim,
     ringMat,
     groundMat,
-    horizonMat
+    horizonMat,
+    moteMaterial
   };
 
   return {
