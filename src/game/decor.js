@@ -26,6 +26,50 @@ export function createDecor(scene) {
   const groups = []; // { mesh, items:[...] }
   let landmark = null;
 
+  // La maison habitée : un filet de fumée à la cheminée, et une lueur chaude
+  // aux fenêtres dès que le soir tombe. Deux détails minuscules qui changent
+  // tout — une maison éteinte et sans fumée est un décor, une maison qui fume
+  // est un lieu où quelqu'un vit.
+  const FUMEE = 26;
+  const fumeePos = new Float32Array(FUMEE * 3);
+  const fumeeVie = new Float32Array(FUMEE);
+  for (let i = 0; i < FUMEE; i += 1) fumeeVie[i] = Math.random();
+
+  const fumeeGeo = new THREE.BufferGeometry();
+  fumeeGeo.setAttribute('position', new THREE.BufferAttribute(fumeePos, 3));
+
+  const fumeeCanvas = document.createElement('canvas');
+  fumeeCanvas.width = 32;
+  fumeeCanvas.height = 32;
+  const fctx = fumeeCanvas.getContext('2d');
+  const fgrad = fctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+  fgrad.addColorStop(0, 'rgba(255,255,255,0.75)');
+  fgrad.addColorStop(0.55, 'rgba(255,255,255,0.22)');
+  fgrad.addColorStop(1, 'rgba(255,255,255,0)');
+  fctx.fillStyle = fgrad;
+  fctx.fillRect(0, 0, 32, 32);
+
+  const fumee = new THREE.Points(
+    fumeeGeo,
+    new THREE.PointsMaterial({
+      map: new THREE.CanvasTexture(fumeeCanvas),
+      color: 0xbfc6d4,
+      size: 0.5,
+      sizeAttenuation: true,
+      transparent: true,
+      opacity: 0.34,
+      depthWrite: false
+    })
+  );
+  fumee.frustumCulled = false;
+  fumee.visible = false;
+  scene.add(fumee);
+
+  // Lueur des fenêtres : une lampe chaude de faible portée, allumée la nuit.
+  const lampe = new THREE.PointLight(0xffb765, 0, 7, 2);
+  lampe.visible = false;
+  scene.add(lampe);
+
   function clear() {
     groups.forEach((g) => {
       scene.remove(g.mesh);
@@ -33,6 +77,8 @@ export function createDecor(scene) {
     });
     groups.length = 0;
     landmark = null;
+    fumee.visible = false;
+    lampe.visible = false;
   }
 
   async function build(biome, seed, base = import.meta.env.BASE_URL || './') {
@@ -123,6 +169,20 @@ export function createDecor(scene) {
           // Le point d'accueil se trouve devant la façade, entre la maison et
           // le centre de la scène : la créature s'y arrête au lieu d'entrer
           // dans le mur.
+          fumee.visible = true;
+          lampe.visible = true;
+          // La cheminée sort du toit : on émet un peu au-dessus et de côté.
+          fumee.userData.source = new THREE.Vector3(
+            position.x - Math.cos(angle) * height * 0.18,
+            height * 0.92,
+            position.z - Math.sin(angle) * height * 0.18
+          );
+          lampe.position.set(
+            position.x - Math.cos(angle) * 0.5,
+            height * 0.35,
+            position.z - Math.sin(angle) * 0.5
+          );
+
           landmark = {
             position: position.clone(),
             devant: new THREE.Vector3(
@@ -158,7 +218,31 @@ export function createDecor(scene) {
   const tilt = new THREE.Quaternion();
   const axis = new THREE.Euler();
 
-  function update(dt, time) {
+  // Direction du vent. Elle tourne très lentement, sur plusieurs minutes.
+  const VENT = new THREE.Vector2(1, 0.35).normalize();
+
+  // Intensité de la lampe, pilotée par le cycle jour/nuit.
+  function setNight(facteur) {
+    lampe.intensity = facteur * 2.4;
+  }
+
+  function update(dt, time, monsterPosition = null) {
+    // La fumée monte, s'incline dans le vent et s'évase en montant.
+    if (fumee.visible && fumee.userData.source) {
+      const src = fumee.userData.source;
+      const pos = fumeeGeo.attributes.position.array;
+      for (let i = 0; i < FUMEE; i += 1) {
+        fumeeVie[i] += dt * 0.16;
+        if (fumeeVie[i] > 1) fumeeVie[i] -= 1;
+        const v = fumeeVie[i];
+        const large = v * 1.1;
+        pos[i * 3] = src.x + Math.sin(v * 5 + i) * large * 0.5 + v * 1.4;
+        pos[i * 3 + 1] = src.y + v * 3.4;
+        pos[i * 3 + 2] = src.z + Math.cos(v * 4 + i * 1.7) * large * 0.5 + v * 0.5;
+      }
+      fumeeGeo.attributes.position.needsUpdate = true;
+    }
+
     groups.forEach((g) => {
       if (!g.items.length) return;
       for (let i = 0; i < g.items.length; i += 1) {
@@ -177,9 +261,32 @@ export function createDecor(scene) {
           );
         }
 
-        const wind = Math.sin(time * 0.7 + item.phase) * item.amount;
-        const gust = Math.sin(time * 1.9 + item.phase * 1.7) * item.amount * 0.4;
-        axis.set(gust, 0, wind);
+        // Le vent est une VAGUE qui traverse la scène, pas un balancement
+        // propre à chaque plante. Le déphasage dépend de la position le long de
+        // la direction du vent : les objets se couchent les uns après les
+        // autres, et l'on voit la rafale passer.
+        const long = item.position.x * VENT.x + item.position.z * VENT.y;
+        const vague = time * 1.05 - long * 0.35;
+        const wind = Math.sin(vague + item.phase * 0.25) * item.amount;
+        const gust = Math.sin(vague * 2.3 + item.phase * 0.4) * item.amount * 0.45;
+
+        // Le décor s'écarte au passage de la créature. C'est le détail qui fait
+        // qu'elle habite le monde au lieu de glisser dessus.
+        let ecartX = 0;
+        let ecartZ = 0;
+        if (monsterPosition) {
+          const dx = item.position.x - monsterPosition.x;
+          const dz = item.position.z - monsterPosition.z;
+          const d2 = dx * dx + dz * dz;
+          if (d2 < 2.6) {
+            const force = (1 - d2 / 2.6) * 0.5;
+            const d = Math.sqrt(d2) || 1;
+            ecartZ += (dx / d) * force;
+            ecartX -= (dz / d) * force;
+          }
+        }
+
+        axis.set(gust + ecartX, 0, wind + ecartZ);
         tilt.setFromEuler(axis).premultiply(item.baseY);
         matrix.compose(item.position, tilt, item.scale);
         g.mesh.setMatrixAt(i, matrix);
@@ -192,6 +299,7 @@ export function createDecor(scene) {
     build,
     update,
     clear,
+    setNight,
     // Position d'accueil devant la maison, ou null si le décor n'en a pas.
     get home() {
       return landmark ? landmark.devant : null;

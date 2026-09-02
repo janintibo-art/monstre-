@@ -39,7 +39,13 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
       // à toute heure. Ce sont eux qui font un lever de soleil.
       sunDir: { value: new THREE.Vector3(0, 1, 0) },
       sunColor: { value: new THREE.Color(0xffffff) },
-      sunPower: { value: 0 }
+      sunPower: { value: 0 },
+      // Nuages calculés, sans image : ils dérivent et changent de forme, et
+      // prennent la couleur de l'heure. Le ciel de midi était le moment le
+      // plus vide de la journée.
+      nuageTemps: { value: 0 },
+      nuageCouleur: { value: new THREE.Color(0xffffff) },
+      nuageForce: { value: 0.35 }
     },
     vertexShader: `
       varying vec3 vPos;
@@ -54,7 +60,40 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
       uniform vec3 sunDir;
       uniform vec3 sunColor;
       uniform float sunPower;
+      uniform float nuageTemps;
+      uniform vec3 nuageCouleur;
+      uniform float nuageForce;
       varying vec3 vPos;
+
+      // Bruit de valeur classique : haché, lissé, puis empilé sur quatre
+      // octaves. C'est le minimum pour obtenir des masses nuageuses plutôt
+      // qu'un damier, et cela tient en quelques lignes sans aucune texture.
+      float hache(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+      }
+
+      float bruit(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(
+          mix(hache(i), hache(i + vec2(1.0, 0.0)), f.x),
+          mix(hache(i + vec2(0.0, 1.0)), hache(i + vec2(1.0, 1.0)), f.x),
+          f.y
+        );
+      }
+
+      float nuages(vec2 p) {
+        float somme = 0.0;
+        float poids = 0.5;
+        for (int i = 0; i < 4; i += 1) {
+          somme += bruit(p) * poids;
+          p *= 2.03;
+          poids *= 0.5;
+        }
+        return somme;
+      }
+
       void main() {
         vec3 dir = normalize(vPos);
         float h = clamp(dir.y * 0.5 + 0.5, 0.0, 1.0);
@@ -68,8 +107,22 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
         // Frange claire juste au-dessus de la ligne d'horizon, là où l'air est
         // le plus épais. Elle donne la profondeur qui manque à un dégradé nu.
         float frange = pow(1.0 - abs(dir.y), 9.0) * 0.22;
+        vec3 couleur = base + sunColor * (halo + frange) * sunPower;
 
-        gl_FragColor = vec4(base + sunColor * (halo + frange) * sunPower, 1.0);
+        // Les nuages ne sont dessinés qu'au-dessus de l'horizon. On projette la
+        // direction sur un plan haut placé : les masses s'étirent naturellement
+        // près de l'horizon, comme une voûte vue par en dessous.
+        if (dir.y > 0.02) {
+          vec2 uv = dir.xz / (dir.y + 0.22);
+          float n = nuages(uv * 1.35 + vec2(nuageTemps * 0.012, nuageTemps * 0.004));
+          float masse = smoothstep(0.52, 0.78, n);
+          // Ils s'effacent au ras de l'horizon, sinon ils formeraient une
+          // bande dure là où le paysage commence.
+          masse *= smoothstep(0.02, 0.30, dir.y);
+          couleur = mix(couleur, nuageCouleur, masse * nuageForce);
+        }
+
+        gl_FragColor = vec4(couleur, 1.0);
       }
     `
   });

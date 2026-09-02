@@ -1043,9 +1043,10 @@ async function boot() {
     }
 
     daylight.update(dt);
+    decor.setNight(daylight.nightFactor);
     vfx.update(dt);
     kitchen.update(dt, time, monster ? monster.group.position : null);
-    decor.update(dt, time);
+    decor.update(dt, time, monster ? monster.group.position : null);
     actionBar.update(dt, { hatched: pet.hatched });
 
     hudTimer -= dt;

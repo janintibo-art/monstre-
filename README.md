@@ -610,6 +610,23 @@ Quelques réglages qui pèsent lourd sur l'aspect :
   reçoivent les ombres autant qu'ils en projettent : sans cela, un bras devant
   le torse ne marque rien et le volume s'aplatit.
 
+## Ce qui rend la scène vivante
+
+- **Le vent est une vague**, pas un balancement par objet. Le déphasage dépend
+  de la position le long de la direction du vent : les plantes se couchent les
+  unes après les autres, et l'on voit la rafale traverser la clairière.
+- **Le décor s'écarte au passage de la créature.** Les tiges se penchent en
+  s'éloignant d'elle sur deux mètres. C'est le détail qui fait qu'elle habite le
+  monde au lieu de glisser dessus.
+- **La maison est habitée** : un filet de fumée sort de la cheminée et monte en
+  s'évasant, et une lueur chaude apparaît aux fenêtres dès que le soir tombe.
+  Une maison éteinte et sans fumée est un décor ; une maison qui fume est un
+  lieu où quelqu'un vit.
+- **Des nuages calculés** dérivent dans le ciel — bruit de valeur sur quatre
+  octaves, aucune image. Ils prennent la couleur de l'heure, s'effacent au ras
+  de l'horizon pour ne pas former de bande dure, et une masse met une minute à
+  traverser le ciel.
+
 ## Les poussières lumineuses
 
 Une centaine de points dérivent lentement autour de l'aire de jeu, à la couleur

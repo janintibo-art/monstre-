@@ -304,6 +304,18 @@ export function createDaylight(world) {
     env.skyMat.uniforms.sunColor.value.copy(palette.sun);
     env.skyMat.uniforms.sunPower.value = 0.5 + rasant * 0.9;
 
+    // Nuages : blancs en plein jour, teintés par le soleil quand il rase, à
+    // peine visibles la nuit. Ils dérivent avec l'horloge du jeu.
+    // En SECONDES, pas en images : incrémenter d'une unité par image donnait
+    // 43 unités de dérive par minute, soit des nuages qui filent comme en
+    // accéléré. Ici, une masse traverse le ciel en une minute environ.
+    env.skyMat.uniforms.nuageTemps.value += dt;
+    env.skyMat.uniforms.nuageCouleur.value
+      .copy(palette.skyBottom)
+      .lerp(palette.sun, 0.45)
+      .lerp(NUIT_HORIZON, palette.stars * 0.7);
+    env.skyMat.uniforms.nuageForce.value = 0.42 - palette.stars * 0.24;
+
     env.hemi.color.copy(palette.hemiSky);
     env.hemi.groundColor.copy(palette.hemiGround);
     env.hemi.intensity = palette.hemi;
