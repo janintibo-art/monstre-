@@ -131,8 +131,14 @@ export function createWorld(canvas, textures = {}, biome = null) {
 
         // Le pied du paysage se noie dans la brume : sans cela, la base du
         // relief tranche net sur le sol, comme un décor découpé et posé là.
-        float bas = smoothstep(0.30, 0.02, vUv.y);
-        vive = mix(vive, brume, bas * 0.85);
+        //
+        // Les bornes de smoothstep doivent aller en CROISSANT. Écrites à
+        // l'envers, la spécification GLSL déclare le résultat indéfini : selon
+        // le pilote, la fonction renvoie 1 partout, et c'est toute la bande qui
+        // se noie dans la brume au lieu de son seul pied. Pour inverser, on
+        // soustrait à 1, on n'échange pas les bornes.
+        float bas = 1.0 - smoothstep(0.02, 0.30, vUv.y);
+        vive = mix(vive, brume, bas * 0.8);
 
         gl_FragColor = vec4(vive, c.a * presence);
       }

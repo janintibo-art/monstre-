@@ -615,7 +615,15 @@ scène ; à quatre, 36 %, ce qui laisse respirer le ciel, et le rapport 4:1 des
 images est respecté.
 
 Le pied du paysage se noie dans la brume : sans cela, la base du relief tranche
-net sur le sol, comme un décor découpé et posé là. Et la nuit, l'assombrissement
+net sur le sol, comme un décor découpé et posé là.
+
+> **Piège rencontré.** Ce fondu était écrit `smoothstep(0.30, 0.02, y)`, bornes
+> à l'envers. La spécification GLSL déclare le résultat **indéfini** quand la
+> première borne dépasse la seconde : selon le pilote, la fonction renvoie 1
+> partout, et c'est toute la bande qui se noie dans la brume au lieu de son seul
+> pied. L'horizon disparaissait entièrement, sans le moindre message d'erreur.
+> Pour inverser un fondu, on soustrait à 1, on n'échange pas les bornes — et un
+> test refuse désormais toute borne décroissante dans les shaders. Et la nuit, l'assombrissement
 s'arrête à 55 % — descendre plus bas écrasait le relief, l'image du soir étant
 déjà sombre.
 

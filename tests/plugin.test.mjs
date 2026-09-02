@@ -148,3 +148,21 @@ test('chaque espèce a sa planche de marche', async () => {
     );
   });
 });
+
+test('les appels smoothstep des shaders ont leurs bornes en ordre croissant', () => {
+  // La spécification GLSL déclare le résultat indéfini si la première borne est
+  // supérieure ou égale à la seconde. Certains pilotes renvoient alors 1
+  // partout — un fondu localisé devient un voile sur toute la surface, et le
+  // décor disparaît sans le moindre message d'erreur.
+  ['src/game/world.js', 'src/game/vfx.js'].forEach((fichier) => {
+    const source = readFileSync(fichier, 'utf8');
+    const appels = source.match(/smoothstep\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,/g) || [];
+    appels.forEach((appel) => {
+      const [, a, b] = appel.match(/smoothstep\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,/);
+      assert.ok(
+        Number(a) < Number(b),
+        `${fichier} : smoothstep(${a}, ${b}, …) — bornes à l’envers, résultat indéfini`
+      );
+    });
+  });
+});
