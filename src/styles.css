@@ -1370,3 +1370,140 @@ select {
   min-height: 58px;
   font-size: 30px;
 }
+
+/* ------------------------------ Pense-bête ------------------------------- */
+
+.agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agenda-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  min-height: 64px;
+  border-radius: 14px;
+  background: var(--ink-2);
+  border: 1px solid rgba(233, 238, 245, 0.1);
+}
+
+/* La barre latérale passe à l'ambre quand l'échéance approche : on doit voir
+   ce qui arrive bientôt sans lire les dates une par une. */
+.agenda-item__mark {
+  width: 4px;
+  align-self: stretch;
+  border-radius: 4px;
+  background: var(--glow);
+  flex: none;
+}
+
+.agenda-item--soon .agenda-item__mark {
+  background: var(--amber);
+}
+
+.agenda-item--past .agenda-item__mark {
+  background: var(--muted);
+}
+
+.agenda-item__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.agenda-item__subject {
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.agenda-item__when {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.agenda-item__drop {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.agenda-item__drop:hover {
+  color: #ff9b9b;
+}
+
+/* Bandeau de rappel : la créature vient le présenter dans le jeu. */
+.recall {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + 96px);
+  transform: translateX(-50%);
+  z-index: 600;
+  width: min(460px, calc(100% - 32px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(30, 38, 71, 0.96);
+  border: 1px solid var(--amber);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  animation: rise-up 300ms ease-out;
+}
+
+@keyframes rise-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+}
+
+.recall__body {
+  flex: 1;
+}
+
+.recall__subject {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.recall__when {
+  font-size: 13px;
+  color: var(--amber);
+}
+
+.recall button {
+  background: var(--amber);
+  color: #2a1a05;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 700;
+  min-height: 48px;
+  cursor: pointer;
+}
+
+.confort .agenda-item {
+  min-height: 84px;
+}
+
+.confort .agenda-item__subject {
+  font-size: 19px;
+}
+
+.confort .agenda-item__when {
+  font-size: 15px;
+}
+
+.confort .recall__subject {
+  font-size: 21px;
+}

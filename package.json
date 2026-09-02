@@ -24,7 +24,8 @@
   "dependencies": {
     "three": "0.169.0",
     "@capacitor-community/speech-recognition": "^6.0.0",
-    "@capacitor/screen-orientation": "^6.0.0"
+    "@capacitor/screen-orientation": "^6.0.0",
+    "@capacitor/local-notifications": "^6.0.0"
   },
   "devDependencies": {
     "@capacitor/android": "6.2.0",

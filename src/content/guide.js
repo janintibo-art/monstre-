@@ -52,6 +52,19 @@ export const GUIDE = [
     ]
   },
   {
+    id: 'agenda',
+    icon: '📅',
+    title: 'Le pense-bête',
+    body: [
+      'Dis-lui simplement : « **j’ai rendez-vous chez le médecin mardi à 17 h** ». Elle comprend la date et l’heure toute seule, au micro comme au clavier.',
+      '**Elle demande ensuite quand te prévenir** : une heure avant, le matin même, la veille au soir… C’est la question que tout le monde oublie de préciser, et sans elle un pense-bête arrive toujours trop tard.',
+      'Le moment venu, ton téléphone t’alerte même si l’application est fermée. En ouvrant, la créature accourt et répète le rendez-vous jusqu’à ce que tu appuies sur « C’est noté ».',
+      'Elle comprend aussi « demain », « après-demain », « dans trois jours », « le 12 mars », et les rendez-vous qui se répètent : « **tous les jours à 8 h** » pour les médicaments, « tous les mardis » pour le kiné.',
+      '**Réglages → Mes pense-bêtes** montre tout ce qu’elle retient, avec la possibilité d’en effacer. Chaque profil a les siens.',
+      'La première fois, le téléphone demande l’autorisation d’envoyer des notifications : il faut accepter, sinon elle ne pourra te prévenir que lorsque tu ouvres l’application.'
+    ]
+  },
+  {
     id: 'souvenirs',
     icon: '💭',
     title: 'Ses souvenirs',

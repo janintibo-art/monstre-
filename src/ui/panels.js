@@ -19,6 +19,7 @@ export function createPanels({
   onPanelToggle,
   onImport,
   onGuide,
+  onAgenda,
   onProfiles,
   onAgeChange,
   getPet,
@@ -32,6 +33,7 @@ export function createPanels({
   const resetBtn = document.getElementById('btn-reset');
 
   const guideBtn = document.getElementById('btn-guide');
+  const agendaBtn = document.getElementById('btn-agenda');
   const profilesBtn = document.getElementById('btn-profiles');
   const comfortToggle = document.getElementById('field-comfort');
   const comfortHelp = document.getElementById('comfort-help');
@@ -87,6 +89,11 @@ export function createPanels({
         ? 'Réglage manuel : il ne suivra plus l’âge du profil.'
         : `Réglé automatiquement d’après le profil (${band.label}).`;
   }
+
+  agendaBtn.addEventListener('click', () => {
+    closeAll();
+    if (onAgenda) onAgenda();
+  });
 
   profilesBtn.addEventListener('click', () => {
     closeAll();

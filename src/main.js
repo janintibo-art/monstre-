@@ -33,9 +33,14 @@ import { createListener } from './audio/listen.js';
 import { contextLexicon } from './audio/hearing.js';
 import { createGamesUi } from './ui/games.js';
 import { createGuide } from './ui/guide.js';
+import { createAgendaUi, createRecall } from './ui/agenda.js';
+import { parseReminder } from './agenda/parse.js';
+import { dueReminders, listReminders } from './agenda/store.js';
+import * as notify from './agenda/notify.js';
 import { comfortEnabled, applyComfortClass } from './state/profile.js';
 import {
   currentBand,
+  getActiveId,
   getActiveProfile,
   migrateLegacy,
   listProfiles,
@@ -220,6 +225,7 @@ async function boot() {
   let thinkTimer = 0;
   let hudTimer = 0;
   let forgetTimer = 30;
+  let recallTimer = 3;
   let ambientTimer = 0;
   let chatterTimer = 12 + Math.random() * 14;
   let decision = { action: 'idle', emotion: 'calme', urgency: 0 };
@@ -296,6 +302,7 @@ async function boot() {
     voice,
     onMemoryChange: () => save(pet),
     onGuide: () => guide.open(),
+    onAgenda: () => agenda.open(),
     onProfiles: () => {
       // Changer de profil change la sauvegarde a charger : on repart proprement
       // plutot que de recabler le monde a chaud.
@@ -387,6 +394,16 @@ async function boot() {
   }
 
   async function answerInner(message, { silent = false } = {}) {
+    // Un rendez-vous entendu dans la conversation ouvre directement la question
+    // de prévenance, sans passer par un menu : c'est le geste le plus naturel.
+    const reminder = parseReminder(message);
+    if (reminder) {
+      recordSpeech(pet.memory, 'you', message);
+      remember(pet.memory, 'agenda');
+      agenda.startAsk(reminder);
+      return null;
+    }
+
     remember(pet.memory, 'talk');
     applyEffects(pet.needs, { affection: 4 });
     if (monster) monster.react('pet', 0.8);
@@ -575,6 +592,28 @@ async function boot() {
     save(pet);
   });
 
+  // La créature vient au premier plan et s'agite : elle a quelque chose à dire.
+  function checkReminders() {
+    if (recall.active || agenda.asking) return;
+    const due = dueReminders(getActiveId());
+    if (!due.length) return;
+
+    const reminder = due[0];
+    recall.show(reminder, {
+      onDismiss: () => {
+        if (monster) monster.react('pet', 1);
+        agenda.render();
+      }
+    });
+
+    if (monster) {
+      // Elle accourt : le rappel doit se voir, pas seulement s'entendre.
+      brain.forceAction('seekAttention', 20);
+      monster.react('pet', 1.5);
+      vfx.emit('sparkleTrail', monster.headWorldPosition(), { count: 10 });
+    }
+  }
+
   // ----------------------------------------------------------- jeux et guide
   // La creature reagit a ce qui se passe dans les jeux : elle se rejouit d'une
   // bonne reponse et encourage apres une erreur. C'est ce qui fait qu'on joue
@@ -606,6 +645,23 @@ async function boot() {
   });
 
   const guide = createGuide({ voice, voiceProfile, getPet: () => pet });
+
+  // Le pense-bête. La créature demande toujours quand prévenir : sans ça, on
+  // est averti à l'heure du rendez-vous, c'est-à-dire trop tard.
+  const agenda = createAgendaUi({
+    getPet: () => pet,
+    voice,
+    voiceProfile,
+    onListen: (onHeard, choices) => {
+      talkTarget = onHeard;
+      expectedChoices = choices || null;
+      listener.start({ pace: listeningPace() });
+    }
+  });
+
+  const recall = createRecall({ getPet: () => pet, voice, voiceProfile });
+
+  agenda.setToggleHandler((open) => panels.setExternalOpen(open));
 
   games.setToggleHandler((open) => panels.setExternalOpen(open));
   guide.setToggleHandler((open) => panels.setExternalOpen(open));
@@ -918,6 +974,15 @@ async function boot() {
       hud.update(pet, decision);
     }
 
+    // Les rappels sont vérifiés toutes les vingt secondes. Inutile plus
+    // souvent : une minute de retard sur un pense-bête ne change rien, et
+    // parcourir la liste à chaque image serait absurde.
+    recallTimer -= dt;
+    if (recallTimer <= 0) {
+      recallTimer = 20;
+      checkReminders();
+    }
+
     // L'oubli tourne en fond, une fois par minute : inutile plus souvent, et ca
     // evite de parcourir la memoire a chaque image.
     forgetTimer -= dt;
@@ -943,6 +1008,11 @@ async function boot() {
       if (errorCount >= 3) loop.stop();
     }
   });
+
+  // Android efface les notifications programmées au redémarrage du téléphone :
+  // on les rebranche à chaque lancement.
+  notify.rescheduleAll(listReminders(getActiveId()), pet.name);
+  notify.onTap(() => checkReminders());
 
   autosave(() => pet);
   loop.start();

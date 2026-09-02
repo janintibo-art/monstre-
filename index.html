@@ -66,6 +66,8 @@
             <input id="field-name" type="text" maxlength="16" />
           </label>
 
+          <button id="btn-agenda">📅 Mes pense-bêtes</button>
+
           <button id="btn-profiles">👤 Changer de profil</button>
 
           <button id="btn-guide">📖 Comment ça marche ?</button>
@@ -195,6 +197,39 @@
               <button id="profile-save">Enregistrer</button>
               <button id="profile-cancel" type="button">Annuler</button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pense-bete -->
+      <div id="agenda" role="dialog" aria-modal="true" aria-label="Pense-bête" class="panel panel--wide" hidden>
+        <div class="panel__head">
+          <h2 id="agenda-title">Pense-bête</h2>
+          <button id="agenda-close" class="icon-button" aria-label="Fermer">×</button>
+        </div>
+        <div class="panel__body">
+          <p id="agenda-intro" class="hint"></p>
+
+          <!-- Question posée après avoir compris un rendez-vous -->
+          <div id="agenda-ask" hidden>
+            <p id="agenda-what" class="game-prompt"></p>
+            <p class="hint">Quand veux-tu que je te prévienne ?</p>
+            <div id="agenda-leads" class="chip-row"></div>
+            <div class="row">
+              <button id="agenda-lead-voice" type="button">🎤 Le dire</button>
+              <button id="agenda-cancel" type="button">Annuler</button>
+            </div>
+          </div>
+
+          <div id="agenda-list" class="agenda-list"></div>
+
+          <div id="agenda-add" class="field">
+            <span>Ou écris-le</span>
+            <div class="chat-input">
+              <input id="agenda-field" type="text" placeholder="rendez-vous chez le médecin mardi à 17h" autocomplete="off" />
+              <button id="agenda-send">Ajouter</button>
+            </div>
+            <p id="agenda-status" class="hint" aria-live="polite"></p>
           </div>
         </div>
       </div>

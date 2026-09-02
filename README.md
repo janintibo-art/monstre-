@@ -351,6 +351,41 @@ Le mode **confort** (texte et cibles agrandis, deux colonnes au lieu de trois)
 s'active automatiquement pour les tout-petits et le profil senior, et se force à
 la main profil par profil.
 
+## Le pense-bête
+
+« **J'ai rendez-vous chez le médecin mardi à 17 h** » suffit. L'analyse est
+faite par motifs, en français, sans modèle de langage (`src/agenda/parse.js`) :
+donc hors ligne, instantanée et prévisible — un pense-bête qui se trompe une
+fois sur dix ne sert à rien.
+
+Sont reconnus : les jours de la semaine (toujours le prochain à venir, sauf
+« ce mardi »), demain, après-demain, « dans trois jours », « le 12 mars », les
+heures sous toutes leurs formes (`17h30`, `14:45`, « neuf heures et quart »,
+« dix-sept heures » dicté), les moments de la journée, et la récurrence
+(« tous les jours à 8 h », « tous les mardis »).
+
+**La créature demande ensuite quand prévenir.** C'est le point central : être
+averti à 17 h d'un rendez-vous à 17 h ne sert à rien. Six réponses proposées à
+toucher ou à dire — au moment, 15 min, 1 h, 2 h avant, le matin même, la veille
+au soir. « La veille au soir » n'est pas un décalage en minutes mais une heure
+fixe la veille, ce qui n'a rien à voir pour un rendez-vous à 8 h du matin. Et un
+rappel ne tombe jamais après le rendez-vous, même mal réglé.
+
+Le moment venu, une notification système arrive **même application fermée**. En
+ouvrant, la créature accourt, s'agite et répète toutes les vingt secondes
+jusqu'à ce qu'on appuie sur « C'est noté ». Un rendez-vous récurrent est alors
+reporté à la fois suivante au lieu d'être supprimé.
+
+Chaque profil a ses pense-bêtes.
+
+> **Ce qui n'est pas fait** : la créature ne se promène pas *par-dessus* les
+> autres applications, sur le bureau du téléphone. Cela demande la permission
+> Android « affichage par-dessus les autres applications », un service en
+> arrière-plan et une fenêtre native — donc du code Java dans le projet Android,
+> qui est aujourd'hui régénéré à chaque compilation. C'est faisable, mais c'est
+> un chantier à part. La notification et le rappel en jeu couvrent le besoin
+> réel : être averti à temps.
+
 ## Discuter, pas seulement jouer
 
 La première carte de l'écran Jeux est **Papoter avec moi**. La créature propose
