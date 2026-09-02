@@ -295,3 +295,43 @@ test('l’horizon garde du contraste avec le ciel à toute heure', async () => {
     assert.ok(ecart(proche, loin) > 25, `${nom} : plans proche et lointain indistincts`);
   });
 });
+
+test('l’aire de jeu reste plate, les alentours ondulent', async () => {
+  const { hauteurSol, TERRAIN } = await import('../src/game/terrain.js');
+
+  // La créature évolue au centre : si le terrain y montait, il faudrait la
+  // faire suivre le relief, avec tous les risques que ça comporte. En gardant
+  // le centre plat, on obtient le bénéfice visuel sans aucun des ennuis.
+  for (let r = 0; r <= TERRAIN.PLAT; r += 0.5) {
+    for (let a = 0; a < 12; a += 1) {
+      const t = (a / 12) * Math.PI * 2;
+      assert.equal(hauteurSol(Math.cos(t) * r, Math.sin(t) * r), 0, `relief au rayon ${r}`);
+    }
+  }
+
+  // Et au-delà, il doit vraiment onduler, sinon l'effort est inutile.
+  let mini = 9;
+  let maxi = -9;
+  for (let a = 0; a < 64; a += 1) {
+    const t = (a / 64) * Math.PI * 2;
+    const h = hauteurSol(Math.cos(t) * 18, Math.sin(t) * 18);
+    mini = Math.min(mini, h);
+    maxi = Math.max(maxi, h);
+  }
+  assert.ok(maxi - mini > 0.8, 'relief trop faible pour se voir');
+  assert.ok(maxi - mini < 3, 'relief trop violent pour un décor');
+});
+
+test('la transition vers le relief est douce', async () => {
+  const { hauteurSol, TERRAIN } = await import('../src/game/terrain.js');
+  // Une marche brutale à la limite de la zone plate se verrait comme une
+  // falaise circulaire autour de la créature.
+  let saut = 0;
+  let precedent = 0;
+  for (let r = TERRAIN.PLAT - 1; r < TERRAIN.PLEIN + 2; r += 0.25) {
+    const h = hauteurSol(r, r * 0.3);
+    saut = Math.max(saut, Math.abs(h - precedent));
+    precedent = h;
+  }
+  assert.ok(saut < 0.12, `marche de ${saut.toFixed(2)} unité à la jonction`);
+});

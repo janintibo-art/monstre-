@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { hauteurSol } from './terrain.js';
 import { createRng } from '../core/rng.js';
 import { loadModel } from './gltf.js';
 import { DECOR_MODELS } from './biomes.js';
@@ -159,8 +160,25 @@ export function createDecor(scene) {
           ? entry.altitude[0] + rng() * (entry.altitude[1] - entry.altitude[0])
           : -0.05;
 
-        position.set(Math.cos(angle) * radius, altitude, Math.sin(angle) * radius);
-        quaternion.setFromEuler(new THREE.Euler(0, rng() * Math.PI * 2, 0));
+        const px = Math.cos(angle) * radius;
+        const pz = Math.sin(angle) * radius;
+        // Les objets posés suivent le relief ; ceux du ciel gardent leur
+        // altitude. Sans cela, un arbre du rang lointain flotterait au-dessus
+        // d'un creux ou s'enfoncerait dans une bosse.
+        const sol = entry.altitude ? altitude : hauteurSol(px, pz) - 0.05;
+        position.set(px, sol, pz);
+        // Rotation libre autour de la verticale, plus une inclinaison de
+        // quelques degrés : rien ne pousse parfaitement droit, et un décor dont
+        // tout est d'aplomb se repère immédiatement comme artificiel. La maison
+        // et l'île y échappent — une maison de travers, c'est autre chose.
+        const penche = entry.landmark || entry.altitude ? 0 : 0.13;
+        quaternion.setFromEuler(
+          new THREE.Euler(
+            (rng() - 0.5) * penche,
+            rng() * Math.PI * 2,
+            (rng() - 0.5) * penche
+          )
+        );
         scale.set(height * (0.92 + rng() * 0.16), height, height * (0.92 + rng() * 0.16));
         matrix.compose(position, quaternion, scale);
         mesh.setMatrixAt(i, matrix);

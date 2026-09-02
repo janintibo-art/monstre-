@@ -617,6 +617,35 @@ Quelques réglages qui pèsent lourd sur l'aspect :
   reçoivent les ombres autant qu'ils en projettent : sans cela, un bras devant
   le torse ne marque rien et le volume s'aplatit.
 
+## Le relief
+
+Le sol était un disque parfaitement plat — c'est ce qui donnait cet aspect de
+maquette posée sur une table. Il ondule maintenant, avec une règle : **l'aire de
+jeu reste plate.**
+
+L'amplitude est nulle jusqu'à 6,5 unités du centre, puis croît jusqu'à sa pleine
+valeur à 15. La créature évolue donc toujours sur du plan — pas de suivi de
+terrain, pas de risque qu'elle s'enfonce ou flotte — pendant que les alentours
+ondulent franchement, d'environ 1,7 unité entre creux et bosse. On obtient le
+bénéfice visuel sans aucun des ennuis. Un test vérifie les deux propriétés, et
+qu'aucune marche brutale ne marque la jonction.
+
+Le décor du rang lointain suit la même fonction de hauteur : sans cela, un arbre
+flotterait au-dessus d'un creux. Et rien n'est plus posé parfaitement d'aplomb —
+quelques degrés d'inclinaison aléatoire, sauf pour la maison et l'île.
+
+Deux corrections de fond au passage :
+
+- **`CircleGeometry` ne pouvait pas porter de relief** : c'est un éventail, un
+  centre et une seule couronne de sommets, donc rien à déplacer à l'intérieur.
+  Un `RingGeometry` au trou minuscule donne de vraies couronnes concentriques.
+- **L'anneau lumineux qui bordait l'aire de jeu** ressemblait à une piste de
+  course. Il est remplacé par un halo dégradé : la clairière semble simplement
+  plus éclairée en son centre, sans qu'aucun trait ne la borde.
+- **Le carrelage du sol** est rompu par une variation de teinte à grande
+  échelle, portée par les couleurs de sommets — des taches bien plus larges
+  qu'une dalle.
+
 ## Ce qui rend la scène vivante
 
 - **Le vent est une vague**, pas un balancement par objet. Le déphasage dépend

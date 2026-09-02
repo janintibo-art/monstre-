@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { hauteurSol } from './terrain.js';
 
 // Le monde : un petit terrarium nocturne. Une seule lumiere directionnelle
 // porte les ombres, le reste n'est que remplissage colore.
@@ -503,6 +504,10 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
   scene.add(rim);
 
   // --- Sol ---
+  // Variation de teinte à grande échelle, appliquée par couleurs de sommets.
+  // La texture du sol se répète douze fois : sans cela, le motif se lit comme
+  // un carrelage. Des taches lentes de clair et de sombre, bien plus larges
+  // qu'une dalle, suffisent à le rompre.
   const groundMat = new THREE.MeshStandardMaterial({
     color: 0x2a3358,
     roughness: 0.95,
@@ -520,7 +525,45 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
   // Le sol est bien plus large que l'aire de jeu : à 6,5 unités, son bord
   // dessinait une courbe nette au milieu de l'image, comme une petite planète.
   // À 26, le bord passe derrière le décor et l'horizon.
-  const ground = new THREE.Mesh(new THREE.CircleGeometry(26, 96), groundMat);
+  // Le disque est finement subdivisé pour porter le relief. 96 anneaux de 96
+  // secteurs : assez pour que les ondulations soient lisses, assez peu pour ne
+  // rien coûter — c'est un maillage statique, calculé une seule fois.
+  //
+  // Un anneau plutôt qu'un disque : `CircleGeometry` n'est qu'un éventail — un
+  // centre et une seule couronne de sommets, donc rien à déplacer à
+  // l'intérieur. `RingGeometry` avec un trou minuscule donne de vraies
+  // couronnes concentriques.
+  //
+  // Le maillage est tourné de -90° autour de X : le local (x, y, z) devient le
+  // monde (x, z, -y). La hauteur du monde se met donc dans le z local, et la
+  // profondeur du monde vaut moins le y local.
+  const groundGeo = new THREE.RingGeometry(0.02, 26, 96, 40);
+  {
+    const pos = groundGeo.attributes.position;
+    for (let i = 0; i < pos.count; i += 1) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      pos.setZ(i, hauteurSol(x, -y));
+    }
+    pos.needsUpdate = true;
+    groundGeo.computeVertexNormals();
+
+    const teintes = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i += 1) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      const v =
+        0.88 +
+        0.12 * Math.sin(x * 0.11 + y * 0.07) +
+        0.06 * Math.cos(x * 0.05 - y * 0.13);
+      teintes[i * 3] = v;
+      teintes[i * 3 + 1] = v;
+      teintes[i * 3 + 2] = v;
+    }
+    groundGeo.setAttribute('color', new THREE.BufferAttribute(teintes, 3));
+  }
+  groundMat.vertexColors = true;
+  const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);
@@ -529,11 +572,32 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
   const ringMat = new THREE.MeshBasicMaterial({
     color: 0x6fe3c4,
     transparent: true,
-    opacity: 0.28
+    // Le dégradé porte déjà l'atténuation : l'opacité générale reste haute,
+    // sinon le halo disparaît.
+    opacity: 0.85,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
   });
-  const ring = new THREE.Mesh(new THREE.RingGeometry(5.4, 5.7, 96), ringMat);
+  // Une couronne nette lue à l'écran ressemble à une piste de course. On la
+  // remplace par un halo dégradé, dessiné sur canvas : la clairière semble
+  // simplement plus éclairée en son centre, sans qu'aucun trait ne la borde.
+  const clairiereCanvas = document.createElement('canvas');
+  clairiereCanvas.width = 128;
+  clairiereCanvas.height = 128;
+  const cctx = clairiereCanvas.getContext('2d');
+  const cgrad = cctx.createRadialGradient(64, 64, 10, 64, 64, 64);
+  cgrad.addColorStop(0, 'rgba(255,255,255,0.30)');
+  cgrad.addColorStop(0.55, 'rgba(255,255,255,0.12)');
+  cgrad.addColorStop(0.86, 'rgba(255,255,255,0.04)');
+  cgrad.addColorStop(1, 'rgba(255,255,255,0)');
+  cctx.fillStyle = cgrad;
+  cctx.fillRect(0, 0, 128, 128);
+  ringMat.map = new THREE.CanvasTexture(clairiereCanvas);
+
+  const ring = new THREE.Mesh(new THREE.PlaneGeometry(13, 13), ringMat);
   ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.01;
+  ring.position.y = 0.02;
+  ring.renderOrder = 1;
   scene.add(ring);
 
   // Poussières lumineuses / lucioles : le monde continue de respirer même
