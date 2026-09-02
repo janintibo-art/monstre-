@@ -1653,3 +1653,24 @@ select {
     opacity: 0.35;
   }
 }
+
+/* Icônes maison. Elles remplacent l'emoji quand le fichier existe ; sinon
+   l'emoji reste, et rien ne se voit. */
+.icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.icone__image {
+  width: 1.1em;
+  height: 1.1em;
+  object-fit: contain;
+  display: block;
+}
+
+.confort .icone__image {
+  width: 1.2em;
+  height: 1.2em;
+}

@@ -382,3 +382,32 @@ test('les sons d’interface restent courts et doux', async () => {
   // Une onde carrée est agressive à faible volume : pas dans l'interface.
   assert.ok(!/type:\s*'square'/.test(source), 'onde carrée dans les sons d’interface');
 });
+
+test('chaque icône déclarée correspond à un bouton réel', async () => {
+  const { ICON_FILES } = await import('../src/ui/icons.js');
+  const { CARES } = await import('../src/ui/actions.js');
+
+  // Les huit soins de la barre d'actions doivent tous avoir leur entrée :
+  // c'est le lot visible en permanence, celui qu'on livre en premier.
+  CARES.forEach((care) => {
+    assert.ok(ICON_FILES[care.id], `aucune icône prévue pour « ${care.id} »`);
+  });
+
+  Object.values(ICON_FILES).forEach((fichier) => {
+    assert.match(fichier, /\.png$/, `${fichier} : format inattendu`);
+  });
+
+  const noms = Object.values(ICON_FILES);
+  assert.equal(new Set(noms).size, noms.length, 'deux icônes partagent un fichier');
+});
+
+test('une icône manquante ne casse rien', async () => {
+  const source = readFileSync('src/ui/icons.js', 'utf8');
+  // L'emoji est posé AVANT la tentative de chargement : on n'affiche jamais un
+  // bouton vide en attendant, et un fichier absent laisse simplement l'emoji.
+  const fonction = source.slice(source.indexOf('export function iconContent'));
+  const poseEmoji = fonction.indexOf('span.textContent = emoji');
+  const chargeImage = fonction.indexOf('image.src');
+  assert.ok(poseEmoji >= 0 && poseEmoji < chargeImage, 'l’emoji doit être posé en premier');
+  assert.match(fonction, /image\.onerror/, 'aucun repli si le fichier est absent');
+});

@@ -84,6 +84,8 @@ export const CARES = [
   }
 ];
 
+import { iconContent, applyIcon } from './icons.js';
+
 export function createActionBar(onCare) {
   const root = document.getElementById('actionbar');
   const buttons = {};
@@ -93,7 +95,18 @@ export function createActionBar(onCare) {
     const button = document.createElement('button');
     button.className = 'pebble';
     button.type = 'button';
-    button.innerHTML = `<span class="pebble__icon">${care.icon}</span><span class="pebble__label">${care.label}</span>`;
+    // L'icône maison si elle existe, l'emoji sinon. On ne construit pas de
+    // HTML : le libellé vient du catalogue, mais un jour il viendra peut-être
+    // d'ailleurs, et une injection dans un bouton n'a rien d'anodin.
+    const icone = document.createElement('span');
+    icone.className = 'pebble__icon';
+    icone.appendChild(iconContent(care.id, care.icon));
+
+    const libelle = document.createElement('span');
+    libelle.className = 'pebble__label';
+    libelle.textContent = care.label;
+
+    button.append(icone, libelle);
     button.addEventListener('click', () => {
       if (button.disabled) return;
       onCare(care);
@@ -132,13 +145,13 @@ export function createActionBar(onCare) {
     if (!button) return;
     button.classList.toggle('pebble--live', active);
     button.querySelector('.pebble__label').textContent = active ? "J'écoute" : 'Parler';
-    button.querySelector('.pebble__icon').textContent = active ? '🔴' : '🎤';
+    applyIcon(button.querySelector('.pebble__icon'), active ? 'microActif' : 'listen', active ? '🔴' : '🎤');
   }
 
   function setSleepLabel(asleep) {
     const button = buttons.sleep;
     button.querySelector('.pebble__label').textContent = asleep ? 'Réveiller' : 'Dormir';
-    button.querySelector('.pebble__icon').textContent = asleep ? '☀️' : '🌙';
+    applyIcon(button.querySelector('.pebble__icon'), asleep ? 'soleil' : 'sleep', asleep ? '☀️' : '🌙');
   }
 
   return { update, setSleepLabel, setListening, buttons };

@@ -1000,6 +1000,18 @@ appel de rendu quel qu'en soit le nombre.
 - Mouvements réduits (`prefers-reduced-motion`) respectés jusque dans la 3D :
   plus de secousse, de flash ni de parallaxe, moitié moins de particules.
 
+## Les icônes
+
+Les boutons utilisent des emoji, qui changent d'aspect selon le téléphone et
+n'ont aucun rapport avec l'univers graphique. Le jeu accepte des **icônes
+maison** en remplacement, avec une règle : **un fichier absent ne casse rien**.
+L'emoji est posé d'abord, l'image le remplace seulement si elle se charge — on
+n'affiche donc jamais un bouton vide, et l'on peut livrer les icônes cinq par
+cinq.
+
+La liste complète, classée par priorité, avec les noms de fichiers attendus et
+une invite prête à coller : [docs/ICONES-A-PRODUIRE.md](docs/ICONES-A-PRODUIRE.md).
+
 ## Contribuer des ressources
 
 La liste de ce qui manque, classée par gain visuel réel, avec les contraintes
