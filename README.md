@@ -522,7 +522,14 @@ l'appareil et dans quel cas.
 
 ## Le cadrage : paysage verrouillé
 
-Le jeu se verrouille en **paysage**. C'est la seule orientation où l'on voit
+L'orientation est fixée **dans le manifeste Android** (`sensorLandscape`),
+appliqué par le workflow après la génération du projet. Un verrou posé au
+démarrage de l'application arrivait parfois avant que l'activité soit prête et
+ne prenait pas. Le manifeste, lui, s'applique dès la création de la fenêtre. Les
+panneaux peuvent toujours libérer l'orientation à l'exécution : un appel à
+`setRequestedOrientation` l'emporte sur le manifeste.
+
+Le jeu se verrouille donc en **paysage**. C'est la seule orientation où l'on voit
 correctement la créature : en portrait, à 42 degrés d'angle sur un écran 20:9,
 il ne reste que **deux unités de large** contre plus de neuf en paysage. Élargir
 l'angle pour compenser rapetissait la créature au point de perdre ce qu'on
@@ -538,6 +545,26 @@ créature si elle se retrouve dehors.
 
 Sur navigateur et sur la version Windows, il n'y a rien à verrouiller : les
 appels échouent silencieusement et le jeu fonctionne normalement.
+
+## Le rendu
+
+Quelques réglages qui pèsent lourd sur l'aspect :
+
+- **Courbe tonale filmique** (ACES). Sans elle, les couleurs saturent et
+  s'écrasent dès qu'une lumière forte les touche — le vert de la prairie tournait
+  à l'aplat fluorescent. La courbe comprime les hautes lumières au lieu de les
+  couper, ce qui rend les matières et fait ressortir le relief.
+- **Filtrage anisotrope au maximum** sur le sol, le décor et les créatures.
+  C'est ce qui évite qu'une surface vue de biais tourne à la bouillie
+  scintillante.
+- **Sol quatre fois plus large** (26 unités au lieu de 6,5) avec quatre fois
+  plus de répétitions. À 6,5, le bord du disque dessinait une courbe nette au
+  milieu de l'image, comme une petite planète ; il passe maintenant derrière le
+  décor et l'horizon, à densité de texels identique.
+- **Ombres en 2048** avec un décalage le long de la normale, qui supprime les
+  rayures sur les surfaces éclairées de biais. Les créatures et le décor
+  reçoivent les ombres autant qu'ils en projettent : sans cela, un bras devant
+  le torse ne marque rien et le volume s'aplatit.
 
 ## L'horizon
 

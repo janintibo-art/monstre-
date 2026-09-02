@@ -159,6 +159,12 @@ async function boot() {
   const base = import.meta.env.BASE_URL || './';
   const groundTexture = await loadTexture(base + biome.ground);
 
+  // Jeton de generation. Chaque operation asynchrone note la generation au
+  // depart ; si elle a change a l'arrivee (reset, changement de decor rapide),
+  // le resultat est jete au lieu d'etre applique par-dessus l'etat courant.
+  let generation = 0;
+  const stale = (g) => g !== generation;
+
   const world = createWorld(canvas, { ...textures, ground: groundTexture }, biome);
 
   // Les trois images d'horizon du décor. Chargées à part : elles ne sont pas
@@ -175,7 +181,10 @@ async function boot() {
     });
     world.setHorizon(jeu);
   }
-  loadHorizon(biome);
+  // Sans ce `catch`, une erreur ici disparaissait sans laisser de trace : la
+  // promesse etait rejetee, personne ne l'ecoutait, et l'horizon manquait
+  // silencieusement. C'est exactement ce qui s'est produit.
+  loadHorizon(biome).catch((error) => console.error('Horizon indisponible :', error));
   const decor = createDecor(world.scene);
   decor.build(biome, pet.seed);
 
@@ -237,11 +246,6 @@ async function boot() {
   let monster = null;
   let brain = createBrain(pet.seed);
 
-  // Jeton de generation. Chaque operation asynchrone note la generation au
-  // depart ; si elle a change a l'arrivee (reset, changement de decor rapide),
-  // le resultat est jete au lieu d'etre applique par-dessus l'etat courant.
-  let generation = 0;
-  const stale = (g) => g !== generation;
   let species = speciesById(pet.species || pickSpecies(pet.seed).id);
   let currentModelUrl = null;
   let swapping = false;
@@ -366,7 +370,10 @@ async function boot() {
       world.applyBiome(biome, texture);
       daylight.setBiome(biome);
       decor.build(biome, pet.seed);
-      loadHorizon(biome);
+      // Sans ce `catch`, une erreur ici disparaissait sans laisser de trace : la
+  // promesse etait rejetee, personne ne l'ecoutait, et l'horizon manquait
+  // silencieusement. C'est exactement ce qui s'est produit.
+  loadHorizon(biome).catch((error) => console.error('Horizon indisponible :', error));
     },
     daylight,
     onRename: (name) => {
@@ -388,7 +395,10 @@ async function boot() {
         world.applyBiome(biome, texture);
         daylight.setBiome(biome);
         decor.build(biome, pet.seed);
-        loadHorizon(biome);
+        // Sans ce `catch`, une erreur ici disparaissait sans laisser de trace : la
+  // promesse etait rejetee, personne ne l'ecoutait, et l'horizon manquait
+  // silencieusement. C'est exactement ce qui s'est produit.
+  loadHorizon(biome).catch((error) => console.error('Horizon indisponible :', error));
       });
       if (monster) {
         world.scene.remove(monster.group);

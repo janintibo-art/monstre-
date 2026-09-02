@@ -66,9 +66,13 @@ export function createDecor(scene) {
         ? source.material[0].clone()
         : source.material.clone();
       material.side = THREE.FrontSide;
+      // Le decor est vu de loin et de biais : c'est la ou l'anisotropie change
+      // le plus, elle evite le fourmillement sur les feuillages.
+      if (material.map) material.map.anisotropy = 16;
 
       const mesh = new THREE.InstancedMesh(geometry, material, entry.count);
       mesh.castShadow = true;
+      mesh.receiveShadow = true;
       mesh.frustumCulled = false;
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 

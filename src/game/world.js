@@ -10,6 +10,17 @@ export function createWorld(canvas, textures = {}, biome = null) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
+  // Courbe tonale filmique. Sans elle, les couleurs saturent et s'écrasent dès
+  // qu'une lumière forte les touche : le vert de la prairie devenait un aplat
+  // fluorescent. La courbe comprime les hautes lumières au lieu de les couper,
+  // ce qui rend les matières et fait ressortir le relief.
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+
+  // Filtrage anisotrope au maximum de ce que la carte accepte. C'est ce qui
+  // évite qu'un sol vu de biais tourne à la bouillie scintillante.
+  const anisotropie = renderer.capabilities.getMaxAnisotropy();
+
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x0b0f1e, 9, 26);
 
@@ -193,14 +204,17 @@ export function createWorld(canvas, textures = {}, biome = null) {
   const key = new THREE.DirectionalLight(0xfff1d8, 1.9);
   key.position.set(4, 7, 4);
   key.castShadow = true;
-  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.mapSize.set(2048, 2048);
   key.shadow.camera.near = 1;
-  key.shadow.camera.far = 20;
-  key.shadow.camera.left = -6;
-  key.shadow.camera.right = 6;
-  key.shadow.camera.top = 6;
-  key.shadow.camera.bottom = -6;
-  key.shadow.bias = -0.0008;
+  key.shadow.camera.far = 30;
+  key.shadow.camera.left = -9;
+  key.shadow.camera.right = 9;
+  key.shadow.camera.top = 9;
+  key.shadow.camera.bottom = -9;
+  key.shadow.bias = -0.0004;
+  // Décale le point de test le long de la normale : supprime les rayures
+  // d'ombre sur les surfaces éclairées de biais, sans creuser le contact.
+  key.shadow.normalBias = 0.03;
   scene.add(key);
 
   const rim = new THREE.PointLight(0x6fe3c4, 12, 12, 2);
@@ -216,11 +230,16 @@ export function createWorld(canvas, textures = {}, biome = null) {
   if (textures.ground) {
     textures.ground.wrapS = THREE.RepeatWrapping;
     textures.ground.wrapT = THREE.RepeatWrapping;
-    textures.ground.repeat.set(3, 3);
+    textures.ground.repeat.set(12, 12);
+    textures.ground.anisotropy = anisotropie;
     groundMat.map = textures.ground;
     groundMat.color.set(0xffffff);
   }
-  const ground = new THREE.Mesh(new THREE.CircleGeometry(6.5, 64), groundMat);
+
+  // Le sol est bien plus large que l'aire de jeu : à 6,5 unités, son bord
+  // dessinait une courbe nette au milieu de l'image, comme une petite planète.
+  // À 26, le bord passe derrière le décor et l'horizon.
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(26, 96), groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);
@@ -231,7 +250,7 @@ export function createWorld(canvas, textures = {}, biome = null) {
     transparent: true,
     opacity: 0.28
   });
-  const ring = new THREE.Mesh(new THREE.RingGeometry(6.2, 6.5, 64), ringMat);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(5.4, 5.7, 96), ringMat);
   ring.rotation.x = -Math.PI / 2;
   ring.position.y = 0.01;
   scene.add(ring);
@@ -244,7 +263,12 @@ export function createWorld(canvas, textures = {}, biome = null) {
     if (groundTexture) {
       groundTexture.wrapS = THREE.RepeatWrapping;
       groundTexture.wrapT = THREE.RepeatWrapping;
-      groundTexture.repeat.set(next.repeat || 3, next.repeat || 3);
+      // Le motif se répète quatre fois plus qu'avant sur un sol quatre fois
+      // plus large : la densité de texels reste la même, le carrelage se voit
+      // moins parce que chaque dalle est plus petite à l'écran.
+      const dalles = (next.repeat || 3) * 4;
+      groundTexture.repeat.set(dalles, dalles);
+      groundTexture.anisotropy = anisotropie;
       groundTexture.colorSpace = THREE.SRGBColorSpace;
       if (groundMat.map) groundMat.map.dispose();
       groundMat.map = groundTexture;

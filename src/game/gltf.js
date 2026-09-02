@@ -97,15 +97,24 @@ function fitToHeight(holder, model, height) {
   return { height: size.y || height, radius: Math.max(size.x, size.z) / 2 };
 }
 
-function prepare(object) {
+function prepare(object, anisotropie = 4) {
   object.traverse((child) => {
     if (!child.isMesh) return;
     child.castShadow = true;
-    child.receiveShadow = false;
+    // La creature recoit aussi les ombres : sans cela, un bras passant devant
+    // le torse ne marque rien et le volume s'aplatit.
+    child.receiveShadow = true;
     // Les maillages skinnes disparaissent parfois au bord de l'ecran
     // si on laisse le culling automatique faire son travail.
     child.frustumCulled = false;
-    if (child.material) child.material.side = THREE.FrontSide;
+    if (child.material) {
+      child.material.side = THREE.FrontSide;
+      // Textures nettes sous un angle rasant, et cotes ombres moins delaves.
+      if (child.material.map) child.material.map.anisotropy = anisotropie;
+      if (child.material.roughness !== undefined) {
+        child.material.roughness = Math.min(1, child.material.roughness + 0.1);
+      }
+    }
   });
 }
 
