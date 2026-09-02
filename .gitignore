@@ -3,11 +3,19 @@ dist/
 release/
 .vite/
 
-# Projet natif Android : regenere par `npx cap add android`.
-# Versionne-le seulement le jour ou tu modifies du code Java/Kotlin,
-# des icones ou le AndroidManifest.
-android/
-ios/
+# Projet natif Android, régénéré par `npx cap add android` à chaque build.
+#
+# La barre oblique de tête est indispensable : sans elle, le motif s'applique à
+# TOUS les dossiers nommés « android », à n'importe quelle profondeur — y compris
+# `plugins/monstre-overlay/android/`, qui contient le code Kotlin du module. Il
+# était donc exclu du dépôt sans le moindre avertissement, et la compilation
+# échouait sur un dossier introuvable.
+/android/
+/ios/
+
+# Le code natif des modules locaux, lui, est du code source : il se versionne.
+!plugins/**/android/
+!plugins/**/android/**
 
 .DS_Store
 Thumbs.db

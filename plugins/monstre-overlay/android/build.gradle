@@ -1,0 +1,51 @@
+// Le module est écrit en Kotlin, mais le projet Android engendré par Capacitor
+// ne connaît que Java : son build.gradle racine n'embarque pas le compilateur
+// Kotlin. Comme ce fichier racine est régénéré à chaque compilation, on ne peut
+// pas l'y ajouter durablement.
+//
+// D'où ce bloc `buildscript` local : le module apporte son propre compilateur.
+// C'est le procédé habituel des modules Capacitor écrits en Kotlin.
+buildscript {
+    ext.kotlin_version = '1.9.24'
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace "com.monstre.overlay"
+    compileSdk project.hasProperty('compileSdkVersion') ? compileSdkVersion : 34
+
+    defaultConfig {
+        minSdk project.hasProperty('minSdkVersion') ? minSdkVersion : 23
+        targetSdk project.hasProperty('targetSdkVersion') ? targetSdkVersion : 34
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':capacitor-android')
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.webkit:webkit:1.11.0'
+}

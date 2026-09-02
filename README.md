@@ -414,6 +414,17 @@ L'autorisation « affichage par-dessus les autres applications » se demande dan
 **Réglages → Promenade sur l'écran**, avec un bouton d'essai pour vérifier sans
 attendre un vrai rendez-vous. Sans elle, la notification suffit.
 
+> **Deux pièges rencontrés, et gardés en mémoire par des tests.**
+>
+> Un motif `android/` dans `.gitignore` s'applique à **tous** les dossiers de ce
+> nom, à n'importe quelle profondeur : il excluait silencieusement le code
+> Kotlin du module. Les motifs sont désormais ancrés (`/android/`), et un test
+> refuse toute ligne non ancrée.
+>
+> Le projet Android engendré par Capacitor n'embarque **pas** le compilateur
+> Kotlin, et son `build.gradle` racine est régénéré à chaque compilation. Le
+> module apporte donc le sien, via un bloc `buildscript` local.
+
 ## Discuter, pas seulement jouer
 
 La première carte de l'écran Jeux est **Papoter avec moi**. La créature propose

@@ -100,6 +100,27 @@ jobs:
       - run: npm run build
 
       # Le dossier android/ n'est pas versionne : Capacitor le regenere ici.
+      # Le code natif du module doit être présent AVANT que Capacitor assemble
+      # le projet Android. S'il manque — typiquement parce qu'un motif de
+      # .gitignore l'a exclu — Capacitor échoue sur un « ENOENT » illisible.
+      # Mieux vaut le dire ici, en clair.
+      - name: Vérifier le module natif
+        shell: bash
+        run: |
+          manquant=0
+          for f in plugins/monstre-overlay/android/build.gradle \
+                   plugins/monstre-overlay/android/src/main/AndroidManifest.xml \
+                   plugins/monstre-overlay/android/src/main/assets/monstre_overlay.html; do
+            if [ ! -f "$f" ]; then
+              echo "::error::Fichier absent du dépôt : $f"
+              manquant=1
+            fi
+          done
+          if [ "$manquant" = "1" ]; then
+            echo "::error::Vérifie .gitignore : un motif « android/ » sans barre oblique de tête exclut aussi les modules."
+            exit 1
+          fi
+          echo "Module natif complet."
       - name: Générer le projet Android
         run: |
           if [ ! -d android ]; then npx cap add android; fi
