@@ -1525,3 +1525,21 @@ select {
 .confort .recall__subject {
   font-size: 21px;
 }
+
+/* Marque du dernier profil utilisé : sur un appareil partagé, c'est
+   l'information qu'on cherche en premier. */
+.profile-card__last {
+  align-self: flex-start;
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--glow);
+  border: 1px solid rgba(111, 227, 196, 0.4);
+  border-radius: 8px;
+  padding: 3px 8px;
+}
+
+.switch input:disabled + span {
+  opacity: 0.45;
+}

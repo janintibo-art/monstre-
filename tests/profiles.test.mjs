@@ -109,3 +109,37 @@ test('currentBand suit le profil actif', () => {
   P.setActiveId(mamie.id);
   assert.equal(P.currentBand().id, 'senior');
 });
+
+test('la question « qui joue ? » est posée par défaut', () => {
+  reset();
+  const a = P.createProfile({ name: 'Mamie', band: 'senior' });
+  P.setActiveId(a.id);
+  // Sans réglage explicite, on demande. C'est ce qui rend un second profil
+  // trouvable : sinon il faudrait penser à le chercher dans les réglages.
+  assert.equal(P.canSkipPicker(), false);
+});
+
+test('on ne peut sauter la question qu’avec un seul profil', () => {
+  reset();
+  const a = P.createProfile({ name: 'Seul', band: 'adulte' });
+  P.setActiveId(a.id);
+  P.saveDirectStart(true);
+  assert.equal(P.canSkipPicker(), true, 'un joueur seul doit pouvoir aller droit au but');
+
+  P.createProfile({ name: 'Deuxième', band: '5-6' });
+  assert.equal(
+    P.canSkipPicker(),
+    false,
+    'avec deux profils, la question doit revenir : c’est tout leur intérêt'
+  );
+  P.saveDirectStart(false);
+});
+
+test('sans profil actif, la question est posée quoi qu’il arrive', () => {
+  reset();
+  P.createProfile({ name: 'Personne', band: 'adulte' });
+  P.saveDirectStart(true);
+  P.setActiveId(null);
+  assert.equal(P.canSkipPicker(), false);
+  P.saveDirectStart(false);
+});

@@ -332,6 +332,16 @@ npm run android:sync && npm run assets
 
 ## Un profil par personne
 
+**L'application demande « qui joue ? » à chaque ouverture.** C'est le comportement
+par défaut, et il est délibéré : aller directement au dernier profil rend les
+autres quasi introuvables — il faudrait penser à chercher « changer de profil »
+dans les réglages. Le dernier profil utilisé est signalé, donc reprendre sa
+partie ne coûte qu'une tape.
+
+Celui qui joue seul peut désactiver la question dans les réglages. L'option est
+verrouillée dès qu'il existe plus d'un profil : la poser est alors exactement
+l'intérêt d'en avoir plusieurs.
+
 Au premier lancement, l'application demande qui joue. Chaque personne crée son
 profil — prénom, image, âge, centres d'intérêt — et **chaque profil a sa propre
 créature, ses propres souvenirs, son propre décor**.

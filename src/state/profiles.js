@@ -166,6 +166,39 @@ export function deleteProfile(id) {
   return profiles;
 }
 
+// Faut-il demander « qui joue ? » à chaque ouverture ?
+//
+// Par défaut, oui. L'application est faite pour être partagée : aller
+// directement au dernier profil rend les autres quasi introuvables, et l'on ne
+// pense pas à chercher « changer de profil » dans les réglages.
+//
+// Celui qui joue seul peut désactiver la question une fois pour toutes.
+const DIRECT_KEY = 'monstre.demarrage.direct';
+
+export function loadDirectStart() {
+  try {
+    return localStorage.getItem(DIRECT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function saveDirectStart(actif) {
+  try {
+    if (actif) localStorage.setItem(DIRECT_KEY, '1');
+    else localStorage.removeItem(DIRECT_KEY);
+  } catch {
+    /* stockage indisponible */
+  }
+}
+
+// Vrai si l'on peut sauter l'écran de choix : réglage activé, un profil actif,
+// et un seul profil enregistré. Avec plusieurs profils, la question se pose
+// toujours — c'est tout l'intérêt d'en avoir plusieurs.
+export function canSkipPicker() {
+  return loadDirectStart() && Boolean(getActiveProfile()) && listProfiles().length === 1;
+}
+
 export function currentBand() {
   const profile = getActiveProfile();
   return bandById(profile ? profile.band : 'none');

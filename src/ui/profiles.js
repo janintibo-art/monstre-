@@ -66,10 +66,11 @@ export function createProfilePicker({ onChoose, onToggle }) {
       const row = document.createElement('div');
       row.className = 'profile-row';
 
+      const actif = profile.id === getActiveId();
       const card = document.createElement('button');
       card.type = 'button';
       card.className = 'profile-card';
-      if (profile.id === getActiveId()) card.classList.add('profile-card--active');
+      if (actif) card.classList.add('profile-card--active');
 
       const avatar = document.createElement('span');
       avatar.className = 'profile-card__avatar';
@@ -89,6 +90,15 @@ export function createProfilePicker({ onChoose, onToggle }) {
         ? `${band.label} · aime ${likes.slice(0, 2).join(', ')}`
         : band.label;
       body.append(name, detail);
+
+      // Le dernier profil utilisé est signalé : sur un appareil partagé, c'est
+      // l'information qu'on cherche en premier.
+      if (actif) {
+        const marque = document.createElement('span');
+        marque.className = 'profile-card__last';
+        marque.textContent = 'dernier';
+        card.appendChild(marque);
+      }
 
       card.append(avatar, body);
       card.addEventListener('click', () => {

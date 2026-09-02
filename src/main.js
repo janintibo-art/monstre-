@@ -45,6 +45,7 @@ import {
   getActiveProfile,
   migrateLegacy,
   listProfiles,
+  canSkipPicker,
   seedFacts
 } from './state/profiles.js';
 import { createProfilePicker } from './ui/profiles.js';
@@ -132,12 +133,15 @@ async function boot() {
   // Le verrou paysage vient APRES la question du profil. Le poser avant ferait
   // basculer l'ecran en paysage puis en portrait sous les yeux du joueur, pour
   // un formulaire qui se remplit au clavier.
+  // « Qui joue ? » est posé à chaque ouverture, sauf si l'on joue seul et qu'on
+  // a demandé à ne plus l'être. Sans cette question, un second profil devient
+  // introuvable : il faudrait penser à le chercher dans les réglages.
   let seeded = false;
-  if (!getActiveProfile() || !listProfiles().length) {
+  if (canSkipPicker()) {
+    lockLandscape();
+  } else {
     const chosen = await askProfile();
     seeded = Boolean(chosen.isNew);
-  } else {
-    lockLandscape();
   }
   applyProfileComfort();
   const canvas = document.getElementById('scene');

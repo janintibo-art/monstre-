@@ -6,7 +6,14 @@ import { knownFacts, forget, daysTogether, playerName } from '../ai/memory.js';
 import { exportSave, parseImport } from '../state/save.js';
 import * as overlay from '../agenda/overlay.js';
 import { bandById, comfortEnabled, applyComfortClass } from '../state/profile.js';
-import { currentBand, getActiveProfile, updateProfile } from '../state/profiles.js';
+import {
+  currentBand,
+  getActiveProfile,
+  updateProfile,
+  listProfiles,
+  loadDirectStart,
+  saveDirectStart
+} from '../state/profiles.js';
 
 // Reglages et bapteme. Regle de base : un seul panneau ouvert a la fois,
 // et tout panneau doit pouvoir se fermer. Un ecran bloque est un bug.
@@ -41,6 +48,8 @@ export function createPanels({
   const overlayAllow = document.getElementById('btn-overlay-allow');
   const overlayTest = document.getElementById('btn-overlay-test');
   const profilesBtn = document.getElementById('btn-profiles');
+  const directToggle = document.getElementById('field-direct');
+  const directHelp = document.getElementById('direct-help');
   const comfortToggle = document.getElementById('field-comfort');
   const comfortHelp = document.getElementById('comfort-help');
   const cycleSelect = document.getElementById('field-cycle');
@@ -89,6 +98,15 @@ export function createPanels({
     profilesBtn.textContent = profile
       ? `👤 ${profile.avatar} ${profile.name} — changer de profil`
       : '👤 Choisir un profil';
+    // La question « qui joue ? » ne peut être sautée qu'avec un seul profil :
+    // avec plusieurs, la poser est exactement l'intérêt d'en avoir plusieurs.
+    const seul = listProfiles().length <= 1;
+    directToggle.checked = loadDirectStart();
+    directToggle.disabled = !seul;
+    directHelp.textContent = seul
+      ? 'Avec un seul profil, l’application peut ouvrir directement sur ta créature.'
+      : 'Plusieurs profils existent : la question « qui joue ? » est posée à chaque ouverture.';
+
     comfortToggle.checked = comfortEnabled(band, profile ? profile.comfort : null);
     comfortHelp.textContent =
       profile && profile.comfort !== null
@@ -132,6 +150,11 @@ export function createPanels({
   profilesBtn.addEventListener('click', () => {
     closeAll();
     if (onProfiles) onProfiles();
+  });
+
+  directToggle.addEventListener('change', () => {
+    saveDirectStart(directToggle.checked);
+    refreshProfile();
   });
 
   comfortToggle.addEventListener('change', () => {
