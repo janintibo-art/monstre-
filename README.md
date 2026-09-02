@@ -18,6 +18,12 @@ EXE), dis-le : la structure du projet resterait proche, seul le rendu changerait
 Aucune dépendance lourde : `three` en production, `vite`, `electron`,
 `electron-builder` et `capacitor` en développement.
 
+## Licence
+
+MIT. Voir [LICENSE](LICENSE), et [CONTRIBUTING.md](CONTRIBUTING.md) pour les
+règles apprises à la dure — chacune vient d'un défaut réel, chacune est
+verrouillée par un test.
+
 ## Vérifier
 
 ```bash
@@ -700,6 +706,24 @@ calcul est dans le shader : rien à recalculer côté processeur.
 
 **Des étoiles filantes** traversent, une toutes les quarante secondes en
 moyenne — une étoile filante fréquente cesse d'être un événement.
+
+## Les sons d'interface
+
+Le manque le plus audible d'un logiciel qui se veut fini : on touche un bouton
+et il ne se passe rien. L'œil voit la réaction, l'oreille n'en a aucune, et
+l'ensemble paraît inerte quelle que soit la qualité de l'image.
+
+Tout est calculé, comme l'ambiance. Trois règles :
+
+- **Court** — moins de 200 ms pour un retour de touche. Au-delà, on entend le
+  son au lieu de sentir le bouton.
+- **Doux** — sinusoïdes et triangles, jamais d'onde carrée : elle est agressive
+  à faible volume.
+- **Varié** — la hauteur change un peu à chaque fois. Un son rigoureusement
+  identique répété devient vite insupportable.
+
+Sept sons : toucher, valider, refuser, réussite, soin, craquement de coquille,
+et l'éclosion — le seul long de l'application.
 
 ## L'ambiance sonore
 

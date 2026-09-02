@@ -11,6 +11,7 @@ import { createVfx } from './game/vfx.js';
 import { createDecor } from './game/decor.js';
 import { createFauna } from './game/fauna.js';
 import { createAmbience, loadAmbience, saveAmbience } from './audio/ambience.js';
+import { sfx, unlockSfx, setMuted } from './audio/sfx.js';
 import { createKitchen } from './game/food.js';
 import { resolveBiome, horizonUrl, HORIZON_MOMENTS } from './game/biomes.js';
 import { createDaylight } from './game/daylight.js';
@@ -214,6 +215,7 @@ async function boot() {
   fauna.setBiome(biome);
 
   const ambience = createAmbience();
+  setMuted(!loadAmbience());
 
   // Les repas. La jauge de faim ne monte qu'une fois le plat termine : c'est ce
   // qui donne au geste une duree, et donc quelque chose a regarder.
@@ -633,6 +635,8 @@ async function boot() {
       actionBar.setSleepLabel(false);
     }
 
+    sfx.soin();
+
     if (care.id === 'feed') {
       // On sert, on ne remplit pas : la jauge montera quand le plat sera mange.
       kitchen.serve(monster ? monster.group.position : null);
@@ -701,6 +705,7 @@ async function boot() {
       listener.start({ pace: listeningPace() });
     },
     onCelebrate: (big = false) => {
+      sfx.reussite();
       if (!monster) return;
       monster.react('pet', 1.2);
       brain.forceAction(big ? 'dance' : 'play', big ? 6 : 3);
@@ -710,6 +715,7 @@ async function boot() {
       applyEffects(pet.needs, { fun: big ? 6 : 2, affection: 1 });
     },
     onEncourage: () => {
+      sfx.refuse();
       if (monster) monster.react('pet', 0.6);
     }
   });
@@ -740,6 +746,7 @@ async function boot() {
   // -------------------------------------------------------------- pointeur
   function onPointerDown(event) {
     voice.unlock(); // le son reste bloque tant que l'ecran n'a pas ete touche
+    unlockSfx();
     // L'ambiance demarre au premier contact, jamais avant : les navigateurs
     // l'interdisent, et personne n'aime qu'une application se mette a faire du
     // bruit sans prevenir.
@@ -755,6 +762,7 @@ async function boot() {
       const hits = world.objectsUnder(x, y, [egg.group]);
       const gain = hits.length ? 0.1 : 0.045;
       egg.poke();
+      sfx.craque();
       pet.taps += 1;
       pet.hatchProgress = Math.min(1, pet.hatchProgress + gain);
       vfx.emit('eggGlow', new THREE.Vector3(0, 1, 0), { count: hits.length ? 5 : 2 });
@@ -812,6 +820,7 @@ async function boot() {
     vfx.lightBeam(center, { duration: 1.5 });
     vfx.flash('#fff3d0', 0.85, 520);
     world.shake(0.45);
+    sfx.eclosion();
     egg.burst();
     vfx.emit('hatchBurst', center);
     vfx.emit('shards', center);

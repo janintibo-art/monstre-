@@ -351,3 +351,34 @@ test('les nappes de brume ne calculent pas de pixels invisibles', () => {
   assert.match(bloc, /RingGeometry/, 'les voiles devraient épouser la forme du masque');
   assert.ok(!/PlaneGeometry/.test(bloc), 'un voile carré gaspille des fragments transparents');
 });
+
+test('les libellés de jauges tiennent dans leur colonne', () => {
+  const css = readFileSync('src/styles.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const bloc = css.slice(css.indexOf('.vial {'), css.indexOf('}', css.indexOf('.vial {')));
+  const largeur = Number((bloc.match(/width:\s*(\d+)px/) || [])[1]);
+
+  // « Propreté » et « Affection » font une cinquantaine de pixels à 9 px avec
+  // les majuscules et l'interlettrage. À 26 px de colonne, ils débordaient sur
+  // leurs voisins et se lisaient collés.
+  assert.ok(largeur >= 46, `colonne de ${largeur} px : les libellés déborderont`);
+
+  const label = css.slice(css.indexOf('.vial__label {'), css.indexOf('}', css.indexOf('.vial__label {')));
+  assert.match(label, /overflow:\s*hidden/, 'aucun garde-fou si un libellé s’allonge');
+});
+
+test('le projet déclare une licence libre', () => {
+  const licence = readFileSync('LICENSE', 'utf8');
+  assert.match(licence, /MIT License/, 'licence absente ou illisible');
+  const paquet = JSON.parse(readFileSync('package.json', 'utf8'));
+  assert.equal(paquet.license, 'MIT', 'licence non déclarée dans package.json');
+});
+
+test('les sons d’interface restent courts et doux', async () => {
+  const source = readFileSync('src/audio/sfx.js', 'utf8');
+  // Au-delà de 200 ms, on entend le son au lieu de sentir le bouton.
+  const toucher = source.slice(source.indexOf('touche()'), source.indexOf('valide()'));
+  const duree = Number((toucher.match(/duree:\s*([\d.]+)/) || [])[1]);
+  assert.ok(duree <= 0.2, `retour de touche de ${duree} s : trop long`);
+  // Une onde carrée est agressive à faible volume : pas dans l'interface.
+  assert.ok(!/type:\s*'square'/.test(source), 'onde carrée dans les sons d’interface');
+});
