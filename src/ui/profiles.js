@@ -10,6 +10,7 @@ import {
   INTERESTS
 } from '../state/profiles.js';
 import { AGE_BANDS, bandById } from '../state/profile.js';
+import { currentBand } from '../state/profiles.js';
 import { applyIcon, avatarContent } from './icons.js';
 
 // Choix et creation de profil.
@@ -25,12 +26,13 @@ import { applyIcon, avatarContent } from './icons.js';
 //   3. **Tout reste sur l'appareil.** C'est ecrit sur l'ecran, pas cache dans
 //      une politique de confidentialite.
 
-export function createProfilePicker({ onChoose, onToggle }) {
+export function createProfilePicker({ onChoose, onToggle, voice, voiceProfile, getPet }) {
   const panel = document.getElementById('profiles');
   const listView = document.getElementById('profiles-list');
   const formView = document.getElementById('profiles-form');
   const title = document.getElementById('profiles-title');
   const closeBtn = document.getElementById('profiles-close');
+  const voiceBtn = document.getElementById('profiles-voice');
 
   const nameField = document.getElementById('profile-name');
   const avatarRow = document.getElementById('profile-avatars');
@@ -45,6 +47,37 @@ export function createProfilePicker({ onChoose, onToggle }) {
   let editing = null;
   let canClose = false;
 
+  // Voix off.
+  //
+  // Elle ne parle pas d'elle-même au premier lancement : le son est bloqué tant
+  // que l'écran n'a pas été touché, et surtout une application qui se met à
+  // parler sans prévenir surprend plus qu'elle n'aide. Le bouton haut-parleur
+  // est ce premier contact ; une fois pressé, chaque étape est annoncée.
+  let voixActive = false;
+
+  const EXPLICATIONS = {
+    liste:
+      'Qui joue ? Touche ton image pour retrouver ta créature. Le bouton du bas sert à créer un nouveau profil, pour quelqu’un d’autre de la famille.',
+    accueil:
+      'Bienvenue. Chaque personne a son propre monstre, qui se souvient d’elle et d’elle seule. Touche le bouton pour te présenter.',
+    formulaire:
+      'Écris d’abord ton prénom, ou le surnom que tu veux. Choisis ensuite une image, puis ton âge : il sert à adapter les jeux et la façon de te parler. En dessous, coche ce que tu aimes : ta créature s’en souviendra. Tout reste sur cet appareil.'
+  };
+
+  function dire(texte) {
+    if (!voixActive || !voice || !texte) return;
+    voice.narrate(texte, voiceProfile ? voiceProfile(getPet ? getPet() : {}, currentBand()) : undefined);
+  }
+
+  if (voiceBtn) {
+    voiceBtn.addEventListener('click', () => {
+      if (voice && voice.unlock) voice.unlock();
+      voixActive = true;
+      voiceBtn.classList.add('icon-button--actif');
+      dire(formView.hidden ? (listProfiles().length ? EXPLICATIONS.liste : EXPLICATIONS.accueil) : EXPLICATIONS.formulaire);
+    });
+  }
+
   /* ------------------------------------------------------------ la liste */
 
   function renderList() {
@@ -54,6 +87,7 @@ export function createProfilePicker({ onChoose, onToggle }) {
     listView.hidden = false;
     formView.hidden = true;
     closeBtn.hidden = !canClose;
+    dire(listProfiles().length ? EXPLICATIONS.liste : EXPLICATIONS.accueil);
 
     if (!profiles.length) {
       const hello = document.createElement('p');
@@ -144,6 +178,7 @@ export function createProfilePicker({ onChoose, onToggle }) {
     listView.hidden = true;
     formView.hidden = false;
     closeBtn.hidden = !canClose;
+    dire(EXPLICATIONS.formulaire);
 
     nameField.value = draft.name;
     noteField.value = draft.note || '';

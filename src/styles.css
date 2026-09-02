@@ -1419,7 +1419,7 @@ select {
 .agenda-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 12px 14px;
   min-height: 64px;
   border-radius: 14px;
@@ -1433,7 +1433,19 @@ select {
   width: 4px;
   align-self: stretch;
   border-radius: 4px;
-  background: var(--glow);
+  /* La couleur vient de la nature du rappel : turquoise pour un rendez-vous,
+     ambre pour une tâche, rose pour un réveil. On lit la semaine sans lire un
+     seul mot. */
+  background: var(--teinte, var(--glow));
+  flex: none;
+}
+
+.agenda-item__heure {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--teinte, var(--glow));
+  min-width: 52px;
   flex: none;
 }
 
@@ -1723,4 +1735,115 @@ select {
 .confort .game-card__icon .icone__image {
   width: 52px;
   height: 52px;
+}
+
+/* ------------------------- La semaine en un coup d'œil ------------------- */
+
+.semaine {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+.semaine__jour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 2px 6px;
+  min-height: 62px;
+  border-radius: 12px;
+  border: 1px solid rgba(233, 238, 245, 0.1);
+  background: linear-gradient(160deg, rgba(38, 48, 86, 0.7), rgba(16, 22, 44, 0.8));
+  color: var(--bone);
+  cursor: pointer;
+  transition: border-color 140ms ease, transform 140ms ease;
+}
+
+.semaine__jour:active {
+  transform: scale(0.96);
+}
+
+.semaine__jour--aujourdhui {
+  border-color: rgba(111, 227, 196, 0.45);
+}
+
+.semaine__jour--choisi {
+  border-color: var(--glow);
+  background: linear-gradient(160deg, rgba(111, 227, 196, 0.22), rgba(16, 22, 44, 0.85));
+}
+
+.semaine__nom {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.semaine__chiffre {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Les pastilles disent la charge du jour sans qu'on ait à lire. */
+.semaine__points {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 8px;
+}
+
+.semaine__points i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: block;
+}
+
+.semaine__points em {
+  font-size: 8px;
+  font-style: normal;
+  color: var(--muted);
+}
+
+.agenda-jours {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.agenda-jour__titre {
+  margin: 10px 0 2px;
+  font-family: var(--display);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.agenda-jour__titre:first-child {
+  margin-top: 0;
+}
+
+.chip[style*='--teinte'].chip--on {
+  border-color: var(--teinte);
+  background: color-mix(in srgb, var(--teinte) 18%, transparent);
+  color: var(--teinte);
+}
+
+.confort .semaine__jour {
+  min-height: 76px;
+}
+
+.confort .semaine__chiffre {
+  font-size: 21px;
+}
+
+.confort .agenda-item__heure {
+  font-size: 18px;
+  min-width: 62px;
 }

@@ -29,6 +29,7 @@
           <span id="pet-name" class="identity__name">Œuf</span>
           <span id="pet-stage" class="identity__stage">incubation</span>
         </div>
+        <button id="btn-agenda-top" class="icon-button" aria-label="Mon agenda">📅</button>
         <button id="btn-menu" class="icon-button" aria-label="Ouvrir le menu">···</button>
       </header>
 
@@ -178,6 +179,7 @@
       <div id="profiles" role="dialog" aria-modal="true" aria-label="Profils" class="panel panel--center panel--wide" hidden>
         <div class="panel__head">
           <h2 id="profiles-title">Qui joue ?</h2>
+          <button id="profiles-voice" class="icon-button" aria-label="Écouter les explications">🔊</button>
           <button id="profiles-close" class="icon-button" aria-label="Fermer">×</button>
         </div>
         <div class="panel__body">
@@ -223,16 +225,19 @@
         </div>
       </div>
 
-      <!-- Pense-bete -->
-      <div id="agenda" role="dialog" aria-modal="true" aria-label="Pense-bête" class="panel panel--wide" hidden>
+      <!-- Agenda -->
+      <div id="agenda" role="dialog" aria-modal="true" aria-label="Agenda" class="panel panel--wide" hidden>
         <div class="panel__head">
-          <h2 id="agenda-title">Pense-bête</h2>
+          <h2 id="agenda-title">Mon agenda</h2>
           <button id="agenda-close" class="icon-button" aria-label="Fermer">×</button>
         </div>
         <div class="panel__body">
+          <!-- Bande de la semaine : sept jours, avec le nombre de rappels -->
+          <div id="agenda-semaine" class="semaine"></div>
+
           <p id="agenda-intro" class="hint"></p>
 
-          <!-- Question posée après avoir compris un rendez-vous -->
+          <!-- Question posée après avoir compris un rappel -->
           <div id="agenda-ask" hidden>
             <p id="agenda-what" class="game-prompt"></p>
             <p class="hint">Quand veux-tu que je te prévienne ?</p>
@@ -243,10 +248,10 @@
             </div>
           </div>
 
-          <div id="agenda-list" class="agenda-list"></div>
+          <div id="agenda-jours" class="agenda-jours"></div>
 
-          <div id="agenda-add" class="field">
-            <span>Ou écris-le</span>
+          <div id="agenda-add">
+            <div class="chip-row" id="agenda-types"></div>
             <div class="chat-input">
               <input id="agenda-field" type="text" placeholder="rendez-vous chez le médecin mardi à 17h" autocomplete="off" />
               <button id="agenda-send">Ajouter</button>

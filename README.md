@@ -355,6 +355,12 @@ Celui qui joue seul peut désactiver la question dans les réglages. L'option es
 verrouillée dès qu'il existe plus d'un profil : la poser est alors exactement
 l'intérêt d'en avoir plusieurs.
 
+L'écran de présentation a un bouton **haut-parleur** qui lit les explications à
+voix haute — pour ceux qui ne lisent pas encore, et pour ceux que les petits
+caractères fatiguent. Il ne parle jamais de lui-même : c'est ce premier appui
+qui débloque le son, et une application qui se met à parler sans prévenir
+surprend plus qu'elle n'aide.
+
 Au premier lancement, l'application demande qui joue. Chaque personne crée son
 profil — prénom, image, âge, centres d'intérêt — et **chaque profil a sa propre
 créature, ses propres souvenirs, son propre décor**.
@@ -396,7 +402,7 @@ Le mode **confort** (texte et cibles agrandis, deux colonnes au lieu de trois)
 s'active automatiquement pour les tout-petits et le profil senior, et se force à
 la main profil par profil.
 
-## Le pense-bête
+## L'agenda
 
 « **J'ai rendez-vous chez le médecin mardi à 17 h** » suffit. L'analyse est
 faite par motifs, en français, sans modèle de langage (`src/agenda/parse.js`) :
@@ -421,7 +427,21 @@ ouvrant, la créature accourt, s'agite et répète toutes les vingt secondes
 jusqu'à ce qu'on appuie sur « C'est noté ». Un rendez-vous récurrent est alors
 reporté à la fois suivante au lieu d'être supprimé.
 
-Chaque profil a ses pense-bêtes.
+**Trois natures de rappel**, et elles ne se ressemblent pas : un rendez-vous a
+une heure imposée par quelqu'un d'autre, une tâche est quelque chose qu'on
+s'impose et qu'on peut décaler, un réveil doit sonner tous les jours et insister.
+Le ton de la créature et la durée de son apparition en dépendent — cinq minutes
+pour un réveil, trois pour un rendez-vous — et un réveil qui dirait « n'oublie
+pas » sonnerait faux.
+
+**L'agenda lui-même** s'ouvre depuis la barre du haut. Une bande montre les sept
+prochains jours avec des pastilles colorées : on lit la charge de la semaine sans
+lire un seul mot. En dessous, les rappels groupés par jour, avec leur heure en
+gros. Les rappels qui se répètent sont **projetés sur leurs prochaines
+occurrences** : sans cela un réveil quotidien n'apparaîtrait qu'une fois, et
+l'agenda mentirait sur la semaine à venir.
+
+Chaque profil a son agenda.
 
 ### La créature marche sur l'écran
 

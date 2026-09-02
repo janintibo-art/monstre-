@@ -55,9 +55,12 @@ export const GUIDE = [
   {
     id: 'agenda',
     icon: '📅',
-    title: 'Le pense-bête',
+    title: 'L’agenda',
     body: [
-      'Dis-lui simplement : « **j’ai rendez-vous chez le médecin mardi à 17 h** ». Elle comprend la date et l’heure toute seule, au micro comme au clavier.',
+      'Le bouton **📅 en haut de l’écran** ouvre ton agenda. Une bande montre les sept prochains jours avec des pastilles de couleur : d’un coup d’œil, tu vois les journées chargées.',
+      'Trois sortes de rappels : **un rendez-vous** (turquoise), **une tâche à faire** (ambre) et **un réveil** (rose). Choisis-en un, puis dis ou écris ta phrase.',
+      'Dis-lui simplement : « **j’ai rendez-vous chez le médecin mardi à 17 h** », « **rappelle-moi d’arroser les plantes samedi** » ou « **réveille-moi à 7 h** ». Elle comprend la date et l’heure toute seule, au micro comme au clavier.',
+      'Un réveil se répète tous les jours sans que tu aies à le demander — personne ne se lève une seule fois — et la créature insiste plus longtemps que pour un simple rappel.',
       '**Elle demande ensuite quand te prévenir** : une heure avant, le matin même, la veille au soir… C’est la question que tout le monde oublie de préciser, et sans elle un pense-bête arrive toujours trop tard.',
       'Le moment venu, ton téléphone t’alerte même si l’application est fermée. En ouvrant, la créature accourt et répète le rendez-vous jusqu’à ce que tu appuies sur « C’est noté ».',
       'Elle comprend aussi « demain », « après-demain », « dans trois jours », « le 12 mars », et les rendez-vous qui se répètent : « **tous les jours à 8 h** » pour les médicaments, « tous les mardis » pour le kiné.',
@@ -93,6 +96,7 @@ export const GUIDE = [
     icon: '👤',
     title: 'Un profil par personne',
     body: [
+      'Sur l’écran de présentation, le bouton **haut-parleur** en haut lit les explications à voix haute. Pratique si tu ne lis pas encore, ou si les petits caractères te fatiguent.',
       'Au premier lancement, l’application demande qui joue. Chaque personne crée son profil : un prénom, une image, son âge, et ce qu’elle aime.',
       '**Chaque profil a son propre monstre**, ses propres souvenirs, son propre décor. C’est essentiel : une mémoire partagée entre une grand-mère et un enfant de six ans ne serait la mémoire de personne. La complicité ne se crée que si la créature sait à qui elle parle.',
       'Ce que vous cochez à la création — les animaux, le jardin, la cuisine — devient tout de suite un souvenir. La créature vous connaît donc un peu dès la première phrase, au lieu de vous demander votre prénom que vous venez d’écrire.',

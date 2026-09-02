@@ -1,8 +1,25 @@
-import { parseReminder, parseLead, formatWhen, LEADS, leadById, triggerTime } from '../agenda/parse.js';
-import { listReminders, addReminder, removeReminder, completeReminder, prune } from '../agenda/store.js';
+import {
+  parseReminder,
+  parseLead,
+  formatWhen,
+  LEADS,
+  leadById,
+  triggerTime,
+  TYPES,
+  typeById
+} from '../agenda/parse.js';
+import {
+  listReminders,
+  addReminder,
+  removeReminder,
+  completeReminder,
+  prune,
+  parJour
+} from '../agenda/store.js';
 import * as notify from '../agenda/notify.js';
 import * as overlay from '../agenda/overlay.js';
 import { currentBand, getActiveId } from '../state/profiles.js';
+import { iconContent } from './icons.js';
 
 // Le pense-bête.
 //
@@ -16,7 +33,9 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
   const panel = document.getElementById('agenda');
   const closeBtn = document.getElementById('agenda-close');
   const intro = document.getElementById('agenda-intro');
-  const listView = document.getElementById('agenda-list');
+  const semaineView = document.getElementById('agenda-semaine');
+  const joursView = document.getElementById('agenda-jours');
+  const typesRow = document.getElementById('agenda-types');
 
   const ask = document.getElementById('agenda-ask');
   const askWhat = document.getElementById('agenda-what');
@@ -37,60 +56,187 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
     voice.narrate(text, voiceProfile(getPet(), currentBand()));
   }
 
-  /* ------------------------------------------------------------- la liste */
+  /* ------------------------------------------------------------- l'agenda */
+
+  const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  const MOIS = ['janv.', 'févr.', 'mars', 'avril', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
+  let jourChoisi = null; // filtre par jour, ou null pour toute la semaine
+  let typeChoisi = 'rdv';
+
+  function memeJour(a, b) {
+    const x = new Date(a);
+    const y = new Date(b);
+    return x.toDateString() === y.toDateString();
+  }
+
+  function titreJour(quand, maintenant) {
+    const d = new Date(quand);
+    const ecart = Math.round((new Date(quand).setHours(0, 0, 0, 0) - new Date(maintenant).setHours(0, 0, 0, 0)) / 86400000);
+    if (ecart === 0) return "Aujourd'hui";
+    if (ecart === 1) return 'Demain';
+    return `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]}`;
+  }
+
+  // Bande des sept prochains jours. Elle donne d'un coup d'œil la charge de la
+  // semaine — c'est ce qu'on regarde en premier dans un agenda, avant même le
+  // détail d'une journée.
+  function renderSemaine(groupes, maintenant) {
+    semaineView.innerHTML = '';
+    for (let i = 0; i < 7; i += 1) {
+      const jour = new Date(maintenant);
+      jour.setDate(jour.getDate() + i);
+      jour.setHours(0, 0, 0, 0);
+
+      const groupe = groupes.find((g) => g.jour === jour.getTime());
+      const nombre = groupe ? groupe.items.length : 0;
+
+      const case_ = document.createElement('button');
+      case_.type = 'button';
+      case_.className = 'semaine__jour';
+      if (jourChoisi === jour.getTime()) case_.classList.add('semaine__jour--choisi');
+      if (i === 0) case_.classList.add('semaine__jour--aujourdhui');
+
+      const nom = document.createElement('span');
+      nom.className = 'semaine__nom';
+      nom.textContent = JOURS[jour.getDay()].slice(0, 3);
+      const chiffre = document.createElement('span');
+      chiffre.className = 'semaine__chiffre';
+      chiffre.textContent = jour.getDate();
+
+      const points = document.createElement('span');
+      points.className = 'semaine__points';
+      // Trois points au maximum : au-delà, on compte au lieu d'aligner.
+      (groupe ? groupe.items.slice(0, 3) : []).forEach((item) => {
+        const point = document.createElement('i');
+        point.style.background = typeById(item.type).couleur;
+        points.appendChild(point);
+      });
+      if (nombre > 3) {
+        const plus = document.createElement('em');
+        plus.textContent = `+${nombre - 3}`;
+        points.appendChild(plus);
+      }
+
+      case_.append(nom, chiffre, points);
+      case_.addEventListener('click', () => {
+        jourChoisi = jourChoisi === jour.getTime() ? null : jour.getTime();
+        render();
+      });
+      semaineView.appendChild(case_);
+    }
+  }
+
+  function ligne(item, maintenant) {
+    const type = typeById(item.type);
+    const row = document.createElement('div');
+    row.className = 'agenda-item';
+    row.style.setProperty('--teinte', type.couleur);
+    if (item.at < maintenant) row.classList.add('agenda-item--past');
+
+    const mark = document.createElement('div');
+    mark.className = 'agenda-item__mark';
+
+    const heure = document.createElement('div');
+    heure.className = 'agenda-item__heure';
+    const d = new Date(item.at);
+    heure.textContent = `${d.getHours()}h${String(d.getMinutes()).padStart(2, '0')}`;
+
+    const body = document.createElement('div');
+    body.className = 'agenda-item__body';
+    const subject = document.createElement('div');
+    subject.className = 'agenda-item__subject';
+    subject.textContent = item.subject || type.label;
+    const detail = document.createElement('div');
+    detail.className = 'agenda-item__when';
+    const prevenance = item.lead && item.lead.label ? item.lead.label.toLowerCase() : '';
+    detail.textContent = [type.label, item.repete ? 'chaque fois' : '', prevenance ? `prévenu ${prevenance}` : '']
+      .filter(Boolean)
+      .join(' · ');
+    body.append(subject, detail);
+
+    const drop = document.createElement('button');
+    drop.type = 'button';
+    drop.className = 'agenda-item__drop';
+    drop.textContent = '×';
+    drop.setAttribute('aria-label', `Oublier ${item.subject || type.label}`);
+    drop.addEventListener('click', () => {
+      notify.cancel(item);
+      overlay.cancel(item);
+      removeReminder(getActiveId(), item.id);
+      render();
+    });
+
+    row.append(mark, heure, body, drop);
+    return row;
+  }
 
   function render() {
     const profileId = getActiveId();
     prune(profileId);
-    const list = listReminders(profileId).filter((r) => !r.done);
-    const now = Date.now();
+    const maintenant = Date.now();
+    const groupes = parJour(profileId, 7, maintenant);
 
-    intro.textContent = list.length
+    renderSemaine(groupes, maintenant);
+    renderTypes();
+
+    const visibles = jourChoisi === null ? groupes : groupes.filter((g) => g.jour === jourChoisi);
+
+    intro.textContent = groupes.length
       ? 'Je te préviendrai, même si l’application est fermée.'
-      : 'Dis-moi un rendez-vous et je m’en souviendrai. Par exemple : « rendez-vous chez le médecin mardi à 17 h ».';
+      : 'Dis-moi un rendez-vous, une tâche ou une heure de réveil, et je m’en souviendrai.';
 
-    listView.innerHTML = '';
-    list.forEach((item) => {
-      const row = document.createElement('div');
-      row.className = 'agenda-item';
-      const reste = item.at - now;
-      if (reste < 0) row.classList.add('agenda-item--past');
-      else if (reste < 24 * 3600000) row.classList.add('agenda-item--soon');
-
-      const mark = document.createElement('div');
-      mark.className = 'agenda-item__mark';
-
-      const body = document.createElement('div');
-      body.className = 'agenda-item__body';
-      const subject = document.createElement('div');
-      subject.className = 'agenda-item__subject';
-      subject.textContent = item.subject || 'Rendez-vous';
-      const when = document.createElement('div');
-      when.className = 'agenda-item__when';
-      const prevenance = item.lead && item.lead.label ? ` · prévenu ${item.lead.label.toLowerCase()}` : '';
-      when.textContent = `${formatWhen(item.at, new Date(now))}${prevenance}`;
-      body.append(subject, when);
-
-      const drop = document.createElement('button');
-      drop.type = 'button';
-      drop.className = 'agenda-item__drop';
-      drop.textContent = '×';
-      drop.setAttribute('aria-label', `Oublier ${item.subject}`);
-      drop.addEventListener('click', () => {
-        notify.cancel(item);
-        overlay.cancel(item);
-        removeReminder(profileId, item.id);
-        render();
-      });
-
-      row.append(mark, body, drop);
-      listView.appendChild(row);
+    joursView.innerHTML = '';
+    visibles.forEach((groupe) => {
+      const titre = document.createElement('h3');
+      titre.className = 'agenda-jour__titre';
+      titre.textContent = titreJour(groupe.jour, maintenant);
+      joursView.appendChild(titre);
+      groupe.items.forEach((item) => joursView.appendChild(ligne(item, maintenant)));
     });
+
+    if (!visibles.length && jourChoisi !== null) {
+      const vide = document.createElement('p');
+      vide.className = 'hint';
+      vide.textContent = 'Rien de prévu ce jour-là.';
+      joursView.appendChild(vide);
+    }
 
     ask.hidden = !pending;
     addRow.hidden = Boolean(pending);
-    listView.hidden = Boolean(pending);
+    joursView.hidden = Boolean(pending);
+    semaineView.hidden = Boolean(pending);
   }
+
+  // Choix de la nature avant d'écrire : c'est plus rapide que de deviner
+  // depuis la phrase, et cela apprend à l'utilisateur ce qu'il peut demander.
+  function renderTypes() {
+    typesRow.innerHTML = '';
+    Object.values(TYPES).forEach((type) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      if (typeChoisi === type.id) chip.classList.add('chip--on');
+      chip.style.setProperty('--teinte', type.couleur);
+      chip.appendChild(iconContent(`type:${type.id}`, type.icone));
+      const mot = document.createElement('span');
+      mot.textContent = ` ${type.label}`;
+      chip.appendChild(mot);
+      chip.addEventListener('click', () => {
+        typeChoisi = type.id;
+        field.placeholder = PLACEHOLDERS[type.id];
+        renderTypes();
+        field.focus();
+      });
+      typesRow.appendChild(chip);
+    });
+  }
+
+  const PLACEHOLDERS = {
+    rdv: 'rendez-vous chez le médecin mardi à 17h',
+    tache: 'arroser les plantes samedi à 10h',
+    reveil: 'réveille-moi à 7h'
+  };
 
   /* --------------------------------------------- la question de prévenance */
 
@@ -128,6 +274,7 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
     const item = addReminder(profileId, { ...pending, lead });
     pending = null;
 
+    const type = typeById(item.type);
     const quand = formatWhen(item.at);
     const rappel = formatWhen(triggerTime(item.at, lead));
 
@@ -140,9 +287,10 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
     if (getSpeciesFolder) await overlay.schedule(item, getSpeciesFolder());
 
     render();
+    const quoi = item.subject || type.label.toLowerCase();
     const phrase = ok
-      ? `C’est noté : ${item.subject || 'rendez-vous'} ${quand}. Je te préviens ${rappel}.`
-      : `C’est noté : ${item.subject || 'rendez-vous'} ${quand}. Je te préviendrai quand tu ouvriras l’application — autorise les notifications pour que je te prévienne même fermé.`;
+      ? `C’est noté : ${quoi} ${quand}. Je te préviens ${rappel}.`
+      : `C’est noté : ${quoi} ${quand}. Je te préviendrai quand tu ouvriras l’application — autorise les notifications pour que je te prévienne même fermé.`;
     say(phrase);
     status.textContent = phrase;
   }
@@ -176,6 +324,14 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
     const text = field.value.trim();
     if (!text) return;
     const reminder = parseReminder(text);
+    if (reminder) {
+      // La nature choisie au doigt l'emporte sur celle devinée dans la phrase :
+      // l'utilisateur vient de la désigner, il sait mieux que l'analyse.
+      reminder.type = typeChoisi;
+      if (typeChoisi === 'reveil' && !reminder.recurrence) {
+        reminder.recurrence = { every: 'day' };
+      }
+    }
     if (!reminder) {
       status.textContent =
         'Je n’ai pas trouvé de date. Essaie « rendez-vous chez le dentiste jeudi à 10 h ».';
@@ -256,7 +412,7 @@ export function createRecall({ getPet, voice, voiceProfile }) {
     body.className = 'recall__body';
     const subject = document.createElement('div');
     subject.className = 'recall__subject';
-    subject.textContent = reminder.subject || 'Rendez-vous';
+    subject.textContent = reminder.subject || typeById(reminder.type).label;
     const when = document.createElement('div');
     when.className = 'recall__when';
     when.textContent = formatWhen(reminder.at);
@@ -275,7 +431,12 @@ export function createRecall({ getPet, voice, voiceProfile }) {
     element.append(body, ok);
     document.body.appendChild(element);
 
-    const phrase = `N’oublie pas : ${reminder.subject || 'ton rendez-vous'}, ${formatWhen(reminder.at)}.`;
+    // Chaque nature a sa formule : « debout ! » pour un réveil, « tu voulais »
+    // pour une tâche. Un réveil qui dit « n'oublie pas » sonne faux.
+    const type = typeById(reminder.type);
+    const phrase = `${type.phrase(reminder.subject || 'ton rendez-vous')}${
+      type.id === 'reveil' ? '' : `, ${formatWhen(reminder.at)}.`
+    }`;
     say(phrase);
 
     // Il répète toutes les vingt secondes, tant qu'on ne l'a pas acquitté.

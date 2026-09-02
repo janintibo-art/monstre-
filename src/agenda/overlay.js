@@ -1,4 +1,4 @@
-import { triggerTime, formatWhen } from './parse.js';
+import { triggerTime, formatWhen, typeById } from './parse.js';
 
 // La créature qui vient marcher sur l'écran du téléphone.
 //
@@ -93,7 +93,9 @@ export async function schedule(reminder, speciesFolder) {
       text: reminder.subject || 'Rendez-vous',
       when: formatWhen(reminder.at, new Date(at)),
       sprite: spriteFor(speciesFolder),
-      timeoutMs: DUREE_MS
+      // Un réveil insiste plus longtemps qu'un rendez-vous : c'est sa raison
+      // d'être. Trois minutes pour l'un, cinq pour l'autre.
+      timeoutMs: typeById(reminder.type).duree || DUREE_MS
     });
     return Boolean(scheduled);
   } catch {

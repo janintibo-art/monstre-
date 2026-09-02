@@ -12,6 +12,7 @@ import { createDecor } from './game/decor.js';
 import { createFauna } from './game/fauna.js';
 import { createAmbience, loadAmbience, saveAmbience } from './audio/ambience.js';
 import { sfx, unlockSfx, setMuted } from './audio/sfx.js';
+import { applyIcon } from './ui/icons.js';
 import { createKitchen } from './game/food.js';
 import { resolveBiome, horizonUrl, HORIZON_MOMENTS } from './game/biomes.js';
 import { createDaylight } from './game/daylight.js';
@@ -116,8 +117,19 @@ function hideBoot() {
 // bloquait l'application au tout premier lancement.
 function askProfile() {
   hideBoot();
+
+  // La voix de l'écran de profil est créée ici, et non prise dans `boot` : à ce
+  // stade `boot` n'a encore rien construit. Prendre une variable déclarée plus
+  // bas aurait levé une erreur de portée — exactement ce qui avait fait
+  // disparaître l'horizon en silence pendant six versions.
+  const voixAccueil = createVoice();
+
   return new Promise((resolve) => {
     const picker = createProfilePicker({
+      voice: voixAccueil,
+      voiceProfile,
+      // Aucune créature n'existe encore : un profil vocal neutre suffit.
+      getPet: () => ({ stage: 'child', genome: {}, personality: {} }),
       onToggle: (open) => setScreenOpen('profils', open),
       onChoose: (profile, info) => {
         picker.close();
@@ -371,6 +383,9 @@ async function boot() {
       // plutot que de recabler le monde a chaud.
       save(pet);
       const picker = createProfilePicker({
+        voice,
+        voiceProfile,
+        getPet: () => pet,
         onToggle: (open) => setScreenOpen('profils', open),
         onChoose: () => window.location.reload()
       });
@@ -739,6 +754,17 @@ async function boot() {
   const recall = createRecall({ getPet: () => pet, voice, voiceProfile });
 
   agenda.setToggleHandler((open) => setScreenOpen('agenda', open));
+
+  // Accès direct depuis la barre du haut : l'agenda est devenu une pièce
+  // maîtresse, l'enterrer dans les réglages ne se justifiait plus.
+  const agendaTop = document.getElementById('btn-agenda-top');
+  if (agendaTop) {
+    applyIcon(agendaTop, 'agenda', '📅');
+    agendaTop.addEventListener('click', () => {
+      sfx.touche();
+      agenda.open();
+    });
+  }
 
   games.setToggleHandler((open) => setScreenOpen('jeux', open));
   guide.setToggleHandler((open) => setScreenOpen('guide', open));

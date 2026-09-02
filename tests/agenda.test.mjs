@@ -197,3 +197,80 @@ test('une sauvegarde abîmée ne fait pas tomber la liste', async () => {
   localStorage.setItem('monstre.agenda.p', JSON.stringify([{ subject: 'sans date' }, null, 42]));
   assert.deepEqual(S.listReminders('p'), []);
 });
+
+test('les trois natures de rappel sont reconnues', () => {
+  const cas = [
+    ['réveille-moi à 7h', 'reveil'],
+    ['rendez-vous chez le médecin mardi à 17h', 'rdv'],
+    ['il faut que je acheter du pain demain matin', 'tache'],
+    ['n’oublie pas de sortir la poubelle ce soir', 'tache']
+  ];
+  cas.forEach(([phrase, attendu]) => {
+    const r = A.parseReminder(phrase, LUNDI);
+    assert.ok(r, `non reconnu : « ${phrase} »`);
+    assert.equal(r.type, attendu, `« ${phrase} » classé ${r.type}`);
+  });
+});
+
+test('un réveil se répète tous les jours sans qu’on le demande', () => {
+  const r = A.parseReminder('réveille-moi à 7h', LUNDI);
+  assert.deepEqual(r.recurrence, { every: 'day' }, 'personne ne se lève une seule fois');
+  // Et son sujet est vide : la formule du réveil n'en a pas besoin.
+  assert.equal(r.subject, '');
+});
+
+test('les sujets se lisent en français correct', () => {
+  // Les mots de temps retirés laissent derrière eux leurs prépositions.
+  const cas = [
+    ['rendez-vous chez le médecin mardi à 17h', 'chez le médecin'],
+    ['rappelle-moi d’arroser les plantes samedi à 10h', 'arroser les plantes'],
+    ['je dois acheter du pain demain matin', 'acheter du pain']
+  ];
+  cas.forEach(([phrase, attendu]) => {
+    assert.equal(A.parseReminder(phrase, LUNDI).subject, attendu, `« ${phrase} »`);
+  });
+});
+
+test('chaque nature a son ton et sa durée', () => {
+  Object.values(A.TYPES).forEach((type) => {
+    assert.ok(type.label && type.couleur, `${type.id} : présentation incomplète`);
+    assert.ok(type.duree >= 120000, `${type.id} : trop bref pour être remarqué`);
+    assert.ok(typeof type.phrase === 'function', `${type.id} : aucune formule`);
+    assert.ok(type.phrase('quelque chose').length > 5, `${type.id} : formule vide`);
+  });
+  // Un réveil doit insister plus qu'un rendez-vous : c'est sa raison d'être.
+  assert.ok(A.TYPES.reveil.duree > A.TYPES.rdv.duree);
+});
+
+test('un rappel répété apparaît chaque jour de la semaine', async () => {
+  const S = await import('../src/agenda/store.js');
+  localStorage.clear();
+  const now = Date.now();
+  S.addReminder('p', {
+    subject: '',
+    type: 'reveil',
+    at: now + 3600000,
+    lead: A.leadById('moment'),
+    recurrence: { every: 'day' }
+  });
+
+  // Sans projection, un réveil quotidien n'apparaîtrait qu'une fois et
+  // l'agenda mentirait sur la semaine à venir.
+  const groupes = S.parJour('p', 7, now);
+  assert.equal(groupes.length, 7, 'le réveil ne couvre pas la semaine');
+  groupes.forEach((g) => assert.equal(g.items.length, 1));
+});
+
+test('une récurrence mal formée ne fait pas tourner la boucle sans fin', async () => {
+  const S = await import('../src/agenda/store.js');
+  localStorage.clear();
+  const now = Date.now();
+  S.addReminder('p', {
+    subject: 'bizarre',
+    at: now,
+    lead: A.leadById('moment'),
+    recurrence: { every: 'jamais' }
+  });
+  const groupes = S.parJour('p', 7, now);
+  assert.ok(groupes.length <= 7, 'projection incontrôlée');
+});

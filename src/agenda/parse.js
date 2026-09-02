@@ -32,12 +32,62 @@ const MOMENTS = {
   minuit: 0
 };
 
+// Les trois natures de rappel.
+//
+// Elles ne se ressemblent pas : un rendez-vous a une heure imposée par
+// quelqu'un d'autre, une tâche est quelque chose qu'on s'impose et qu'on peut
+// décaler, un réveil doit sonner tous les jours à la même heure et insister.
+// Le ton de la créature et sa façon d'apparaître en dépendent.
+export const TYPES = {
+  rdv: {
+    id: 'rdv',
+    label: 'Rendez-vous',
+    icone: '📅',
+    couleur: '#6fe3c4',
+    duree: 180000,
+    phrase: (sujet) => `N’oublie pas : ${sujet}`
+  },
+  tache: {
+    id: 'tache',
+    label: 'À faire',
+    icone: '✔️',
+    couleur: '#ffb74a',
+    duree: 150000,
+    phrase: (sujet) => `Tu voulais ${sujet}`
+  },
+  reveil: {
+    id: 'reveil',
+    label: 'Réveil',
+    icone: '⏰',
+    couleur: '#ff8fa3',
+    // Un réveil insiste : cinq minutes au lieu de trois, et il revient tous
+    // les jours. C'est sa raison d'être.
+    duree: 300000,
+    phrase: () => 'Debout ! C’est l’heure de se lever.'
+  }
+};
+
+export function typeById(id) {
+  return TYPES[id] || TYPES.rdv;
+}
+
+// Reconnaît la nature du rappel dans la phrase.
+export function detectType(text) {
+  const t = normalize(text);
+  if (/\b(reveille?[- ]moi|reveil|debout|lever)\b/.test(t)) return 'reveil';
+  if (/\b(pense[rz]? a|il faut que je|je dois|penser a|faire|acheter|appeler|envoyer|payer|arroser|sortir)\b/.test(t)) {
+    return 'tache';
+  }
+  return 'rdv';
+}
+
 // Ce qui déclenche la création d'un pense-bête.
 const DECLENCHEURS = [
   /\brendez[- ]?vous\b/,
   /\brappelle[- ]?moi\b/,
+  /\breveille?[- ]moi\b/,
   /\bfais[- ]?moi penser\b/,
-  /\bn'?oublie pas\b/,
+  /\bn['\s]?oublie pas\b/,
   /\bje dois\b/,
   /\bil faut que je\b/,
   /\bj'?ai\b.{0,24}\b(medecin|dentiste|coiffeur|kine|reunion|cours|train|avion|visite|controle)\b/
@@ -164,10 +214,11 @@ function findRecurrence(text) {
 /* ------------------------------------------------------------------ sujet */
 
 // Ce qui reste une fois retirés les mots de temps et les formules d'annonce.
+// Les articles ne sont PAS retirés : « arroser les plantes » se lit mieux que
+// « arroser plantes », et ces mots ne portent aucune information de temps.
 const A_RETIRER = [
-  /\b(j'?ai|je dois|il faut que je|rappelle[- ]?moi de?|fais[- ]?moi penser a|n'?oublie pas de?)\b/g,
+  /\b(j'?ai|je dois|il faut que je|rappelle[- ]?moi(?:\s+(?:de|d'))?|fais[- ]?moi penser a|n['\s]?oublie pas(?:\s+(?:de|d'))?|reveille?[- ]moi|penser a)\b/g,
   /\brendez[- ]?vous\b/g,
-  /\b(le|la|les|l'|un|une|de|du|des|a|au|aux)\b/g,
   /\b(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\b/g,
   /\b(demain|apres[- ]demain|aujourd'?hui|prochaine?)\b/g,
   /\b(ce|cet|cette)\s+(matin|soir|apres midi|semaine)\b/g,
@@ -192,21 +243,46 @@ function findSubject(text) {
   return rest;
 }
 
+// Rétablit les accents perdus à la normalisation. Sans article : il survit
+// désormais dans la phrase, et « chez le le médecin » se lit mal.
 const JOLI = {
-  medecin: 'le médecin',
-  dentiste: 'le dentiste',
-  coiffeur: 'le coiffeur',
-  kine: 'le kiné',
-  pharmacie: 'la pharmacie',
-  courses: 'les courses',
-  reunion: 'la réunion'
+  medecin: 'médecin',
+  dentiste: 'dentiste',
+  coiffeur: 'coiffeur',
+  kine: 'kiné',
+  pharmacie: 'pharmacie',
+  reunion: 'réunion',
+  ecole: 'école',
+  hopital: 'hôpital',
+  veterinaire: 'vétérinaire',
+  anniversaire: 'anniversaire'
 };
 
 function embellish(subject) {
   if (!subject) return '';
-  const words = subject.split(' ');
-  const pretty = words.map((w) => JOLI[w] || w).join(' ');
-  return pretty.replace(/^chez\s+/, 'chez ');
+
+  let texte = subject
+    .split(' ')
+    .map((w) => JOLI[w] || w)
+    .join(' ');
+
+  // Ménage final. Retirer les mots de temps laisse derrière eux les
+  // prépositions qui les introduisaient : « chez le médecin à » ou « à 
+  // arroser ». On les enlève une fois, ici, plutôt que d'alourdir chaque motif.
+  texte = texte
+    // Une apostrophe orpheline reste quand « d'arroser » a perdu son « d ».
+    .replace(/^['\s]+/, '')
+    .replace(/\s+(a|de|du|des|pour|vers|en|le|la|les)\s*$/g, '')
+    .replace(/^(a|de|du|des|pour|vers|en)\s+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Un sujet réduit à une préposition n'est pas un sujet. C'est le cas d'un
+  // réveil : « réveille-moi à 7 h » ne laisse rien une fois les mots de temps
+  // retirés, et c'est très bien — la phrase du réveil n'en a pas besoin.
+  if (/^(a|de|du|des|le|la|les|pour|vers|en)$/.test(texte)) return '';
+
+  return texte;
 }
 
 /* --------------------------------------------------------------- l'ensemble */
@@ -236,10 +312,17 @@ export function parseReminder(text, now = new Date()) {
 
   const subject = embellish(findSubject(clean));
 
+  const type = detectType(raw);
+
+  // Un réveil se répète tous les jours par défaut : personne ne se lève une
+  // seule fois. Sauf si la phrase dit explicitement autre chose.
+  const repetition = recurrence || (type === 'reveil' ? { every: 'day' } : null);
+
   return {
     subject,
+    type,
     at: when.getTime(),
-    recurrence,
+    recurrence: repetition,
     // Sans heure précise, on préviendra quand même, mais on le signale.
     vague: !time || !time.precise,
     source: raw.trim()

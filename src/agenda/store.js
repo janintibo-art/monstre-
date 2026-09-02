@@ -1,4 +1,4 @@
-import { triggerTime, leadById } from './parse.js';
+import { triggerTime, leadById, typeById } from './parse.js';
 
 // Les pense-bêtes, rangés par profil.
 //
@@ -38,6 +38,7 @@ function normalizeItem(item) {
   return {
     id: String(item.id || `r${at}`),
     subject: String(item.subject || '').slice(0, 120),
+    type: typeById(item.type).id,
     at,
     lead: item.lead && typeof item.lead === 'object' ? item.lead : leadById('1h'),
     recurrence: item.recurrence || null,
@@ -111,4 +112,56 @@ export function dueReminders(profileId, now = Date.now()) {
 
 export function upcoming(profileId, now = Date.now()) {
   return listReminders(profileId).filter((r) => !r.done && r.at > now);
+}
+
+// Regroupe par jour, pour l'affichage de l'agenda. Un rappel qui se répète est
+// projeté sur ses prochaines occurrences : sinon un réveil quotidien
+// n'apparaîtrait qu'une fois, et l'agenda mentirait sur la semaine à venir.
+export function parJour(profileId, jours = 7, now = Date.now()) {
+  const debut = new Date(now);
+  debut.setHours(0, 0, 0, 0);
+  const fin = debut.getTime() + jours * 86400000;
+
+  const occurrences = [];
+  listReminders(profileId).forEach((item) => {
+    if (item.done) return;
+
+    if (!item.recurrence) {
+      if (item.at >= debut.getTime() && item.at < fin) occurrences.push({ ...item });
+      return;
+    }
+
+    // On avance de proche en proche jusqu'à sortir de la fenêtre. Une borne
+    // dure évite qu'une récurrence mal formée fasse tourner la boucle sans fin.
+    const pas = item.recurrence.every;
+    let quand = new Date(item.at);
+    for (let garde = 0; garde < 400 && quand.getTime() < fin; garde += 1) {
+      if (quand.getTime() >= debut.getTime()) {
+        occurrences.push({ ...item, at: quand.getTime(), repete: true });
+      }
+      const suivant = new Date(quand);
+      if (pas === 'day') suivant.setDate(suivant.getDate() + 1);
+      else if (pas === 'week') suivant.setDate(suivant.getDate() + 7);
+      else if (pas === 'month') suivant.setMonth(suivant.getMonth() + 1);
+      else suivant.setDate(suivant.getDate() + 1);
+      if (suivant.getTime() <= quand.getTime()) break;
+      quand = suivant;
+    }
+  });
+
+  occurrences.sort((a, b) => a.at - b.at);
+
+  const groupes = [];
+  occurrences.forEach((o) => {
+    const jour = new Date(o.at);
+    jour.setHours(0, 0, 0, 0);
+    const cle = jour.getTime();
+    let groupe = groupes.find((g) => g.jour === cle);
+    if (!groupe) {
+      groupe = { jour: cle, items: [] };
+      groupes.push(groupe);
+    }
+    groupe.items.push(o);
+  });
+  return groupes;
 }
