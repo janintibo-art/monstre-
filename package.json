@@ -19,7 +19,8 @@
     "android:open": "cap open android",
     "assets": "npx --yes @capacitor/assets@3 generate --android",
     "test": "node --test tests/index.mjs",
-    "check": "python3 tools/check_scope.py && npm test"
+    "check": "python3 tools/check_scope.py && npm test",
+    "verrou": "npm install --package-lock-only && echo \"Verrou à jour — pense à le committer.\""
   },
   "dependencies": {
     "three": "0.169.0",

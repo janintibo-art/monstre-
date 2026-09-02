@@ -139,7 +139,22 @@ git add package-lock.json && git commit -m "Lockfile" && git push
 > `--package-lock-only` calcule l'arbre sans rien télécharger, en quelques
 > secondes. La compilation, elle, se fait sur GitHub, pas ici.
 
-## 8. Les fois suivantes
+## 8. Après chaque nouvelle version
+
+Si la version apporte de nouvelles dépendances, il faut régénérer le fichier de
+verrouillage **avant** de pousser :
+
+```bash
+cd ~/projets/monster-pet && npm run verrou
+```
+
+Puis `git add -A`, `git commit`, `git push` comme d'habitude.
+
+> Depuis la v32, oublier cette étape ne casse plus le build : la CI le détecte,
+> affiche un avertissement et continue. Mais le build n'est alors plus
+> reproductible à l'identique, donc autant le faire.
+
+## 9. Les fois suivantes
 
 ```bash
 cd ~/projets/monster-pet
@@ -203,4 +218,5 @@ Ouvre ensuite `http://localhost:5173` dans le navigateur du téléphone.
 | `Permission denied` sur `/sdcard` | `termux-setup-storage` n'a pas été validé. Relance-le. |
 | Le push reste bloqué | Fichier trop lourd. GitHub refuse au-delà de 100 Mo : `du -sh public/assets/*` pour repérer le coupable. |
 | `npm error sharp` / `libvips ... not available for android-arm64` | Tu as lancé `npm install` complet. Utilise `npm install --package-lock-only`. |
+| `npm ci can only install packages when your package.json and package-lock.json are in sync` | Le fichier de verrouillage est décalé. `npm run verrou`, puis committe `package-lock.json`. |
 | `Everything up-to-date` alors que tu as modifié des fichiers | Une commande précédente de la chaîne `&&` a échoué, donc `git commit` n'a jamais tourné. Relance `git add -A`, `git commit` et `git push` **séparément**. |

@@ -80,6 +80,11 @@ et feraient échouer une installation complète.
 Dès qu'il est présent, le workflow bascule de `npm install` à `npm ci` : deux
 builds à deux dates différentes installent exactement les mêmes versions.
 
+Après une version qui ajoute des dépendances, régénère-le avec `npm run verrou`
+puis committe-le. Si tu oublies, le build ne casse pas : le workflow détecte le
+décalage, affiche un avertissement et retombe sur `npm install`. Un build rouge
+dont la cause n'a rien à voir avec le code n'apprend rien à personne.
+
 Les dépendances épinglées datent de la création du projet. Pour les mettre à
 jour, fais-le dans une branche, une famille à la fois (Vite, puis Electron,
 puis Capacitor), avec `npm audit` et un test sur appareil entre chaque.

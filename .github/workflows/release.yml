@@ -22,13 +22,31 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
-      # npm ci si le lockfile est versionne (builds reproductibles),
-      # npm install sinon. Le lockfile se genere une fois en local :
-      # `npm install` puis `git add package-lock.json`.
+      # `npm ci` exige que le fichier de verrouillage corresponde exactement à
+      # package.json. Dès qu'une dépendance est ajoutée sans régénérer le
+      # verrou, il refuse de travailler et tout le build tombe — y compris les
+      # tests, qui n'ont rien à voir.
+      #
+      # On tente donc `npm ci` d'abord, pour la reproductibilité, et on retombe
+      # sur `npm install` s'il refuse, en le disant clairement. Un build qui
+      # passe avec un avertissement vaut mieux qu'un build rouge dont la cause
+      # n'a rien à voir avec le code.
       - name: Installer les dépendances
         shell: bash
         run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          if [ -f package-lock.json ]; then
+            if npm ci; then
+              echo "Dépendances installées depuis le fichier de verrouillage."
+            else
+              echo "::warning::Le fichier de verrouillage est décalé par rapport à package.json."
+              echo "::warning::Régénère-le puis pousse-le : npm install --package-lock-only && git add package-lock.json"
+              npm install
+            fi
+          else
+            echo "::warning::Aucun package-lock.json : build non reproductible."
+            echo "::warning::Génère-le une fois : npm install --package-lock-only"
+            npm install
+          fi
       - run: npm test
       - run: npm run build
       - run: |
@@ -57,10 +75,31 @@ jobs:
       # npm ci si le lockfile est versionne (builds reproductibles),
       # npm install sinon. Le lockfile se genere une fois en local :
       # `npm install` puis `git add package-lock.json`.
+      # `npm ci` exige que le fichier de verrouillage corresponde exactement à
+      # package.json. Dès qu'une dépendance est ajoutée sans régénérer le
+      # verrou, il refuse de travailler et tout le build tombe — y compris les
+      # tests, qui n'ont rien à voir.
+      #
+      # On tente donc `npm ci` d'abord, pour la reproductibilité, et on retombe
+      # sur `npm install` s'il refuse, en le disant clairement. Un build qui
+      # passe avec un avertissement vaut mieux qu'un build rouge dont la cause
+      # n'a rien à voir avec le code.
       - name: Installer les dépendances
         shell: bash
         run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          if [ -f package-lock.json ]; then
+            if npm ci; then
+              echo "Dépendances installées depuis le fichier de verrouillage."
+            else
+              echo "::warning::Fichier de verrouillage décalé par rapport à package.json."
+              echo "::warning::Régénère-le puis pousse-le : npm install --package-lock-only"
+              npm install
+            fi
+          else
+            echo "::warning::Aucun package-lock.json : build non reproductible."
+            echo "::warning::Génère-le une fois : npm install --package-lock-only"
+            npm install
+          fi
       - run: npm test
       - run: npm run build
       - run: npx electron-builder --win portable nsis --publish never
