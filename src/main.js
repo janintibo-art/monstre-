@@ -9,6 +9,8 @@ import { loadModel, createModelMonster, createModelEgg } from './game/gltf.js';
 import { speciesById, pickSpecies, eggUrl, stageUrl } from './game/species.js';
 import { createVfx } from './game/vfx.js';
 import { createDecor } from './game/decor.js';
+import { createFauna } from './game/fauna.js';
+import { createAmbience, loadAmbience, saveAmbience } from './audio/ambience.js';
 import { createKitchen } from './game/food.js';
 import { resolveBiome, horizonUrl, HORIZON_MOMENTS } from './game/biomes.js';
 import { createDaylight } from './game/daylight.js';
@@ -204,6 +206,14 @@ async function boot() {
   const daylight = createDaylight(world);
   daylight.setBiome(biome);
   const vfx = createVfx(world.scene, { reducedMotion: REDUCED_MOTION });
+
+  // Petite faune et ambiance sonore : deux couches qui ne servent à rien, et
+  // c'est précisément ce qui donne l'impression que le monde existait avant
+  // qu'on arrive.
+  const fauna = createFauna(world.scene);
+  fauna.setBiome(biome);
+
+  const ambience = createAmbience();
 
   // Les repas. La jauge de faim ne monte qu'une fois le plat termine : c'est ce
   // qui donne au geste une duree, et donc quelque chose a regarder.
@@ -729,6 +739,10 @@ async function boot() {
   // -------------------------------------------------------------- pointeur
   function onPointerDown(event) {
     voice.unlock(); // le son reste bloque tant que l'ecran n'a pas ete touche
+    // L'ambiance demarre au premier contact, jamais avant : les navigateurs
+    // l'interdisent, et personne n'aime qu'une application se mette a faire du
+    // bruit sans prevenir.
+    if (loadAmbience()) ambience.demarrer();
     const x = event.clientX;
     const y = event.clientY;
     pointerActive = 2.5;
@@ -1047,6 +1061,10 @@ async function boot() {
     vfx.update(dt);
     kitchen.update(dt, time, monster ? monster.group.position : null);
     decor.update(dt, time, monster ? monster.group.position : null);
+    if (!REDUCED_MOTION) {
+      fauna.update(dt, time, daylight.nightFactor, monster ? monster.group.position : null);
+    }
+    ambience.update(dt, daylight.nightFactor, daylight.phase);
     actionBar.update(dt, { hatched: pet.hatched });
 
     hudTimer -= dt;

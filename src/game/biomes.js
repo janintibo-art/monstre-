@@ -13,6 +13,7 @@ export const BIOMES = [
   {
     id: 'prairie',
     folder: 'prairie',
+    particules: { forme: 'pollen', couleur: 0xfff3b0, chute: -0.03, tourbillon: 0.5 },
     name: 'Prairie',
     ground: 'assets/textures/ground/prairie.jpg',
     repeat: 3,
@@ -39,6 +40,7 @@ export const BIOMES = [
   {
     id: 'mousse',
     folder: 'mousse',
+    particules: { forme: 'feuille', couleur: 0x9fd08a, chute: 0.32, tourbillon: 0.9 },
     name: 'Sous-bois',
     ground: 'assets/textures/ground/mousse.jpg',
     repeat: 3,
@@ -62,6 +64,7 @@ export const BIOMES = [
   {
     id: 'roche',
     folder: 'roche',
+    particules: { forme: 'eclat', couleur: 0xbfa8ff, chute: -0.01, tourbillon: 0.25 },
     name: 'Éboulis',
     ground: 'assets/textures/ground/roche.jpg',
     repeat: 2.5,
@@ -85,6 +88,7 @@ export const BIOMES = [
   {
     id: 'terre',
     folder: 'terre',
+    particules: { forme: 'sable', couleur: 0xe0b27a, chute: 0.06, tourbillon: 1.4 },
     name: 'Terre sèche',
     ground: 'assets/textures/ground/terre.jpg',
     repeat: 3,

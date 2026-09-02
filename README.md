@@ -622,15 +622,68 @@ Quelques réglages qui pèsent lourd sur l'aspect :
   s'évasant, et une lueur chaude apparaît aux fenêtres dès que le soir tombe.
   Une maison éteinte et sans fumée est un décor ; une maison qui fume est un
   lieu où quelqu'un vit.
+- **La caméra respire** : deux centimètres d'amplitude. Une caméra parfaitement
+  immobile est le signe le plus sûr qu'on regarde une image et non une scène.
 - **Des nuages calculés** dérivent dans le ciel — bruit de valeur sur quatre
   octaves, aucune image. Ils prennent la couleur de l'heure, s'effacent au ras
   de l'horizon pour ne pas former de bande dure, et une masse met une minute à
   traverser le ciel.
 
+## Le ciel étoilé
+
+Un semis uniforme de points identiques ressemble à du bruit. Un vrai ciel a
+trois propriétés qu'il faut reproduire, et **1 400 étoiles** les portent :
+
+- **Des magnitudes très inégales** — la taille suit une puissance quatre, ce qui
+  donne environ 180 étoiles franches, 310 moyennes et 900 à peine visibles.
+- **Des couleurs** — du bleu froid au doré, la plupart proches du blanc. C'est
+  discret, mais l'œil le remarque.
+- **Une Voie lactée** — une étoile sur deux est tirée près d'un plan incliné en
+  travers de la voûte. Sans cette bande dense, la répartition est trop régulière
+  pour être crédible.
+
+Elles scintillent chacune à son rythme, par deux sinusoïdes de périodes
+incommensurables pour qu'aucune pulsation d'ensemble ne se fasse sentir. Le
+calcul est dans le shader : rien à recalculer côté processeur.
+
+**Des étoiles filantes** traversent, une toutes les quarante secondes en
+moyenne — une étoile filante fréquente cesse d'être un événement.
+
+## L'ambiance sonore
+
+Trois couches, **entièrement calculées, sans aucun fichier audio** :
+
+- **Le vent** — du bruit brun bouclé sur deux secondes, passé dans un filtre
+  passe-bas dont la coupure respire par rafales lentes. Une boucle courte
+  s'entend ; une coupure qui bouge la masque entièrement.
+- **Les oiseaux** — de brefs sifflements dont la hauteur glisse, plus denses à
+  l'aube et au matin.
+- **Les grillons** — des stridulations la nuit.
+
+Entre le dernier oiseau et le premier grillon, un moment presque silencieux :
+c'est ce silence qui rend le reste crédible.
+
+Le son ne démarre **jamais** de lui-même — les navigateurs l'interdisent tant
+que l'écran n'a pas été touché, et personne n'aime qu'une application se mette à
+faire du bruit sans prévenir. Il se coupe dans les réglages.
+
+## La petite faune
+
+Sept papillons près du sol, cinq oiseaux en altitude, dessinés sur canvas — ni
+modèle ni texture à charger. Ils entrent et sortent du champ au lieu de tourner
+en permanence. Les papillons sont attirés par la créature sans jamais
+l'atteindre ; la nuit, ils se posent et les oiseaux rentrent.
+
+Ils ne servent à rien, et c'est le point : un monde où seule la créature bouge
+est un monde qui l'attend.
+
 ## Les poussières lumineuses
 
-Une centaine de points dérivent lentement autour de l'aire de jeu, à la couleur
-d'accent du décor, plus visibles la nuit. Ils font que **le monde continue de
+Une centaine de points dérivent autour de l'aire de jeu, **avec un comportement
+propre à chaque décor** : le pollen monte en prairie, les feuilles tombent au
+sous-bois, les éclats flottent sur l'éboulis, le sable file au vent sur la terre
+sèche. Trois nombres — chute, tourbillon, taille — suffisent à changer
+complètement la sensation d'un lieu. Ils font que **le monde continue de
 respirer quand la créature est immobile** — c'est ce qui manquait aux moments
 calmes. Un seul objet, un seul appel de rendu, position mise à jour depuis
 l'horloge du jeu : ils s'arrêtent avec elle, au lieu de continuer seuls, et se

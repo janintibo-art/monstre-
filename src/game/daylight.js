@@ -379,9 +379,12 @@ export function createDaylight(world) {
         .lerp(NUIT_HORIZON, palette.stars * 0.55);
     }
 
-    env.stars.material.opacity = palette.stars * 0.9;
+    env.starMat.uniforms.presence.value = palette.stars;
+    env.starMat.uniforms.temps.value += dt;
+    if (env.majFilante) env.majFilante(dt, palette.stars);
     if (env.moteMaterial) env.moteMaterial.opacity = 0.24 + palette.stars * 0.38;
     env.stars.visible = palette.stars > 0.02;
+    env.starMat.uniforms.echelle.value = 1 + palette.stars * 0.35;
 
     // L'astre visible : soleil le jour, lune la nuit, au meme endroit du ciel.
     env.sun.position.copy(env.key.position).multiplyScalar(2.2);

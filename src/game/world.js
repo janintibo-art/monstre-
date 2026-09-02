@@ -274,35 +274,169 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
     horizonMat.uniforms.presence.value = 1;
   }
 
-  // Etoiles : un semis fixe qui s'efface au lever du jour.
-  const starCount = 420;
+  // Ciel étoilé.
+  //
+  // Un semis uniforme de points identiques donne un ciel plat, qui ressemble à
+  // du bruit. Un vrai ciel a trois propriétés qu'il faut reproduire :
+  //
+  //   1. **Des magnitudes très inégales.** Quelques étoiles franches, beaucoup
+  //      de faibles. La distribution suit une puissance, pas un tirage plat.
+  //   2. **Des couleurs.** Les étoiles ne sont pas blanches : elles vont du
+  //      bleu au doré. C'est discret mais l'œil le remarque.
+  //   3. **Une Voie lactée.** Une bande dense en travers du ciel. Sans elle, la
+  //      répartition est trop régulière pour être crédible.
+  //
+  // Et elles scintillent, chacune à son rythme — le scintillement est fait par
+  // le shader, donc rien à recalculer côté processeur.
+  const starCount = 1400;
   const starPos = new Float32Array(starCount * 3);
+  const starTaille = new Float32Array(starCount);
+  const starTeinte = new Float32Array(starCount * 3);
+  const starPhase = new Float32Array(starCount);
+
+  // Plan de la Voie lactée : un grand cercle incliné en travers de la voûte.
+  const laiteuseNormale = new THREE.Vector3(0.42, 0.72, -0.55).normalize();
+  const dir = new THREE.Vector3();
+
   for (let i = 0; i < starCount; i += 1) {
-    // Reparties sur la calotte superieure seulement : sous l'horizon, le sol
-    // les masquerait de toute facon.
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(Math.random() * 0.95);
+    // Une étoile sur deux est tirée près du plan de la Voie lactée, l'autre
+    // moitié au hasard sur la voûte.
+    let attente = 0;
+    do {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(Math.random() * 0.97);
+      dir.set(Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta));
+      attente += 1;
+    } while (
+      i % 2 === 0 &&
+      attente < 12 &&
+      Math.abs(dir.dot(laiteuseNormale)) > 0.16 + Math.random() * 0.12
+    );
+
     const r = 52;
-    starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-    starPos[i * 3 + 1] = r * Math.cos(phi);
-    starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+    starPos[i * 3] = dir.x * r;
+    starPos[i * 3 + 1] = dir.y * r;
+    starPos[i * 3 + 2] = dir.z * r;
+
+    // Magnitude : une puissance quatre donne beaucoup de faibles et de rares
+    // franches, comme un vrai ciel.
+    const m = Math.pow(Math.random(), 4);
+    starTaille[i] = 0.16 + m * 0.75;
+
+    // Température : du bleu froid au doré, la plupart proches du blanc.
+    const chaud = Math.pow(Math.random(), 2);
+    starTeinte[i * 3] = 0.78 + chaud * 0.22;
+    starTeinte[i * 3 + 1] = 0.84 + chaud * 0.1;
+    starTeinte[i * 3 + 2] = 1.0 - chaud * 0.28;
+
+    starPhase[i] = Math.random() * Math.PI * 2;
   }
+
   const starGeo = new THREE.BufferGeometry();
   starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-  const stars = new THREE.Points(
-    starGeo,
-    new THREE.PointsMaterial({
-      color: 0xdce9ff,
-      size: 0.42,
-      sizeAttenuation: true,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      fog: false
-    })
-  );
+  starGeo.setAttribute('taille', new THREE.BufferAttribute(starTaille, 1));
+  starGeo.setAttribute('teinte', new THREE.BufferAttribute(starTeinte, 3));
+  starGeo.setAttribute('phase', new THREE.BufferAttribute(starPhase, 1));
+
+  const starMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    fog: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: {
+      presence: { value: 0 },
+      temps: { value: 0 },
+      echelle: { value: 1 }
+    },
+    vertexShader: `
+      attribute float taille;
+      attribute vec3 teinte;
+      attribute float phase;
+      uniform float temps;
+      uniform float echelle;
+      varying vec3 vTeinte;
+      varying float vEclat;
+      void main() {
+        vTeinte = teinte;
+        // Scintillement : deux sinusoïdes de périodes incommensurables, pour
+        // qu'aucune pulsation d'ensemble ne se fasse sentir.
+        vEclat = 0.72 + 0.28 * sin(temps * 2.1 + phase) * sin(temps * 0.73 + phase * 1.7);
+        vec4 vue = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = taille * echelle * (300.0 / -vue.z);
+        gl_Position = projectionMatrix * vue;
+      }
+    `,
+    fragmentShader: `
+      uniform float presence;
+      varying vec3 vTeinte;
+      varying float vEclat;
+      void main() {
+        // Disque adouci : un point carré se voit immédiatement.
+        vec2 d = gl_PointCoord - vec2(0.5);
+        float r = length(d);
+        if (r > 0.5) discard;
+        float halo = pow(1.0 - r * 2.0, 1.6);
+        gl_FragColor = vec4(vTeinte, halo * vEclat * presence);
+      }
+    `
+  });
+
+  const stars = new THREE.Points(starGeo, starMat);
   stars.frustumCulled = false;
+  stars.renderOrder = -2;
   scene.add(stars);
+
+  // Étoiles filantes. Rares — une toutes les quarante secondes en moyenne —
+  // parce qu'une étoile filante fréquente cesse d'être un événement.
+  const filanteGeo = new THREE.BufferGeometry();
+  filanteGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+  const filanteMat = new THREE.LineBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    fog: false
+  });
+  const filante = new THREE.Line(filanteGeo, filanteMat);
+  filante.frustumCulled = false;
+  scene.add(filante);
+
+  const filanteEtat = { vie: 0, attente: 12 + Math.random() * 40 };
+
+  function majFilante(dt, nuit) {
+    if (nuit < 0.45) {
+      filanteMat.opacity = 0;
+      return;
+    }
+    if (filanteEtat.vie > 0) {
+      filanteEtat.vie -= dt;
+      // Elle apparaît vite et s'éteint lentement : c'est ce qui donne la traînée.
+      filanteMat.opacity = Math.max(0, Math.sin(Math.min(1, filanteEtat.vie / 0.9) * Math.PI)) * nuit;
+      return;
+    }
+    filanteMat.opacity = 0;
+    filanteEtat.attente -= dt;
+    if (filanteEtat.attente > 0) return;
+
+    filanteEtat.attente = 20 + Math.random() * 45;
+    filanteEtat.vie = 0.9;
+
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(0.25 + Math.random() * 0.6);
+    const depart = new THREE.Vector3(
+      Math.sin(phi) * Math.cos(theta),
+      Math.cos(phi),
+      Math.sin(phi) * Math.sin(theta)
+    ).multiplyScalar(50);
+    const fin = depart
+      .clone()
+      .add(new THREE.Vector3(Math.random() - 0.5, -0.35 - Math.random() * 0.3, Math.random() - 0.5).multiplyScalar(14));
+
+    const p = filanteGeo.attributes.position.array;
+    p[0] = depart.x; p[1] = depart.y; p[2] = depart.z;
+    p[3] = fin.x; p[4] = fin.y; p[5] = fin.z;
+    filanteGeo.attributes.position.needsUpdate = true;
+  }
 
   // L'astre : soleil ou lune selon l'heure, toujours dans l'axe de la lumiere.
   const sun = new THREE.Mesh(
@@ -429,6 +563,10 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
   moteCtx.fillRect(0, 0, 48, 48);
   const moteGeometry = new THREE.BufferGeometry();
   moteGeometry.setAttribute('position', new THREE.BufferAttribute(motePositions, 3));
+  const moteScintille = new Float32Array(moteCount);
+  for (let i = 0; i < moteCount; i += 1) moteScintille[i] = Math.random();
+  moteGeometry.setAttribute('scintille', new THREE.BufferAttribute(moteScintille, 1));
+
   const moteMaterial = new THREE.PointsMaterial({
     color: biome ? biome.accent : 0x6fe3c4,
     map: new THREE.CanvasTexture(moteCanvas),
@@ -440,6 +578,11 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
     blending: THREE.AdditiveBlending,
     fog: true
   });
+
+  // Comportement propre au décor : le pollen monte, les feuilles tombent, le
+  // sable file au vent. Trois nombres suffisent à changer complètement la
+  // sensation d'un lieu.
+  const moteReglage = { chute: -0.02, tourbillon: 0.6, taille: 0.13 };
   const motes = new THREE.Points(moteGeometry, moteMaterial);
   motes.renderOrder = 2;
   motes.frustumCulled = false;
@@ -467,7 +610,14 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
     }
     ringMat.color.setHex(next.accent);
     rim.color.setHex(next.accent);
-    moteMaterial.color.setHex(next.accent);
+
+    const p = next.particules;
+    moteMaterial.color.setHex(p ? p.couleur : next.accent);
+    moteReglage.chute = p ? p.chute : -0.02;
+    moteReglage.tourbillon = p ? p.tourbillon : 0.6;
+    // Une feuille se voit, un grain de pollen à peine.
+    moteReglage.taille = p && p.forme === 'feuille' ? 0.22 : p && p.forme === 'sable' ? 0.1 : 0.14;
+    moteMaterial.size = moteReglage.taille;
   }
 
   if (biome) applyBiome(biome, textures.ground || null);
@@ -554,6 +704,7 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
   resize();
 
   let horlogeMotes = 0;
+  let respiration = 0;
 
   function update(dt) {
     // La camera suit la creature, avec du retard : elle ne peut plus sortir du
@@ -573,6 +724,15 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
       camera.position.y += (Math.random() - 0.5) * k * 2;
     }
 
+    // La caméra respire. Une amplitude minuscule — deux centimètres — mais
+    // une caméra parfaitement immobile est le signe le plus sûr qu'on regarde
+    // une image et non une scène. En mouvements réduits, elle se fige.
+    if (!mouvementsReduits) {
+      respiration += dt;
+      camera.position.x += Math.sin(respiration * 0.31) * 0.02;
+      camera.position.y += Math.sin(respiration * 0.23 + 1.4) * 0.015;
+    }
+
     cameraTarget.set(focus.x * 0.85, 1, focus.z * 0.35);
     camera.lookAt(cameraTarget);
 
@@ -582,13 +742,21 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
     if (mouvementsReduits) return;
     horlogeMotes += dt;
     const t = horlogeMotes;
+    const tourbillon = moteReglage.tourbillon;
     const positions = moteGeometry.attributes.position.array;
     for (let i = 0; i < moteCount; i += 1) {
       const p = i * 3;
       const phase = motePhase[i];
-      positions[p] = moteOrigins[p] + Math.sin(t * 0.19 + phase) * 0.32;
-      positions[p + 1] = moteOrigins[p + 1] + Math.sin(t * 0.42 + phase * 1.7) * 0.18;
-      positions[p + 2] = moteOrigins[p + 2] + Math.cos(t * 0.16 + phase * 0.8) * 0.28;
+
+      // Dérive verticale continue, avec reprise en boucle : une feuille qui
+      // tombe recommence en haut, un pollen qui monte redescend en bas.
+      let hauteur = moteOrigins[p + 1] - moteReglage.chute * t;
+      const span = 4.2;
+      hauteur = ((hauteur - 0.15) % span + span) % span + 0.15;
+
+      positions[p] = moteOrigins[p] + Math.sin(t * 0.19 * tourbillon + phase) * 0.32 * tourbillon;
+      positions[p + 1] = hauteur + Math.sin(t * 0.42 + phase * 1.7) * 0.18;
+      positions[p + 2] = moteOrigins[p + 2] + Math.cos(t * 0.16 * tourbillon + phase * 0.8) * 0.28 * tourbillon;
     }
     moteGeometry.attributes.position.needsUpdate = true;
   }
@@ -603,6 +771,8 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
     fog: scene.fog,
     skyMat,
     stars,
+    starMat,
+    majFilante,
     sun,
     hemi,
     key,

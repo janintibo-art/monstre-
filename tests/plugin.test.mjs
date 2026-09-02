@@ -235,3 +235,32 @@ test('chaque uniforme utilisé dans un shader y est aussi déclaré', () => {
     });
   });
 });
+
+test('chaque décor définit ses propres particules', async () => {
+  const { BIOMES } = await import('../src/game/biomes.js');
+  const formes = new Set();
+  BIOMES.forEach((biome) => {
+    assert.ok(biome.particules, `${biome.id} : aucune particule définie`);
+    const p = biome.particules;
+    assert.ok(p.forme && p.couleur, `${biome.id} : forme ou couleur manquante`);
+    assert.ok(Number.isFinite(p.chute), `${biome.id} : vitesse de chute invalide`);
+    assert.ok(p.tourbillon > 0, `${biome.id} : aucun mouvement latéral`);
+    formes.add(p.forme);
+  });
+  // Quatre décors avec la même particule ne se distingueraient pas.
+  assert.equal(formes.size, BIOMES.length, 'plusieurs décors partagent la même particule');
+});
+
+test('l’ambiance sonore ne démarre jamais d’elle-même', () => {
+  const source = readFileSync('src/main.js', 'utf8');
+  // Les navigateurs l'interdisent tant que l'écran n'a pas été touché, et
+  // surtout personne n'aime qu'une application se mette à faire du bruit.
+  const appels = [...source.matchAll(/ambience\.demarrer\(\)/g)];
+  assert.ok(appels.length >= 1, 'l’ambiance n’est jamais démarrée');
+
+  const contexte = source.slice(0, source.indexOf('ambience.demarrer()'));
+  assert.ok(
+    /onPointerDown|unlock/.test(contexte.slice(-400)),
+    'l’ambiance doit démarrer depuis un geste de l’utilisateur'
+  );
+});

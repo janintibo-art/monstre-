@@ -29,6 +29,7 @@ export function createPanels({
   onImport,
   onGuide,
   onAgenda,
+  onAmbience,
   onSpeciesFolder,
   onProfiles,
   onAgeChange,
@@ -49,6 +50,7 @@ export function createPanels({
   const overlayAllow = document.getElementById('btn-overlay-allow');
   const overlayTest = document.getElementById('btn-overlay-test');
   const profilesBtn = document.getElementById('btn-profiles');
+  const ambienceToggle = document.getElementById('field-ambience');
   const directToggle = document.getElementById('field-direct');
   const directHelp = document.getElementById('direct-help');
   const comfortToggle = document.getElementById('field-comfort');
@@ -102,6 +104,7 @@ export function createPanels({
       : '👤 Choisir un profil';
     // La question « qui joue ? » ne peut être sautée qu'avec un seul profil :
     // avec plusieurs, la poser est exactement l'intérêt d'en avoir plusieurs.
+    ambienceToggle.checked = localStorage.getItem('monstre.ambiance') !== '0';
     const seul = listProfiles().length <= 1;
     directToggle.checked = loadDirectStart();
     directToggle.disabled = !seul;
@@ -152,6 +155,10 @@ export function createPanels({
   profilesBtn.addEventListener('click', () => {
     closeAll();
     if (onProfiles) onProfiles();
+  });
+
+  ambienceToggle.addEventListener('change', () => {
+    if (onAmbience) onAmbience(ambienceToggle.checked);
   });
 
   directToggle.addEventListener('change', () => {
