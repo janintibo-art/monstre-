@@ -26,6 +26,10 @@ export const BIOMES = [
       // plan à l'autre.
       { model: 'arbre_loin', count: 9, radius: [13, 21], height: [5, 8], sway: 0.014 },
       { model: 'plante_loin', count: 8, radius: [12, 19], height: [1.4, 2.4], sway: 0.03 },
+      // Le feu de camp, devant la maison. Il donne à la clairière un centre
+      // chaud et une raison d'être : on ne dort pas n'importe où, on dort près
+      // du feu.
+      { model: 'feu', count: 1, radius: [5.3, 5.3], height: [1.1, 1.1], sway: 0, feu: true, angle: -1.45 },
       // La maison est un repère : toujours au même endroit, jamais tirée au
       // hasard. C'est là que la créature va dormir.
       { model: 'maison', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
@@ -50,6 +54,10 @@ export const BIOMES = [
     decor: [
       { model: 'arbre_loin', count: 12, radius: [12, 20], height: [6, 9.5], sway: 0.016 },
       { model: 'champignon_loin', count: 10, radius: [12, 19], height: [1.2, 2.2], sway: 0.006 },
+      // Le feu de camp, devant la maison. Il donne à la clairière un centre
+      // chaud et une raison d'être : on ne dort pas n'importe où, on dort près
+      // du feu.
+      { model: 'feu', count: 1, radius: [5.3, 5.3], height: [1.1, 1.1], sway: 0, feu: true, angle: -1.45 },
       // La maison est un repère : toujours au même endroit, jamais tirée au
       // hasard. C'est là que la créature va dormir.
       { model: 'chaumiere', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
@@ -74,6 +82,10 @@ export const BIOMES = [
     decor: [
       { model: 'champignon_loin', count: 8, radius: [13, 21], height: [1.2, 2], sway: 0.006 },
       { model: 'arbre_loin', count: 4, radius: [14, 22], height: [4, 6], sway: 0.012 },
+      // Le feu de camp, devant la maison. Il donne à la clairière un centre
+      // chaud et une raison d'être : on ne dort pas n'importe où, on dort près
+      // du feu.
+      { model: 'feu', count: 1, radius: [5.3, 5.3], height: [1.1, 1.1], sway: 0, feu: true, angle: -1.45 },
       // La maison est un repère : toujours au même endroit, jamais tirée au
       // hasard. C'est là que la créature va dormir.
       { model: 'maison', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
@@ -98,6 +110,10 @@ export const BIOMES = [
     decor: [
       { model: 'arbre_loin', count: 5, radius: [13, 21], height: [4, 6.5], sway: 0.018 },
       { model: 'plante_loin', count: 6, radius: [12, 20], height: [1.2, 2], sway: 0.035 },
+      // Le feu de camp, devant la maison. Il donne à la clairière un centre
+      // chaud et une raison d'être : on ne dort pas n'importe où, on dort près
+      // du feu.
+      { model: 'feu', count: 1, radius: [5.3, 5.3], height: [1.1, 1.1], sway: 0, feu: true, angle: -1.45 },
       // La maison est un repère : toujours au même endroit, jamais tirée au
       // hasard. C'est là que la créature va dormir.
       { model: 'chaumiere', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
@@ -133,6 +149,7 @@ export const DECOR_MODELS = {
   maison: 'assets/models/decor/maison.glb',
   chaumiere: 'assets/models/decor/chaumiere.glb',
   ile: 'assets/models/decor/ile.glb',
+  feu: 'assets/models/decor/feu.glb',
   plante: 'assets/models/decor/plante.glb',
   champignon: 'assets/models/decor/champignon.glb'
 };

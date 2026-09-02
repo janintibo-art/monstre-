@@ -71,6 +71,15 @@ export function createDecor(scene) {
   lampe.visible = false;
   scene.add(lampe);
 
+  // Le feu de camp. Sa lumière vacille : une flamme d'intensité constante ne
+  // ressemble à rien. Deux sinusoïdes de périodes incommensurables plus un
+  // sursaut aléatoire, pour qu'aucune pulsation régulière ne se devine.
+  const flamme = new THREE.PointLight(0xff8a3c, 0, 9, 2);
+  flamme.visible = false;
+  scene.add(flamme);
+
+  const braises = { position: null, secousse: 0 };
+
   function clear() {
     groups.forEach((g) => {
       scene.remove(g.mesh);
@@ -80,6 +89,8 @@ export function createDecor(scene) {
     landmark = null;
     fumee.visible = false;
     lampe.visible = false;
+    flamme.visible = false;
+    braises.position = null;
   }
 
   async function build(biome, seed, base = import.meta.env.BASE_URL || './') {
@@ -183,6 +194,12 @@ export function createDecor(scene) {
         matrix.compose(position, quaternion, scale);
         mesh.setMatrixAt(i, matrix);
 
+        if (entry.feu) {
+          flamme.visible = true;
+          flamme.position.set(px, sol + height * 0.55, pz);
+          braises.position = new THREE.Vector3(px, sol + height * 0.35, pz);
+        }
+
         if (entry.landmark) {
           // Le point d'accueil se trouve devant la façade, entre la maison et
           // le centre de la scène : la créature s'y arrête au lieu d'entrer
@@ -242,9 +259,25 @@ export function createDecor(scene) {
   // Intensité de la lampe, pilotée par le cycle jour/nuit.
   function setNight(facteur) {
     lampe.intensity = facteur * 2.4;
+    nuit = facteur;
   }
 
+  let nuit = 0;
+
   function update(dt, time, monsterPosition = null) {
+    // Le feu brûle jour et nuit, mais on ne le voit qu'au crépuscule : en plein
+    // soleil, une lumière ponctuelle de plus ne se remarque pas et coûte pour
+    // rien.
+    if (flamme.visible) {
+      braises.secousse += dt;
+      const vacille =
+        0.72 +
+        0.18 * Math.sin(braises.secousse * 7.3) +
+        0.12 * Math.sin(braises.secousse * 17.1 + 1.3);
+      const sursaut = Math.random() < 0.04 ? 0.25 : 0;
+      flamme.intensity = (0.55 + nuit * 2.6) * (vacille + sursaut);
+    }
+
     // La fumée monte, s'incline dans le vent et s'évase en montant.
     if (fumee.visible && fumee.userData.source) {
       const src = fumee.userData.source;

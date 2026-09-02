@@ -25,16 +25,30 @@
     <!-- Interface superposee -->
     <div id="ui" class="ui">
       <header class="topbar">
-        <div class="identity">
-          <span id="pet-name" class="identity__name">Œuf</span>
-          <span id="pet-stage" class="identity__stage">incubation</span>
+        <!-- Fiche de la créature et jauges réunies dans un seul bloc
+             rétractable : à elles deux, elles occupaient le quart de l'écran,
+             sur une scène qui est le sujet même de l'application. -->
+        <div id="fiche" class="fiche">
+          <button id="fiche-bascule" class="fiche__bascule" aria-expanded="true" aria-controls="fiche-corps">
+            <span class="fiche__identite">
+              <span id="pet-name" class="identity__name">Œuf</span>
+              <span id="pet-stage" class="identity__stage">incubation</span>
+            </span>
+            <!-- Vu replié, ce résumé suffit : cinq pastilles qui virent à
+                 l'ambre puis au rouge. On sait s'il faut déplier. -->
+            <span id="fiche-resume" class="fiche__resume" aria-hidden="true"></span>
+            <span class="fiche__chevron" aria-hidden="true"></span>
+          </button>
+          <div id="fiche-corps" class="fiche__corps">
+            <section id="vials" class="vials" aria-label="Besoins du monstre"></section>
+          </div>
         </div>
-        <button id="btn-agenda-top" class="icon-button" aria-label="Mon agenda">📅</button>
-        <button id="btn-menu" class="icon-button" aria-label="Ouvrir le menu">···</button>
-      </header>
 
-      <!-- Signature visuelle : les besoins sont des fioles de seve -->
-      <section id="vials" class="vials" aria-label="Besoins du monstre"></section>
+        <div class="topbar__actions">
+          <button id="btn-agenda-top" class="icon-button" aria-label="Mon agenda">📅</button>
+          <button id="btn-menu" class="icon-button" aria-label="Ouvrir le menu">···</button>
+        </div>
+      </header>
 
       <div id="bubble" class="bubble" hidden></div>
 

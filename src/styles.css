@@ -1599,12 +1599,9 @@ select {
    reçoit donc le z-index seul. */
 .topbar, .vials, .thought, .actionbar { position: relative; z-index: 1; }
 .bubble { z-index: 1; }
-.identity {
-  padding: 10px 15px 11px; border: 1px solid rgba(233,238,245,.16); border-radius: 18px;
-  background: linear-gradient(145deg, rgba(28,37,70,.72), rgba(13,19,39,.72));
-  box-shadow: 0 10px 34px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.06);
-  backdrop-filter: blur(14px) saturate(130%);
-}
+/* L'ancien cadre de la fiche d'identité est repris par `.fiche`, qui englobe
+   désormais l'identité et les jauges. Le conserver dessinerait un cadre dans
+   un cadre. */
 .identity__name { text-shadow: 0 2px 12px rgba(0,0,0,.48); }
 .icon-button {
   background: linear-gradient(145deg, rgba(36,46,83,.76), rgba(13,19,39,.72));
@@ -1613,11 +1610,7 @@ select {
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 .icon-button:hover { box-shadow: 0 0 0 1px var(--glow-soft), 0 8px 28px rgba(0,0,0,.32); transform: translateY(-1px); }
-.vials {
-  width: max-content; padding: 10px 12px 8px; border-radius: 18px;
-  border: 1px solid rgba(233,238,245,.1); background: rgba(9,14,29,.46);
-  backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,.18);
-}
+/* Idem pour les jauges : elles vivent maintenant dans la fiche. */
 .vial__tube { box-shadow: inset 2px 0 3px rgba(255,255,255,.08), 0 0 10px rgba(0,0,0,.22); }
 .vial__tube::after {
   content: ''; position: absolute; top: 5px; bottom: 5px; left: 2px; width: 2px;
@@ -1846,4 +1839,146 @@ select {
 .confort .agenda-item__heure {
   font-size: 18px;
   min-width: 62px;
+}
+
+/* ------------------------------- La fiche -------------------------------
+   Identité et jauges réunies, repliables. À elles deux, elles occupaient le
+   quart de l'écran — sur une application dont la scène EST le sujet.
+   ------------------------------------------------------------------------ */
+
+.topbar {
+  align-items: flex-start;
+}
+
+.topbar__actions {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+
+.fiche {
+  border-radius: 18px;
+  border: 1px solid rgba(233, 238, 245, 0.14);
+  background: linear-gradient(145deg, rgba(28, 37, 70, 0.68), rgba(13, 19, 39, 0.7));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22), inset 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px) saturate(130%);
+  overflow: hidden;
+  max-width: 340px;
+}
+
+.fiche__bascule {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  background: none;
+  border: none;
+  color: var(--bone);
+  cursor: pointer;
+  text-align: left;
+  min-height: 46px;
+}
+
+.fiche__identite {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.fiche__identite .identity__name {
+  font-size: 19px;
+  line-height: 1.1;
+}
+
+.fiche__identite .identity__stage {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Résumé visible quand la fiche est repliée : cinq pastilles qui virent à
+   l'ambre puis au rouge. On sait s'il faut déplier sans rien lire. */
+.fiche__resume {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.fiche__resume i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--glow);
+  display: block;
+  transition: background 400ms ease;
+}
+
+.fiche__resume i.bas {
+  background: var(--amber);
+}
+
+.fiche__resume i.critique {
+  background: #ff8fa3;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.fiche__chevron {
+  margin-left: auto;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 220ms ease;
+  flex: none;
+}
+
+.fiche__corps {
+  overflow: hidden;
+  transition: max-height 260ms ease, opacity 200ms ease;
+  max-height: 160px;
+  opacity: 1;
+}
+
+.fiche--replie .fiche__corps {
+  max-height: 0;
+  opacity: 0;
+}
+
+.fiche--replie .fiche__chevron {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+.fiche--replie .fiche__resume {
+  display: flex;
+}
+
+.fiche--replie .fiche__chevron {
+  margin-left: 4px;
+}
+
+/* Les jauges perdent leur cadre : la fiche le porte désormais. */
+.fiche .vials {
+  margin: 0;
+  padding: 0 12px 10px;
+  background: none;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  width: auto;
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .fiche {
+    max-width: 300px;
+  }
+
+  .fiche__corps {
+    max-height: 120px;
+  }
 }

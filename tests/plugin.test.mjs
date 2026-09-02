@@ -470,3 +470,25 @@ test('aucun texte ne suppose que la personne a un chat', () => {
     assert.ok(!/ton chat|votre chat|mon chat/i.test(texte), `${fichier} : suppose un chat`);
   });
 });
+
+test('la fiche et les jauges ne forment qu’un seul bloc', () => {
+  const html = readFileSync('index.html', 'utf8');
+  // À deux blocs séparés, elles occupaient le quart de l'écran d'une
+  // application dont la scène est le sujet.
+  const fiche = html.indexOf('id="fiche"');
+  const vials = html.indexOf('id="vials"');
+  const finFiche = html.indexOf('</header>', fiche);
+  assert.ok(fiche >= 0, 'fiche absente');
+  assert.ok(vials > fiche && vials < finFiche, 'les jauges sont hors de la fiche');
+  assert.match(html, /id="fiche-bascule"/, 'aucune bascule pour replier');
+  assert.match(html, /aria-expanded/, 'état de repli non annoncé aux lecteurs d’écran');
+});
+
+test('le résumé replié suit les mêmes seuils que les jauges', () => {
+  const source = readFileSync('src/ui/hud.js', 'utf8');
+  // Deux affichages du même état ne doivent jamais raconter deux histoires
+  // différentes.
+  const seuils = [...source.matchAll(/value < (\d+)/g)].map((m) => Number(m[1]));
+  const uniques = [...new Set(seuils)].sort((a, b) => a - b);
+  assert.deepEqual(uniques, [18, 40], `seuils incohérents : ${uniques}`);
+});

@@ -42,6 +42,7 @@ chaque geste devient un petit événement visible.
 | `nid.glb` | Un lit, un panier, un tapis de mousse | Elle va s'y coucher pour dormir |
 | ~~`fruit.glb`~~ | ✅ **Fait** — sept plats-monstres livrés | Voir `models/food/` |
 | ~~`nid.glb`~~ | ✅ **Remplacé** par la maison (v44) | Elle y dort |
+| ~~feu de camp~~ | ✅ **Fait** (v65) | Lumière vacillante devant la maison |
 
 **Ce que je code** : apparition/disparition des objets, la créature qui se
 déplace vers l'objet au lieu de rester sur place, animation de l'objet (la balle

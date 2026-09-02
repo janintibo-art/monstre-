@@ -918,6 +918,29 @@ une fois attribués, ils ne bougent plus. Le génome aussi est conservé tel que
 et n'est reconstruit que s'il manque — corriger un générateur aléatoire ne doit
 jamais faire changer d'apparence une créature à laquelle on s'est attaché.
 
+## La fiche rétractable
+
+L'identité de la créature et ses cinq jauges occupaient deux blocs séparés, soit
+le quart de l'écran — sur une application dont la scène **est** le sujet. Elles
+sont réunies en un seul bloc, repliable d'une tape.
+
+Replié, il ne reste que le nom et **cinq pastilles** qui virent à l'ambre puis
+au rouge : on sait s'il faut déplier sans rien lire. Les deux affichages
+partagent exactement les mêmes seuils — un test le vérifie, parce que deux vues
+du même état qui divergent sont pires que pas de vue du tout.
+
+L'état replié est mémorisé : quelqu'un qui range sa fiche ne veut pas la
+retrouver dépliée au lancement suivant.
+
+## Le feu de camp
+
+Un feu brûle devant chaque maison. Sa lumière **vacille** : deux sinusoïdes de
+périodes incommensurables plus un sursaut aléatoire, pour qu'aucune pulsation
+régulière ne se devine. Une flamme d'intensité constante ne ressemble à rien.
+
+Il donne à la clairière un centre chaud et une raison d'être — on ne dort pas
+n'importe où, on dort près du feu.
+
 ## Les repas
 
 Nourrir la créature ne remplit plus une jauge : **le plat tombe du ciel, se pose

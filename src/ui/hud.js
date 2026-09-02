@@ -17,6 +17,10 @@ const THOUGHTS = {
   idle: 'Il ne fait rien de particulier.'
 };
 
+// Mémorise l'état replié : quelqu'un qui range sa fiche ne veut pas la
+// retrouver dépliée au lancement suivant.
+const CLE_FICHE = 'monstre.fiche.repliee';
+
 export function createHud() {
   const vialsRoot = document.getElementById('vials');
   const nameEl = document.getElementById('pet-name');
@@ -41,6 +45,38 @@ export function createHud() {
   let bubbleTimer = null;
   let override = ''; // texte impose, par exemple la transcription du micro
 
+  // --------------------------------------------------------------- la fiche
+  const fiche = document.getElementById('fiche');
+  const bascule = document.getElementById('fiche-bascule');
+  const resume = document.getElementById('fiche-resume');
+  const pastilles = {};
+
+  NEEDS.forEach((key) => {
+    const point = document.createElement('i');
+    point.title = NEED_LABELS[key];
+    resume.appendChild(point);
+    pastilles[key] = point;
+  });
+
+  function replier(oui) {
+    fiche.classList.toggle('fiche--replie', oui);
+    bascule.setAttribute('aria-expanded', String(!oui));
+    try {
+      localStorage.setItem(CLE_FICHE, oui ? '1' : '0');
+    } catch {
+      /* stockage indisponible */
+    }
+  }
+
+  bascule.addEventListener('click', () => replier(!fiche.classList.contains('fiche--replie')));
+
+  try {
+    if (localStorage.getItem(CLE_FICHE) === '1') replier(true);
+  } catch {
+    /* stockage indisponible */
+  }
+
+
   function update(pet, decision) {
     NEEDS.forEach((key) => {
       const value = Math.max(0, Math.min(100, pet.needs[key]));
@@ -48,6 +84,14 @@ export function createHud() {
       node.fill.style.height = `${value}%`;
       node.vial.classList.toggle('vial--low', value < 40);
       node.vial.classList.toggle('vial--critical', value < 18);
+
+      // Mêmes seuils sur le résumé replié : deux affichages du même état ne
+      // doivent jamais raconter deux histoires différentes.
+      const point = pastilles[key];
+      if (point) {
+        point.classList.toggle('bas', value < 40 && value >= 18);
+        point.classList.toggle('critique', value < 18);
+      }
     });
 
     nameEl.textContent = pet.name;
