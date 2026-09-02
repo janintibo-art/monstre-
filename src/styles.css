@@ -281,6 +281,9 @@ body {
 
 .panel {
   position: fixed;
+  /* Au-dessus de l'écran de démarrage (500) : le choix de profil est posé
+     avant que le jeu ne commence, il doit donc pouvoir s'afficher par-dessus. */
+  z-index: 700;
   left: 50%;
   bottom: 0;
   transform: translateX(-50%);

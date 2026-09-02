@@ -344,6 +344,12 @@ l'appareil, et c'est écrit sur l'écran de création.
 Une installation antérieure aux profils est reprise automatiquement : la
 créature existante devient le premier profil.
 
+> L'écran de démarrage s'efface **avant** que la question soit posée. Sinon il
+> recouvre le panneau, personne ne peut répondre, et l'attente ne se termine
+> jamais — c'est exactement ce qui bloquait le premier lancement en v36. Un
+> chien de garde signale désormais tout démarrage qui n'aboutit pas au bout de
+> vingt secondes, et un test vérifie l'ordre des calques.
+
 ## Pour qui
 
 La **tranche d'âge du profil** va de 3 ans à « Confort ». Il règle

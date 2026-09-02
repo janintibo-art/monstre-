@@ -95,9 +95,23 @@ function applyProfileComfort() {
   return applyComfortClass(comfortEnabled(currentBand(), profile ? profile.comfort : null));
 }
 
+// Retire l'ecran de demarrage. Appele a deux moments : avant de poser une
+// question a l'utilisateur, et une fois la premiere image rendue.
+function hideBoot() {
+  const boot = document.getElementById('boot');
+  if (!boot) return;
+  boot.classList.add('boot--done');
+  setTimeout(() => boot.remove(), 600);
+}
+
 // Choix du profil avant tout le reste : la sauvegarde chargee depend de qui
 // joue, donc rien ne peut demarrer tant que la question n'est pas tranchee.
+//
+// L'ecran de demarrage doit disparaitre AVANT : sinon il recouvre le panneau,
+// personne ne peut repondre, et l'attente ne se termine jamais. C'est ce qui
+// bloquait l'application au tout premier lancement.
 function askProfile() {
+  hideBoot();
   return new Promise((resolve) => {
     const picker = createProfilePicker({
       onChoose: (profile, info) => {
@@ -1043,12 +1057,7 @@ async function boot() {
 
   // On efface l'ecran de demarrage seulement une fois la premiere image rendue,
   // sinon on decouvrirait une scene vide pendant une fraction de seconde.
-  requestAnimationFrame(() => {
-    const boot = document.getElementById('boot');
-    if (!boot) return;
-    boot.classList.add('boot--done');
-    setTimeout(() => boot.remove(), 600);
-  });
+  requestAnimationFrame(hideBoot);
 
   // Message de retour apres une absence
   if (offlineSeconds > 900 && pet.hatched) {
@@ -1058,6 +1067,15 @@ async function boot() {
     }, 1200);
   }
 }
+
+// Chien de garde. Si l'ecran de demarrage est encore la au bout de vingt
+// secondes, c'est qu'une etape attend quelque chose qui n'arrivera pas. Mieux
+// vaut le dire que laisser tourner une barre de chargement indefiniment.
+setTimeout(() => {
+  const boot = document.getElementById('boot');
+  if (!boot || boot.classList.contains('boot--done')) return;
+  showFatal(new Error('Le démarrage n’a pas abouti. Recharge, ou recommence avec un nouvel œuf.'));
+}, 20000);
 
 boot().catch((error) => {
   console.error(error);

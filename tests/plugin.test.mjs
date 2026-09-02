@@ -114,6 +114,31 @@ test('les appels réservés aux versions récentes d’Android sont protégés',
   }
 });
 
+test('les calques s’empilent dans le bon ordre', () => {
+  // Les commentaires sont retirés d'abord : ce fichier en contient qui citent
+  // des sélecteurs pour les expliquer, et une recherche naïve tombait dessus.
+  const css = readFileSync('src/styles.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  function couche(selecteur) {
+    const debut = css.indexOf(selecteur + ' {');
+    assert.ok(debut >= 0, `sélecteur introuvable : ${selecteur}`);
+    const bloc = css.slice(debut, css.indexOf('}', debut));
+    const trouve = bloc.match(/z-index:\s*(\d+)/);
+    return trouve ? Number(trouve[1]) : 0;
+  }
+
+  // Un panneau doit pouvoir s'afficher par-dessus l'écran de démarrage : le
+  // choix de profil est posé avant que le jeu ne commence. Sans ça, la question
+  // reste invisible et l'application attend une réponse impossible à donner.
+  assert.ok(
+    couche('.panel') > couche('.boot'),
+    'les panneaux passent sous l’écran de démarrage : le choix de profil serait inaccessible'
+  );
+  // Le voile de flash et la bannière d'erreur restent au-dessus de tout.
+  assert.ok(couche('.flash') > couche('.panel'), 'le voile de flash passe sous les panneaux');
+  assert.ok(couche('.fatal') > couche('.flash'), 'la bannière d’erreur n’est pas au premier plan');
+});
+
 test('chaque espèce a sa planche de marche', async () => {
   const { SPECIES } = await import('../src/game/species.js');
   SPECIES.forEach((s) => {
