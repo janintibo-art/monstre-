@@ -61,7 +61,9 @@ export const GUIDE = [
       'Le moment venu, ton téléphone t’alerte même si l’application est fermée. En ouvrant, la créature accourt et répète le rendez-vous jusqu’à ce que tu appuies sur « C’est noté ».',
       'Elle comprend aussi « demain », « après-demain », « dans trois jours », « le 12 mars », et les rendez-vous qui se répètent : « **tous les jours à 8 h** » pour les médicaments, « tous les mardis » pour le kiné.',
       '**Réglages → Mes pense-bêtes** montre tout ce qu’elle retient, avec la possibilité d’en effacer. Chaque profil a les siens.',
-      'La première fois, le téléphone demande l’autorisation d’envoyer des notifications : il faut accepter, sinon elle ne pourra te prévenir que lorsque tu ouvres l’application.'
+      'La première fois, le téléphone demande l’autorisation d’envoyer des notifications : il faut accepter, sinon elle ne pourra te prévenir que lorsque tu ouvres l’application.',
+      '**Elle peut aussi venir marcher sur ton écran**, par-dessus tes autres applications, à l’heure du rappel. Tu la touches, elle rentre chez elle. Ça se règle dans **Réglages → Promenade sur l’écran**, avec un bouton pour l’essayer tout de suite.',
+      'Rassure-toi pour la batterie : elle ne tourne pas en fond. Le téléphone la réveille à l’heure dite, elle reste trois minutes au maximum, puis tout s’éteint. Entre deux rendez-vous, elle ne consomme rien.'
     ]
   },
   {

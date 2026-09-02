@@ -158,6 +158,21 @@ rendu qu'une quatrième espèce.
 
 ---
 
+## Note sur la promenade sur l'écran (v31)
+
+Reprise de ton application précédente, avec une différence : le service n'est
+plus permanent, il est réveillé par une alarme à l'heure du rappel puis s'éteint.
+
+La créature affichée est une **planche d'images** générée depuis le vrai modèle
+par `tools/render_sprite.py`. Le script applique le squelette et l'animation de
+marche : ce sont de vraies images du cycle, pas une pose figée. Si tu ajoutes
+une espèce, une seule commande suffit :
+
+```bash
+python3 tools/render_sprite.py public/assets/models/espece/jeune.glb \
+  public/assets/sprites/espece.png 8 160
+```
+
 ## Si tu ne fais qu'une chose
 
 Le **lot 1**. Voir la créature aller manger dans son bol et se coucher dans son

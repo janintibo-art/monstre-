@@ -36,6 +36,10 @@ jobs:
           npx cap sync android
           # Icone et ecran de demarrage generes depuis assets/
           npx --yes @capacitor/assets@3 generate --android
+          # Les planches de marche vont dans les assets natifs : la fenêtre
+          # système qui affiche la créature n'a pas accès au dossier web.
+          mkdir -p android/app/src/main/assets/sprites
+          cp public/assets/sprites/*.png android/app/src/main/assets/sprites/
           chmod +x android/gradlew
           cd android && ./gradlew assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4

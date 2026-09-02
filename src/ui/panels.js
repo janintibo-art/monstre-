@@ -4,6 +4,7 @@ import { BIOMES, biomeById, loadBiomePreference, saveBiomePreference, pickBiome 
 import { CYCLE_MODES } from '../game/daylight.js';
 import { knownFacts, forget, daysTogether, playerName } from '../ai/memory.js';
 import { exportSave, parseImport } from '../state/save.js';
+import * as overlay from '../agenda/overlay.js';
 import { bandById, comfortEnabled, applyComfortClass } from '../state/profile.js';
 import { currentBand, getActiveProfile, updateProfile } from '../state/profiles.js';
 
@@ -20,6 +21,7 @@ export function createPanels({
   onImport,
   onGuide,
   onAgenda,
+  onSpeciesFolder,
   onProfiles,
   onAgeChange,
   getPet,
@@ -34,6 +36,10 @@ export function createPanels({
 
   const guideBtn = document.getElementById('btn-guide');
   const agendaBtn = document.getElementById('btn-agenda');
+  const overlayRow = document.getElementById('row-overlay');
+  const overlayHelp = document.getElementById('overlay-help');
+  const overlayAllow = document.getElementById('btn-overlay-allow');
+  const overlayTest = document.getElementById('btn-overlay-test');
   const profilesBtn = document.getElementById('btn-profiles');
   const comfortToggle = document.getElementById('field-comfort');
   const comfortHelp = document.getElementById('comfort-help');
@@ -89,6 +95,34 @@ export function createPanels({
         ? 'Réglage manuel : il ne suivra plus l’âge du profil.'
         : `Réglé automatiquement d’après le profil (${band.label}).`;
   }
+
+  // La promenade sur l'écran n'existe que sur Android : ailleurs, la ligne
+  // n'apparaît pas du tout plutôt que d'afficher un bouton inerte.
+  async function refreshOverlay() {
+    const dispo = await overlay.available();
+    overlayRow.hidden = !dispo;
+    if (!dispo) return;
+    const autorise = await overlay.hasPermission();
+    overlayAllow.hidden = autorise;
+    overlayTest.hidden = !autorise;
+    overlayHelp.textContent = autorise
+      ? 'Elle viendra marcher sur ton écran à l’heure du rappel, puis rentrera d’elle-même. Rien ne tourne entre deux rendez-vous.'
+      : 'Android demande une autorisation spéciale pour qu’elle puisse apparaître par-dessus les autres applications.';
+  }
+
+  overlayAllow.addEventListener('click', async () => {
+    await overlay.requestPermission();
+    // On revérifie au retour des réglages système : l'autorisation ne se donne
+    // pas dans l'application.
+    setTimeout(refreshOverlay, 800);
+  });
+
+  overlayTest.addEventListener('click', () => {
+    const pet = getPet();
+    overlay.preview(`${pet.name} fait un tour`, onSpeciesFolder ? onSpeciesFolder() : 'rouge');
+  });
+
+  refreshOverlay();
 
   agendaBtn.addEventListener('click', () => {
     closeAll();
@@ -393,6 +427,7 @@ export function createPanels({
       config = loadConfig();
       refreshProviderUI();
       refreshProfile();
+      refreshOverlay();
       menu.hidden = false;
     }
     notify();

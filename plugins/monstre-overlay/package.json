@@ -1,0 +1,13 @@
+{
+  "name": "monstre-overlay",
+  "version": "1.0.0",
+  "description": "La créature vient marcher sur l'écran pour rappeler un rendez-vous, réveillée par une alarme.",
+  "main": "src/index.js",
+  "type": "module",
+  "capacitor": {
+    "android": {
+      "src": "android"
+    }
+  },
+  "license": "MIT"
+}

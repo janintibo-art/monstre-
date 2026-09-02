@@ -378,13 +378,36 @@ reporté à la fois suivante au lieu d'être supprimé.
 
 Chaque profil a ses pense-bêtes.
 
-> **Ce qui n'est pas fait** : la créature ne se promène pas *par-dessus* les
-> autres applications, sur le bureau du téléphone. Cela demande la permission
-> Android « affichage par-dessus les autres applications », un service en
-> arrière-plan et une fenêtre native — donc du code Java dans le projet Android,
-> qui est aujourd'hui régénéré à chaque compilation. C'est faisable, mais c'est
-> un chantier à part. La notification et le rappel en jeu couvrent le besoin
-> réel : être averti à temps.
+### La créature marche sur l'écran
+
+À l'heure du rappel, elle apparaît **par-dessus les autres applications**, se
+promène, affiche le rendez-vous dans une bulle. On la touche, elle rentre chez
+elle. C'est un module natif Android, dans `plugins/monstre-overlay/`.
+
+**Le point qui compte, c'est le modèle d'activation.** Rien ne tourne en fond.
+Une alarme système exacte est programmée à l'heure du rappel ; Android réveille
+l'application à ce moment précis, la créature apparaît, puis tout s'éteint —
+au toucher, ou au bout de trois minutes si personne ne réagit. Entre deux
+rendez-vous, le coût en batterie est nul. C'est la différence avec un compagnon
+d'écran classique, qui maintient un service en permanence.
+
+Trois détails vont dans le même sens :
+
+- `setExactAndAllowWhileIdle` traverse la veille profonde : un rappel qui
+  arrive vingt minutes en retard ne sert à rien.
+- `START_NOT_STICKY` : si le système tue le service, il ne le ressuscite pas.
+  Un rappel manqué vaut mieux qu'un service qui redémarre sans raison.
+- Le cycle de marche ne s'anime que pendant les déplacements.
+
+La créature affichée n'est pas un rendu 3D — en charger un dans une fenêtre
+système coûterait cher en mémoire, et dépendre d'internet pour un rappel serait
+absurde. C'est une **planche d'images de marche** générée depuis le vrai modèle
+par `tools/render_sprite.py`, qui applique réellement le squelette et
+l'animation : de vraies images du cycle de marche, 100 Ko par espèce.
+
+L'autorisation « affichage par-dessus les autres applications » se demande dans
+**Réglages → Promenade sur l'écran**, avec un bouton d'essai pour vérifier sans
+attendre un vrai rendez-vous. Sans elle, la notification suffit.
 
 ## Discuter, pas seulement jouer
 

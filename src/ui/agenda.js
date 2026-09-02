@@ -1,6 +1,7 @@
 import { parseReminder, parseLead, formatWhen, LEADS, leadById, triggerTime } from '../agenda/parse.js';
 import { listReminders, addReminder, removeReminder, completeReminder, prune } from '../agenda/store.js';
 import * as notify from '../agenda/notify.js';
+import * as overlay from '../agenda/overlay.js';
 import { currentBand, getActiveId } from '../state/profiles.js';
 
 // Le pense-bête.
@@ -11,7 +12,7 @@ import { currentBand, getActiveId } from '../state/profiles.js';
 // doit prévenir, et propose des réponses à toucher autant qu'à dire — c'est la
 // seule information que l'utilisateur oublie toujours de donner spontanément.
 
-export function createAgendaUi({ getPet, voice, voiceProfile, onListen, onRecall }) {
+export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeciesFolder }) {
   const panel = document.getElementById('agenda');
   const closeBtn = document.getElementById('agenda-close');
   const intro = document.getElementById('agenda-intro');
@@ -77,6 +78,7 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, onRecall
       drop.setAttribute('aria-label', `Oublier ${item.subject}`);
       drop.addEventListener('click', () => {
         notify.cancel(item);
+        overlay.cancel(item);
         removeReminder(profileId, item.id);
         render();
       });
@@ -133,6 +135,9 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, onRecall
     // pas au premier lancement où personne ne comprend pourquoi.
     const ok = await notify.ensurePermission();
     if (ok) await notify.schedule(item, getPet().name);
+    // Si la promenade sur l'écran est autorisée, elle s'ajoute à la
+    // notification : deux façons d'être prévenu valent mieux qu'une.
+    if (getSpeciesFolder) await overlay.schedule(item, getSpeciesFolder());
 
     render();
     const phrase = ok

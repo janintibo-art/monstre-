@@ -37,6 +37,7 @@ import { createAgendaUi, createRecall } from './ui/agenda.js';
 import { parseReminder } from './agenda/parse.js';
 import { dueReminders, listReminders } from './agenda/store.js';
 import * as notify from './agenda/notify.js';
+import * as overlay from './agenda/overlay.js';
 import { comfortEnabled, applyComfortClass } from './state/profile.js';
 import {
   currentBand,
@@ -303,6 +304,7 @@ async function boot() {
     onMemoryChange: () => save(pet),
     onGuide: () => guide.open(),
     onAgenda: () => agenda.open(),
+    onSpeciesFolder: () => species.folder,
     onProfiles: () => {
       // Changer de profil change la sauvegarde a charger : on repart proprement
       // plutot que de recabler le monde a chaud.
@@ -652,6 +654,7 @@ async function boot() {
     getPet: () => pet,
     voice,
     voiceProfile,
+    getSpeciesFolder: () => species.folder,
     onListen: (onHeard, choices) => {
       talkTarget = onHeard;
       expectedChoices = choices || null;
@@ -1013,6 +1016,9 @@ async function boot() {
   // on les rebranche à chaque lancement.
   notify.rescheduleAll(listReminders(getActiveId()), pet.name);
   notify.onTap(() => checkReminders());
+  // Les alarmes de promenade sont reprogrammées elles aussi : Android les
+  // efface au redémarrage du téléphone.
+  overlay.rescheduleAll(listReminders(getActiveId()), species.folder);
 
   autosave(() => pet);
   loop.start();
