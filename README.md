@@ -533,6 +533,23 @@ créature si elle se retrouve dehors.
 Sur navigateur et sur la version Windows, il n'y a rien à verrouiller : les
 appels échouent silencieusement et le jeu fonctionne normalement.
 
+## L'horizon
+
+Chaque décor a **trois paysages de fond** — matin, midi, soir — fondus l'un dans
+l'autre au fil de la journée. Ce n'est pas une silhouette teintée : la lumière
+rasante du matin et celle du couchant ne se déduisent pas d'une même image par
+un filtre.
+
+Ils sont portés par un cylindre vu de l'intérieur, répété trois fois autour de
+la scène — une seule fois, l'image serait étirée ; trois fois, le rapport
+hauteur/largeur retombe juste et l'on n'en voit jamais deux copies à la fois.
+Le haut des images est transparent, donc le dôme de ciel et les étoiles
+apparaissent au travers.
+
+La nuit n'a pas d'image propre : on reprend celle du soir en l'assombrissant et
+en la bleutant. Un paysage nocturne, c'est un paysage de fin de jour privé de
+lumière — et le même facteur qui allume les étoiles éteint le fond.
+
 ## Le cycle jour / nuit
 
 Sept moments — nuit, aube, matin, midi, après-midi, crépuscule, nuit —

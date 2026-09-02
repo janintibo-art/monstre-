@@ -12,6 +12,7 @@ import { createRng, createLegacyRng } from '../core/rng.js';
 export const BIOMES = [
   {
     id: 'prairie',
+    folder: 'prairie',
     name: 'Prairie',
     ground: 'assets/textures/ground/prairie.jpg',
     repeat: 3,
@@ -26,6 +27,7 @@ export const BIOMES = [
   },
   {
     id: 'mousse',
+    folder: 'mousse',
     name: 'Sous-bois',
     ground: 'assets/textures/ground/mousse.jpg',
     repeat: 3,
@@ -40,6 +42,7 @@ export const BIOMES = [
   },
   {
     id: 'roche',
+    folder: 'roche',
     name: 'Éboulis',
     ground: 'assets/textures/ground/roche.jpg',
     repeat: 2.5,
@@ -54,6 +57,7 @@ export const BIOMES = [
   },
   {
     id: 'terre',
+    folder: 'terre',
     name: 'Terre sèche',
     ground: 'assets/textures/ground/terre.jpg',
     repeat: 3,
@@ -70,6 +74,15 @@ export const BIOMES = [
 
 // Les modeles de decor disponibles. Chaque decor pioche dedans avec ses propres
 // quantites, rayons, hauteurs et amplitudes de balancement.
+// Les trois moments de la journée pour chaque décor. On ne teinte pas une
+// silhouette : on fond une image dans l'autre, ce qui rend la lumière du matin
+// et celle du couchant bien plus justes qu'un filtre appliqué à la même image.
+export const HORIZON_MOMENTS = ['matin', 'midi', 'soir'];
+
+export function horizonUrl(biome, moment, base = import.meta.env.BASE_URL || './') {
+  return `${base}assets/horizons/horizon_${biome.folder || biome.id}_${moment}.png`;
+}
+
 export const DECOR_MODELS = {
   arbre: 'assets/models/decor/arbre.glb',
   plante: 'assets/models/decor/plante.glb',

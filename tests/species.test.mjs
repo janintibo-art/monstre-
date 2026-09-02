@@ -46,3 +46,27 @@ test('le tirage de l’espèce est déterministe et couvre le catalogue', () => 
   for (let seed = 1; seed <= 400; seed += 1) vus.add(pickSpecies(seed).id);
   assert.equal(vus.size, SPECIES.length, 'certaines espèces ne sortent jamais');
 });
+
+test('chaque décor a ses trois horizons', async () => {
+  const { BIOMES, HORIZON_MOMENTS, horizonUrl } = await import('../src/game/biomes.js');
+  BIOMES.forEach((biome) => {
+    assert.ok(biome.folder, `${biome.id} : dossier d’horizon non défini`);
+    HORIZON_MOMENTS.forEach((moment) => {
+      const chemin = horizonUrl(biome, moment, './public/');
+      assert.ok(existsSync(chemin), `${biome.id} / ${moment} : image absente (${chemin})`);
+    });
+  });
+});
+
+test('les images d’horizon ont bien un haut transparent', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { BIOMES, horizonUrl } = await import('../src/game/biomes.js');
+  // Un PNG sans canal alpha masquerait le ciel et les étoiles. On vérifie le
+  // type de couleur dans l'en-tête IHDR : 6 = RVB + alpha, 4 = gris + alpha.
+  BIOMES.forEach((biome) => {
+    const donnees = readFileSync(horizonUrl(biome, 'midi', './public/'));
+    assert.equal(donnees.toString('ascii', 12, 16), 'IHDR', `${biome.id} : PNG invalide`);
+    const typeCouleur = donnees[25];
+    assert.ok([4, 6].includes(typeCouleur), `${biome.id} : image sans transparence`);
+  });
+});

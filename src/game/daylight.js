@@ -211,6 +211,32 @@ function makePalette() {
   return palette;
 }
 
+// Choix des deux images d'horizon à fondre, selon l'heure.
+//
+// Les moments fournis sont matin, midi et soir. La nuit n'a pas d'image
+// propre : on reprend celle du soir en l'assombrissant, ce qui est cohérent —
+// un paysage nocturne, c'est un paysage de fin de jour privé de lumière.
+const HORIZON_ETAPES = [
+  { at: 0.0, moment: 'soir' },
+  { at: 0.24, moment: 'matin' },
+  { at: 0.4, moment: 'midi' },
+  { at: 0.62, moment: 'midi' },
+  { at: 0.82, moment: 'soir' },
+  { at: 1.0, moment: 'soir' }
+];
+
+function horizonPair(t) {
+  for (let i = 0; i < HORIZON_ETAPES.length - 1; i += 1) {
+    const a = HORIZON_ETAPES[i];
+    const b = HORIZON_ETAPES[i + 1];
+    if (t >= a.at && t <= b.at) {
+      const span = Math.max(b.at - a.at, 1e-6);
+      return { a: a.moment, b: b.moment, k: smooth((t - a.at) / span) };
+    }
+  }
+  return { a: 'soir', b: 'soir', k: 0 };
+}
+
 export function createDaylight(world) {
   const palette = makePalette();
   const tinted = new THREE.Color();
@@ -286,6 +312,27 @@ export function createDaylight(world) {
     // creature quand le soleil est couche.
     env.rim.intensity = 4 + palette.rim * 6;
     if (biome) env.rim.color.setHex(biome.accent);
+
+    // Horizon : on fond les deux images du moment, puis on assombrit selon la
+    // nuit. Le même facteur qui allume les étoiles éteint le paysage.
+    const horizonMat = env.horizonMat;
+    if (horizonMat && horizonMat.userData.textures) {
+      const paire = horizonPair(current);
+      const jeu = horizonMat.userData.textures;
+      horizonMat.uniforms.mapA.value = jeu[paire.a] || jeu.midi;
+      horizonMat.uniforms.mapB.value = jeu[paire.b] || jeu.midi;
+      horizonMat.uniforms.melange.value = paire.k;
+
+      // De 1 en plein jour à 0,3 en pleine nuit, avec une dérive bleutée.
+      const nuit = palette.stars;
+      const luminosite = 1 - nuit * 0.7;
+      horizonMat.uniforms.teinte.value.setRGB(
+        luminosite * (1 - nuit * 0.1),
+        luminosite * (1 - nuit * 0.05),
+        luminosite * (1 + nuit * 0.12)
+      );
+      horizonMat.uniforms.presence.value = 1;
+    }
 
     env.stars.material.opacity = palette.stars * 0.9;
     env.stars.visible = palette.stars > 0.02;

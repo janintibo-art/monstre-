@@ -72,7 +72,13 @@ entrées dans `src/game/biomes.js`.
 
 ---
 
-## Lot 3 — La profondeur ★ priorité moyenne
+## Lot 3 — La profondeur ✅ fait (v36)
+
+> **Douze horizons livrés** : quatre décors × trois moments de la journée. Bien
+> mieux que les silhouettes que j'avais demandées — avec trois images par décor,
+> on peut les fondre l'une dans l'autre au lieu de teinter la même.
+
+### Ancienne demande, conservée pour mémoire
 
 La scène n'a qu'un seul plan : la créature et un anneau de décor. Un plan
 lointain donnerait de l'ampleur, surtout en paysage.

@@ -44,6 +44,83 @@ export function createWorld(canvas, textures = {}, biome = null) {
   sky.frustumCulled = false;
   scene.add(sky);
 
+  // Bande d'horizon.
+  //
+  // Un cylindre ouvert, vu de l'intérieur, portant DEUX images fondues l'une
+  // dans l'autre selon l'heure : matin, midi, soir. C'est plus juste qu'une
+  // silhouette teintée — la lumière rasante du matin et celle du couchant ne
+  // se déduisent pas d'une même image par un filtre.
+  //
+  // Le haut des images est transparent : le dôme de ciel et les étoiles
+  // apparaissent au travers.
+  const horizonMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    transparent: true,
+    depthWrite: false,
+    // Pas de brouillard : c'est un fond, pas un objet de la scène. Le laisser
+    // se noyer dans la brume reviendrait à l'effacer.
+    fog: false,
+    uniforms: {
+      mapA: { value: null },
+      mapB: { value: null },
+      melange: { value: 0 },
+      teinte: { value: new THREE.Color(1, 1, 1) },
+      presence: { value: 0 }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D mapA;
+      uniform sampler2D mapB;
+      uniform float melange;
+      uniform vec3 teinte;
+      uniform float presence;
+      varying vec2 vUv;
+      void main() {
+        vec4 a = texture2D(mapA, vUv);
+        vec4 b = texture2D(mapB, vUv);
+        vec4 c = mix(a, b, melange);
+        if (c.a < 0.01) discard;
+        gl_FragColor = vec4(c.rgb * teinte, c.a * presence);
+      }
+    `
+  });
+
+  const horizon = new THREE.Mesh(
+    new THREE.CylinderGeometry(30, 30, 16, 48, 1, true),
+    horizonMat
+  );
+  horizon.position.y = 7;
+  horizon.frustumCulled = false;
+  horizon.renderOrder = -1;
+  horizon.visible = false;
+  scene.add(horizon);
+
+  // Applique les trois images d'un décor. Elles sont répétées trois fois autour
+  // du cylindre : une seule fois, l'image serait étirée de façon grotesque ;
+  // trois fois, le rapport hauteur/largeur retombe juste et l'on n'en voit
+  // jamais deux copies à la fois dans le champ.
+  function setHorizon(textures) {
+    const valides = textures && textures.matin && textures.midi && textures.soir;
+    horizon.visible = Boolean(valides);
+    if (!valides) return;
+    ['matin', 'midi', 'soir'].forEach((moment) => {
+      const texture = textures[moment];
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.repeat.set(3, 1);
+      texture.colorSpace = THREE.SRGBColorSpace;
+    });
+    horizonMat.userData.textures = textures;
+    horizonMat.uniforms.mapA.value = textures.midi;
+    horizonMat.uniforms.mapB.value = textures.midi;
+    horizonMat.uniforms.presence.value = 1;
+  }
+
   // Etoiles : un semis fixe qui s'efface au lever du jour.
   const starCount = 420;
   const starPos = new Float32Array(starCount * 3);
@@ -288,7 +365,19 @@ export function createWorld(canvas, textures = {}, biome = null) {
   }
 
   // Tout ce que le cycle jour/nuit pilote, rassemble en un point.
-  const env = { scene, fog: scene.fog, skyMat, stars, sun, hemi, key, rim, ringMat, groundMat };
+  const env = {
+    scene,
+    fog: scene.fog,
+    skyMat,
+    stars,
+    sun,
+    hemi,
+    key,
+    rim,
+    ringMat,
+    groundMat,
+    horizonMat
+  };
 
   return {
     renderer,
@@ -296,6 +385,7 @@ export function createWorld(canvas, textures = {}, biome = null) {
     camera,
     ground,
     env,
+    setHorizon,
     playBounds,
     clampToArena,
     setFocus,

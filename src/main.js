@@ -10,7 +10,7 @@ import { speciesById, pickSpecies, eggUrl, stageUrl } from './game/species.js';
 import { createVfx } from './game/vfx.js';
 import { createDecor } from './game/decor.js';
 import { createKitchen } from './game/food.js';
-import { resolveBiome } from './game/biomes.js';
+import { resolveBiome, horizonUrl, HORIZON_MOMENTS } from './game/biomes.js';
 import { createDaylight } from './game/daylight.js';
 import { createBrain } from './ai/brain.js';
 import { applyEffects, wellbeing } from './ai/needs.js';
@@ -146,6 +146,22 @@ async function boot() {
   const groundTexture = await loadTexture(base + biome.ground);
 
   const world = createWorld(canvas, { ...textures, ground: groundTexture }, biome);
+
+  // Les trois images d'horizon du décor. Chargées à part : elles ne sont pas
+  // indispensables au démarrage, et leur absence laisse simplement un ciel nu.
+  async function loadHorizon(forBiome) {
+    const g = generation;
+    const images = await Promise.all(
+      HORIZON_MOMENTS.map((moment) => loadTexture(horizonUrl(forBiome, moment, base)))
+    );
+    if (stale(g) || biome !== forBiome) return;
+    const jeu = {};
+    HORIZON_MOMENTS.forEach((moment, i) => {
+      if (images[i]) jeu[moment] = images[i];
+    });
+    world.setHorizon(jeu);
+  }
+  loadHorizon(biome);
   const decor = createDecor(world.scene);
   decor.build(biome, pet.seed);
 
@@ -336,6 +352,7 @@ async function boot() {
       world.applyBiome(biome, texture);
       daylight.setBiome(biome);
       decor.build(biome, pet.seed);
+      loadHorizon(biome);
     },
     daylight,
     onRename: (name) => {
@@ -357,6 +374,7 @@ async function boot() {
         world.applyBiome(biome, texture);
         daylight.setBiome(biome);
         decor.build(biome, pet.seed);
+        loadHorizon(biome);
       });
       if (monster) {
         world.scene.remove(monster.group);
