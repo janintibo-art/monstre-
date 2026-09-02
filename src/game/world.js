@@ -32,7 +32,13 @@ export function createWorld(canvas, textures = {}, biome = null) {
     fog: false,
     uniforms: {
       top: { value: new THREE.Color(0x101a3c) },
-      bottom: { value: new THREE.Color(0x05070f) }
+      bottom: { value: new THREE.Color(0x05070f) },
+      // Halo autour du soleil et frange lumineuse au ras de l'horizon. Sans
+      // eux, le ciel n'est qu'un dégradé à deux couleurs : lisible, mais plat
+      // à toute heure. Ce sont eux qui font un lever de soleil.
+      sunDir: { value: new THREE.Vector3(0, 1, 0) },
+      sunColor: { value: new THREE.Color(0xffffff) },
+      sunPower: { value: 0 }
     },
     vertexShader: `
       varying vec3 vPos;
@@ -44,14 +50,29 @@ export function createWorld(canvas, textures = {}, biome = null) {
     fragmentShader: `
       uniform vec3 top;
       uniform vec3 bottom;
+      uniform vec3 sunDir;
+      uniform vec3 sunColor;
+      uniform float sunPower;
       varying vec3 vPos;
       void main() {
-        float h = clamp(normalize(vPos).y * 0.5 + 0.5, 0.0, 1.0);
-        gl_FragColor = vec4(mix(bottom, top, pow(h, 0.75)), 1.0);
+        vec3 dir = normalize(vPos);
+        float h = clamp(dir.y * 0.5 + 0.5, 0.0, 1.0);
+        vec3 base = mix(bottom, top, pow(h, 0.75));
+
+        // Halo : un noyau serré pour le disque, une nappe large pour la
+        // diffusion dans l'atmosphère.
+        float d = max(dot(dir, normalize(sunDir)), 0.0);
+        float halo = pow(d, 24.0) * 0.9 + pow(d, 3.0) * 0.28;
+
+        // Frange claire juste au-dessus de la ligne d'horizon, là où l'air est
+        // le plus épais. Elle donne la profondeur qui manque à un dégradé nu.
+        float frange = pow(1.0 - abs(dir.y), 9.0) * 0.22;
+
+        gl_FragColor = vec4(base + sunColor * (halo + frange) * sunPower, 1.0);
       }
     `
   });
-  const sky = new THREE.Mesh(new THREE.SphereGeometry(45, 32, 16), skyMat);
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(60, 48, 24), skyMat);
   sky.frustumCulled = false;
   scene.add(sky);
 
@@ -97,16 +118,33 @@ export function createWorld(canvas, textures = {}, biome = null) {
         vec4 b = texture2D(mapB, vUv);
         vec4 c = mix(a, b, melange);
         if (c.a < 0.01) discard;
-        gl_FragColor = vec4(c.rgb * teinte, c.a * presence);
+
+        // La courbe tonale délave le fond : on lui rend un peu de saturation
+        // avant de l'envoyer, sinon le paysage lointain paraît terne à côté du
+        // décor proche, qui bénéficie de la lumière directe.
+        float luma = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+        vec3 vive = mix(vec3(luma), c.rgb, 1.25);
+
+        gl_FragColor = vec4(vive * teinte, c.a * presence);
       }
     `
   });
 
+  // Quatre répétitions autour du cylindre, et une hauteur qui respecte le
+  // rapport 4:1 des images. La hauteur perçue du paysage ne dépend que de ce
+  // nombre : à trois, il occupait 47 % de l'écran et écrasait la scène ; à
+  // quatre, 36 %, ce qui laisse respirer le ciel.
+  const HORIZON_RAYON = 30;
+  const HORIZON_REPET = 4;
+  const HORIZON_HAUT = (2 * Math.PI * HORIZON_RAYON) / HORIZON_REPET / 4;
+
   const horizon = new THREE.Mesh(
-    new THREE.CylinderGeometry(30, 30, 16, 48, 1, true),
+    new THREE.CylinderGeometry(HORIZON_RAYON, HORIZON_RAYON, HORIZON_HAUT, 64, 1, true),
     horizonMat
   );
-  horizon.position.y = 7;
+  // Le bas du cylindre passe légèrement sous le sol : aucune fente ne peut
+  // apparaître entre les deux.
+  horizon.position.y = HORIZON_HAUT / 2 - 1;
   horizon.frustumCulled = false;
   horizon.renderOrder = -1;
   horizon.visible = false;
@@ -123,7 +161,8 @@ export function createWorld(canvas, textures = {}, biome = null) {
     ['matin', 'midi', 'soir'].forEach((moment) => {
       const texture = textures[moment];
       texture.wrapS = THREE.RepeatWrapping;
-      texture.repeat.set(3, 1);
+      texture.repeat.set(HORIZON_REPET, 1);
+      texture.anisotropy = anisotropie;
       texture.colorSpace = THREE.SRGBColorSpace;
     });
     horizonMat.userData.textures = textures;
@@ -140,7 +179,7 @@ export function createWorld(canvas, textures = {}, biome = null) {
     // les masquerait de toute facon.
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(Math.random() * 0.95);
-    const r = 40;
+    const r = 52;
     starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
     starPos[i * 3 + 1] = r * Math.cos(phi);
     starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);

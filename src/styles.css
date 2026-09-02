@@ -538,9 +538,24 @@ select {
 }
 
 .boot__logo {
+  /* Dimensionné par la hauteur autant que par la largeur : en paysage sur un
+     téléphone, 78 % de la largeur déborde de l'écran. */
   width: min(78vw, 420px);
+  max-height: 52vh;
   height: auto;
+  object-fit: contain;
   animation: breathe 3.2s ease-in-out infinite;
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .boot__logo {
+    width: min(46vw, 360px);
+    max-height: 58vh;
+  }
+
+  .boot {
+    gap: 18px;
+  }
 }
 
 @keyframes breathe {

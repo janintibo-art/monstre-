@@ -295,6 +295,12 @@ export function createDaylight(world) {
     env.fog.near = palette.fogNear;
     env.fog.far = palette.fogFar;
 
+    // Le ciel reçoit la position et la couleur du soleil : c'est ce qui donne
+    // le halo, plus fort à l'aube et au couchant quand il rase l'horizon.
+    const rasant = 1 - Math.min(1, Math.abs(Math.sin((current - 0.25) * Math.PI * 2)) * 1.6);
+    env.skyMat.uniforms.sunColor.value.copy(palette.sun);
+    env.skyMat.uniforms.sunPower.value = 0.5 + rasant * 0.9;
+
     env.hemi.color.copy(palette.hemiSky);
     env.hemi.groundColor.copy(palette.hemiGround);
     env.hemi.intensity = palette.hemi;
@@ -307,6 +313,7 @@ export function createDaylight(world) {
     const elevation = Math.sin(angle);
     const azimuth = Math.cos(angle);
     env.key.position.set(azimuth * 8, Math.max(0.6, elevation * 9), 4 + elevation * 2);
+    env.skyMat.uniforms.sunDir.value.copy(env.key.position).normalize();
 
     // La lampe d'appoint compense la nuit : c'est elle qui fait luire la
     // creature quand le soleil est couche.

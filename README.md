@@ -607,15 +607,35 @@ l'autre au fil de la journée. Ce n'est pas une silhouette teintée : la lumièr
 rasante du matin et celle du couchant ne se déduisent pas d'une même image par
 un filtre.
 
-Ils sont portés par un cylindre vu de l'intérieur, répété trois fois autour de
-la scène — une seule fois, l'image serait étirée ; trois fois, le rapport
-hauteur/largeur retombe juste et l'on n'en voit jamais deux copies à la fois.
+Ils sont portés par un cylindre vu de l'intérieur, répété **quatre fois** autour
+de la scène. Ce nombre décide de tout : la hauteur perçue du paysage ne dépend
+que de lui, pas du rayon — agrandir et éloigner donne le même angle. À trois
+répétitions, le paysage occupait 47 % de la hauteur d'écran et écrasait la
+scène ; à quatre, 36 %, ce qui laisse respirer le ciel, et le rapport 4:1 des
+images est respecté.
+
 Le haut des images est transparent, donc le dôme de ciel et les étoiles
-apparaissent au travers.
+apparaissent au travers. Un peu de saturation leur est rendue dans le shader :
+la courbe tonale filmique délave le lointain, qui paraîtrait terne à côté du
+décor proche éclairé en direct.
 
 La nuit n'a pas d'image propre : on reprend celle du soir en l'assombrissant et
 en la bleutant. Un paysage nocturne, c'est un paysage de fin de jour privé de
 lumière — et le même facteur qui allume les étoiles éteint le fond.
+
+## Le ciel
+
+Le dôme n'est pas un simple dégradé à deux couleurs — lisible, mais plat à toute
+heure. S'y ajoutent deux éléments calculés :
+
+- **Un halo autour du soleil**, avec un noyau serré pour le disque et une nappe
+  large pour la diffusion atmosphérique. Son intensité augmente quand le soleil
+  rase l'horizon : c'est ce qui fait un lever et un coucher.
+- **Une frange claire au ras de l'horizon**, là où l'air est le plus épais. Elle
+  donne la profondeur qui manque à un dégradé nu.
+
+La direction du halo suit la position réelle de la lumière, donc la course du
+soleil calculée par le cycle.
 
 ## Le cycle jour / nuit
 
