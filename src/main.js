@@ -125,16 +125,19 @@ function askProfile() {
 }
 
 async function boot() {
-  lockLandscape();
-
   // Une installation anterieure aux profils devient le premier profil : sa
   // creature et ses souvenirs sont conserves.
   migrateLegacy();
 
+  // Le verrou paysage vient APRES la question du profil. Le poser avant ferait
+  // basculer l'ecran en paysage puis en portrait sous les yeux du joueur, pour
+  // un formulaire qui se remplit au clavier.
   let seeded = false;
   if (!getActiveProfile() || !listProfiles().length) {
     const chosen = await askProfile();
     seeded = Boolean(chosen.isNew);
+  } else {
+    lockLandscape();
   }
   applyProfileComfort();
   const canvas = document.getElementById('scene');

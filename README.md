@@ -547,10 +547,20 @@ l'angle pour compenser rapetissait la créature au point de perdre ce qu'on
 était venu regarder — cette compensation a donc été retirée.
 
 **Le paysage vaut pour le jeu, pas pour les écrans de lecture.** Réglages,
-profils, conversation, jeux éducatifs, guide et pense-bête libèrent tous
-l'orientation : ce sont des listes et des formulaires, ils se lisent mieux à la
-verticale et le clavier y prend moins de place. Le verrou revient dès que le
+profils, conversation, jeux éducatifs, guide et pense-bête passent tous en
+**portrait** : ce sont des listes et des formulaires, ils se lisent mieux à la
+verticale et le clavier y prend moins de place. Le paysage revient dès que le
 dernier est refermé.
+
+Les deux orientations sont **imposées**, jamais simplement libérées. Se contenter
+de lever le verrou rend la main au système — et si la rotation automatique est
+désactivée sur le téléphone, ce qui est courant, l'écran reste exactement où il
+était. Les réglages s'affichaient donc en paysage. Un verrou portrait explicite
+donne le même résultat quel que soit le réglage de l'appareil.
+
+Au tout premier lancement, le verrou paysage n'est posé qu'**après** la création
+du profil : le poser avant ferait basculer l'écran en paysage puis en portrait
+sous les yeux du joueur, pour un formulaire qui se remplit au clavier.
 
 Le suivi passe par un ensemble de noms d'écrans, pas par un booléen : ouvrir les
 réglages, puis les souvenirs, puis refermer les souvenirs ne doit pas

@@ -9,7 +9,7 @@ const O = await import('../src/core/orientation.js');
 // Le module ne peut pas verrouiller quoi que ce soit hors d'Android : ces tests
 // vérifient sa logique de suivi, qui est la partie où l'on se trompe.
 
-test('un écran ouvert libère l’orientation, sa fermeture la rend', async () => {
+test('un écran ouvert impose le portrait, sa fermeture rend le paysage', async () => {
   await O.setScreenOpen('reglages', true);
   assert.deepEqual(O.screensOpen(), ['reglages']);
   await O.setScreenOpen('reglages', false);
@@ -46,6 +46,20 @@ test('tous les écrans de lecture sont branchés', () => {
       `écran non branché sur l’orientation : ${ecran}`
     );
   });
+});
+
+test('les deux orientations sont imposées, jamais seulement libérées', async () => {
+  const source = readFileSync('src/core/orientation.js', 'utf8');
+  // Lever le verrou rend la main au système : si la rotation automatique est
+  // désactivée sur le téléphone, l'écran reste où il est. Un écran de lecture
+  // doit donc verrouiller le portrait, pas se contenter de déverrouiller.
+  assert.match(source, /lock\(\{ orientation: etat === 'paysage' \? 'landscape' : 'portrait' \}\)/);
+  const bascule = source.slice(source.indexOf('export function setScreenOpen'));
+  assert.match(bascule, /lockPortrait\(\)/, 'les écrans de lecture n’imposent pas le portrait');
+  assert.ok(
+    !/ouverts\.size \? unlockOrientation/.test(bascule),
+    'les écrans de lecture se contentent de déverrouiller'
+  );
 });
 
 test('le manifeste est bien la source du verrou par défaut', () => {
@@ -94,5 +108,6 @@ test('demander l’orientation ne rejette jamais, même sans module natif', asyn
   await assert.doesNotReject(() => O.setScreenOpen('essai', true));
   await assert.doesNotReject(() => O.setScreenOpen('essai', false));
   await assert.doesNotReject(() => O.lockLandscape());
-  await assert.doesNotReject(() => O.unlockOrientation());
+  await assert.doesNotReject(() => O.lockPortrait());
+  await assert.doesNotReject(() => O.releaseOrientation());
 });
