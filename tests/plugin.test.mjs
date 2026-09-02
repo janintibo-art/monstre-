@@ -50,6 +50,24 @@ test('le module Kotlin déclare son propre compilateur', () => {
   assert.match(gradle, /capacitor-android/, 'dépendance Capacitor absente');
 });
 
+test('les versions du SDK sont résolues hors du bloc android', () => {
+  const gradle = readFileSync(`${RACINE}/android/build.gradle`, 'utf8');
+  const bloc = gradle.slice(gradle.indexOf('android {'), gradle.indexOf('repositories {'));
+
+  // Dans `android { }`, le nom `compileSdkVersion` désigne une méthode dépréciée
+  // du greffon Android, pas la variable du projet. Groovy résout la méthode,
+  // et Gradle échoue en affirmant que la version n'est pas spécifiée.
+  ['compileSdkVersion', 'minSdkVersion', 'targetSdkVersion'].forEach((nom) => {
+    assert.ok(
+      !bloc.includes(nom),
+      `« ${nom} » ne doit pas apparaître dans le bloc android : il y désigne une méthode, pas une valeur`
+    );
+  });
+
+  assert.match(gradle, /compileSdk monstreCompileSdk/, 'version de compilation non fixée');
+  assert.match(gradle, /minSdk monstreMinSdk/, 'version minimale non fixée');
+});
+
 test('le manifeste déclare le service et les récepteurs', () => {
   const manifeste = readFileSync(`${RACINE}/android/src/main/AndroidManifest.xml`, 'utf8');
   ['OverlayService', 'AlarmReceiver', 'BootReceiver'].forEach((classe) => {

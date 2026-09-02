@@ -424,6 +424,13 @@ attendre un vrai rendez-vous. Sans elle, la notification suffit.
 > Le projet Android engendré par Capacitor n'embarque **pas** le compilateur
 > Kotlin, et son `build.gradle` racine est régénéré à chaque compilation. Le
 > module apporte donc le sien, via un bloc `buildscript` local.
+>
+> Enfin, à l'intérieur d'un bloc `android { }`, le nom `compileSdkVersion` ne
+> désigne pas la variable du projet mais une **méthode dépréciée** du greffon
+> Android. Groovy résout la méthode en priorité, et Gradle échoue en affirmant
+> que la version n'est pas spécifiée — alors qu'on vient de l'écrire. Les
+> versions sont donc résolues en dehors du bloc, sous des noms qui n'appartiennent
+> qu'au module.
 
 ## Discuter, pas seulement jouer
 

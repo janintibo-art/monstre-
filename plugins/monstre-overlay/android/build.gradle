@@ -19,13 +19,30 @@ buildscript {
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
+// Les versions du SDK sont résolues ICI, hors du bloc `android`, et sous des
+// noms qui n'appartiennent qu'à nous.
+//
+// À l'intérieur de `android { }`, écrire `compileSdkVersion` ne désigne pas la
+// variable du projet mais la **méthode dépréciée du même nom** portée par le
+// greffon Android. Groovy résout la méthode en priorité, `compileSdk` reçoit
+// une valeur inutilisable, et Gradle se plaint que « compileSdkVersion n'est
+// pas spécifié » — alors qu'on venait justement de le spécifier.
+//
+// On s'aligne sur les versions de l'application quand elles existent, avec un
+// repli sinon : le module doit rester compilable seul.
+ext {
+    monstreCompileSdk = rootProject.hasProperty('compileSdkVersion') ? rootProject.compileSdkVersion : 34
+    monstreMinSdk = rootProject.hasProperty('minSdkVersion') ? rootProject.minSdkVersion : 23
+    monstreTargetSdk = rootProject.hasProperty('targetSdkVersion') ? rootProject.targetSdkVersion : 34
+}
+
 android {
     namespace "com.monstre.overlay"
-    compileSdk project.hasProperty('compileSdkVersion') ? compileSdkVersion : 34
+    compileSdk monstreCompileSdk
 
     defaultConfig {
-        minSdk project.hasProperty('minSdkVersion') ? minSdkVersion : 23
-        targetSdk project.hasProperty('targetSdkVersion') ? targetSdkVersion : 34
+        minSdk monstreMinSdk
+        targetSdk monstreTargetSdk
     }
 
     compileOptions {
