@@ -88,6 +88,15 @@ entrées dans `src/game/biomes.js`.
 > séparés, du plus sombre au premier plan au plus clair au fond. La couleur est
 > ajoutée par le jeu ; une image déjà coloriée se battrait avec le cycle
 > jour/nuit.
+>
+> Le cadrage n'a pas d'importance : `tools/prepare_horizon.py` rogne le vide
+> au-dessus du paysage et normalise tout au même format. Sans lui, le relief
+> changeait de taille d'un moment de la journée à l'autre — les images livrées
+> occupaient entre 55 % et 80 % de leur hauteur.
+>
+> ```bash
+> python3 tools/prepare_horizon.py source.png public/assets/horizons/horizon_prairie_midi.png
+> ```
 
 ### Ancienne demande, conservée pour mémoire
 

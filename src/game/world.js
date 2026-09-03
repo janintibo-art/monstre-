@@ -194,10 +194,10 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
         vec4 c = mix(a, b, melange);
         if (c.a < 0.01) discard;
 
-        // Le gris sert de clé de profondeur. Les images vont de 0,18 à 0,93 :
+        // Le gris sert de clé de profondeur. Les images vont de 0,06 à 0,99 :
         // on étale cette plage sur toute la course entre les deux couleurs,
-        // sinon la moitié du dégradé serait inutilisée et tout se ressemblerait.
-        float profondeur = clamp((dot(c.rgb, vec3(0.299, 0.587, 0.114)) - 0.18) / 0.75, 0.0, 1.0);
+        // sinon une partie du dégradé serait inutilisée et tout se ressemblerait.
+        float profondeur = clamp((dot(c.rgb, vec3(0.299, 0.587, 0.114)) - 0.06) / 0.93, 0.0, 1.0);
 
         // Exposant 2,0, et non 0,8.
         //

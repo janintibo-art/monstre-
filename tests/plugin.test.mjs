@@ -567,3 +567,27 @@ test('le manifeste Android reçoit orientation et visibilité du service vocal',
   assert.match(sortie, /<queries>/);
   unlinkSync(chemin);
 });
+
+test('les horizons sont normalisés au même cadrage', async () => {
+  const { readFileSync: lire } = await import('node:fs');
+  const { BIOMES, HORIZON_MOMENTS, horizonUrl } = await import('../src/game/biomes.js');
+
+  BIOMES.forEach((biome) => {
+    HORIZON_MOMENTS.forEach((moment) => {
+      const donnees = lire(horizonUrl(biome, moment, './public/'));
+      assert.equal(donnees.toString('ascii', 12, 16), 'IHDR', `${biome.id}/${moment} : PNG invalide`);
+
+      const largeur = donnees.readUInt32BE(16);
+      const hauteur = donnees.readUInt32BE(20);
+
+      // Le rapport 4:1 décide de la hauteur du cylindre qui porte l'horizon.
+      // Une image d'un autre format serait étirée ou écrasée.
+      assert.equal(largeur / hauteur, 4, `${biome.id}/${moment} : rapport ${largeur}×${hauteur}`);
+
+      // Type 4 = gris + alpha. L'image ne porte qu'une clé de profondeur et une
+      // découpe : trois canaux de couleur identiques seraient du poids perdu,
+      // et surtout une image colorée se battrait avec le recolorage.
+      assert.ok([4, 6].includes(donnees[25]), `${biome.id}/${moment} : sans transparence`);
+    });
+  });
+});
