@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 // Le module natif ne se compile pas ici : ces tests vérifient sa présence et sa
 // cohérence, ce qui aurait suffi à attraper les deux pannes de la v31 — un
@@ -539,9 +540,32 @@ test('l’agenda permet d’atteindre n’importe quelle date', () => {
   assert.match(html, /id="semaine-date"[^>]*type="date"/, 'pas de saut à une date');
 });
 
-test('le manifeste Android reçoit orientation et visibilité du service vocal', async () => {
-  const { execFileSync } = await import('node:child_process');
+// Le nom de l'interpréteur Python n'est pas le même partout : `python3` sur
+// Linux et macOS, `python` sur Windows. Le test tournait donc en vert deux fois
+// sur trois et faisait échouer la compilation Windows — pour une raison qui
+// n'avait rien à voir avec le code testé.
+function interpretePython() {
+  for (const nom of ['python3', 'python']) {
+    try {
+      execFileSync(nom, ['--version'], { stdio: 'ignore' });
+      return nom;
+    } catch {
+      /* on essaie le suivant */
+    }
+  }
+  return null;
+}
+
+test('le manifeste Android reçoit orientation et visibilité du service vocal', async (t) => {
   const { writeFileSync, readFileSync: lire, unlinkSync } = await import('node:fs');
+
+  const python = interpretePython();
+  if (!python) {
+    // Sans Python, on ne peut pas exécuter le script — mais son absence n'est
+    // pas un défaut du projet : on saute, on ne casse pas.
+    t.skip('aucun interpréteur Python sur cette machine');
+    return;
+  }
 
   const faux = `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -550,13 +574,17 @@ test('le manifeste Android reçoit orientation et visibilité du service vocal',
     </application>
 </manifest>`;
 
-  const chemin = '/tmp/manifeste-essai.xml';
+  // `/tmp` n'existe pas sous Windows : on demande son dossier temporaire au
+  // système plutôt que de le supposer.
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const chemin = join(tmpdir(), 'manifeste-essai.xml');
   writeFileSync(chemin, faux);
 
   // Lancé deux fois : le projet Android est régénéré à chaque compilation, mais
   // le script doit rester sans effet s'il a déjà travaillé.
-  execFileSync('python3', ['tools/patch_manifest.py', chemin]);
-  execFileSync('python3', ['tools/patch_manifest.py', chemin]);
+  execFileSync(python, ['tools/patch_manifest.py', chemin]);
+  execFileSync(python, ['tools/patch_manifest.py', chemin]);
 
   const sortie = lire(chemin, 'utf8');
   assert.equal(sortie.split('screenOrientation').length - 1, 1, 'orientation dupliquée');
@@ -588,6 +616,42 @@ test('les horizons sont normalisés au même cadrage', async () => {
       // découpe : trois canaux de couleur identiques seraient du poids perdu,
       // et surtout une image colorée se battrait avec le recolorage.
       assert.ok([4, 6].includes(donnees[25]), `${biome.id}/${moment} : sans transparence`);
+    });
+  });
+});
+
+test('les tests ne supposent rien du système sur lequel ils tournent', () => {
+  // La suite tourne sur Linux, macOS et Windows. Une hypothèse de plateforme
+  // fait échouer un job sur trois pour une raison sans rapport avec le code —
+  // et l'on cherche le défaut là où il n'est pas.
+  const fichiers = [
+    'tests/plugin.test.mjs',
+    'tests/games.test.mjs',
+    'tests/agenda.test.mjs',
+    'tests/hearing.test.mjs',
+    'tests/orientation.test.mjs',
+    'tests/profiles.test.mjs',
+    'tests/species.test.mjs',
+    'tests/chifoumi.test.mjs'
+  ];
+
+  fichiers.forEach((fichier) => {
+    if (!existsSync(fichier)) return;
+    const lignes = readFileSync(fichier, 'utf8')
+      .split('\n')
+      .filter((l) => !l.trim().startsWith('//'));
+
+    lignes.forEach((ligne, i) => {
+      const ou = `${fichier}:${i + 1}`;
+      // `/tmp` n'existe pas sous Windows : passer par os.tmpdir().
+      assert.ok(!/['"`]\/tmp\//.test(ligne), `${ou} : chemin /tmp codé en dur`);
+      // `python3` n'existe pas sous Windows, qui n'a que `python`.
+      assert.ok(
+        !/execFileSync\(\s*['"]python3['"]/.test(ligne),
+        `${ou} : appelle python3 sans repli`
+      );
+      // Un chemin absolu ne vaut que sur la machine où il a été écrit.
+      assert.ok(!/['"`]\/home\//.test(ligne), `${ou} : chemin absolu`);
     });
   });
 });

@@ -1,4 +1,4 @@
-import { triggerTime, leadById, typeById } from './parse.js';
+import { triggerTime, leadById, typeById, occurrenceSuivante, tombeCeJour } from './parse.js';
 
 // Les pense-bêtes, rangés par profil.
 //
@@ -79,14 +79,13 @@ export function completeReminder(profileId, id) {
   if (!item) return null;
 
   if (item.recurrence) {
-    const next = new Date(item.at);
-    const every = item.recurrence.every;
-    if (every === 'day') next.setDate(next.getDate() + 1);
-    else if (every === 'week') next.setDate(next.getDate() + 7);
-    else if (every === 'month') next.setMonth(next.getMonth() + 1);
-    else next.setDate(next.getDate() + 1);
-    item.at = next.getTime();
-    item.done = false;
+    const suivant = occurrenceSuivante(item.at, item.recurrence);
+    if (suivant) {
+      item.at = suivant.getTime();
+      item.done = false;
+    } else {
+      item.done = true;
+    }
   } else {
     item.done = true;
   }
@@ -131,21 +130,17 @@ export function parJour(profileId, jours = 7, now = Date.now()) {
       return;
     }
 
-    // On avance de proche en proche jusqu'à sortir de la fenêtre. Une borne
-    // dure évite qu'une récurrence mal formée fasse tourner la boucle sans fin.
-    const pas = item.recurrence.every;
-    let quand = new Date(item.at);
-    for (let garde = 0; garde < 400 && quand.getTime() < fin; garde += 1) {
-      if (quand.getTime() >= debut.getTime()) {
-        occurrences.push({ ...item, at: quand.getTime(), repete: true });
-      }
-      const suivant = new Date(quand);
-      if (pas === 'day') suivant.setDate(suivant.getDate() + 1);
-      else if (pas === 'week') suivant.setDate(suivant.getDate() + 7);
-      else if (pas === 'month') suivant.setMonth(suivant.getMonth() + 1);
-      else suivant.setDate(suivant.getDate() + 1);
-      if (suivant.getTime() <= quand.getTime()) break;
-      quand = suivant;
+    // On parcourt la fenêtre jour par jour et l'on demande à la récurrence si
+    // elle tombe ce jour-là. Plus simple et plus juste que d'avancer de proche
+    // en proche : « du lundi au vendredi » ne s'exprime pas par un pas fixe.
+    const heures = new Date(item.at);
+    for (let i = 0; i < jours; i += 1) {
+      const jour = new Date(debut);
+      jour.setDate(jour.getDate() + i);
+      if (jour.getTime() < new Date(item.at).setHours(0, 0, 0, 0)) continue;
+      if (!tombeCeJour(item.recurrence, jour, item.at)) continue;
+      jour.setHours(heures.getHours(), heures.getMinutes(), 0, 0);
+      occurrences.push({ ...item, at: jour.getTime(), repete: true });
     }
   });
 

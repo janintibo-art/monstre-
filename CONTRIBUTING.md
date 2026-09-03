@@ -51,6 +51,14 @@ Chacune vient d'un défaut réel, et chacune est verrouillée par un test.
   (`/android/`). Sans la barre oblique, ils excluent aussi
   `plugins/*/android/`.
 
+**Tests multiplateformes**
+
+- La suite tourne sur Linux, macOS **et Windows**. Aucune hypothèse de
+  plateforme : pas de `/tmp` codé en dur — `os.tmpdir()` — et pas d'appel à
+  `python3`, qui n'existe pas sous Windows. Un test qui suppose son système
+  fait échouer un job sur trois pour une raison sans rapport avec le code, et
+  l'on cherche alors le défaut là où il n'est pas.
+
 **Interface**
 
 - `backdrop-filter` est réservé aux surfaces peu nombreuses : il force le

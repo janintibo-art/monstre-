@@ -274,3 +274,63 @@ test('une récurrence mal formée ne fait pas tourner la boucle sans fin', async
   const groupes = S.parJour('p', 7, now);
   assert.ok(groupes.length <= 7, 'projection incontrôlée');
 });
+
+test('les répétitions couvrent les besoins réels d’un réveil', () => {
+  const ids = A.REPETITIONS.map((r) => r.id);
+  ['une', 'jours', 'ouvres', 'semaine', 'choix'].forEach((id) => {
+    assert.ok(ids.includes(id), `répétition manquante : ${id}`);
+  });
+
+  const ouvres = A.REPETITIONS.find((r) => r.id === 'ouvres');
+  assert.deepEqual(ouvres.valeur.days, [1, 2, 3, 4, 5], 'les jours ouvrés sont faux');
+});
+
+test('un réveil du lundi au vendredi ne sonne pas le week-end', () => {
+  const recurrence = { every: 'week', days: [1, 2, 3, 4, 5] };
+  const depart = new Date(2026, 8, 7, 7, 0); // lundi
+
+  const jours = [];
+  for (let i = 0; i < 7; i += 1) {
+    const jour = new Date(depart);
+    jour.setDate(jour.getDate() + i);
+    if (A.tombeCeJour(recurrence, jour, depart)) jours.push(jour.getDay());
+  }
+  assert.deepEqual(jours, [1, 2, 3, 4, 5], 'le réveil sonne le week-end');
+});
+
+test('l’occurrence suivante saute le week-end', () => {
+  const recurrence = { every: 'week', days: [1, 2, 3, 4, 5] };
+  const vendredi = new Date(2026, 8, 11, 7, 0);
+  assert.equal(vendredi.getDay(), 5);
+
+  // Après vendredi vient lundi, pas samedi : c'est tout l'intérêt d'un réveil
+  // de semaine.
+  const suivant = A.occurrenceSuivante(vendredi, recurrence);
+  assert.equal(suivant.getDay(), 1, `passé au jour ${suivant.getDay()}`);
+});
+
+test('un rappel de jours choisis apparaît aux bons jours de la semaine', async () => {
+  const S = await import('../src/agenda/store.js');
+  localStorage.clear();
+
+  // Mardi et jeudi seulement.
+  const lundi = new Date(2026, 8, 7, 9, 0).getTime();
+  S.addReminder('p', {
+    subject: 'kiné',
+    type: 'rdv',
+    at: lundi,
+    lead: A.leadById('1h'),
+    recurrence: { every: 'week', days: [2, 4] }
+  });
+
+  const groupes = S.parJour('p', 7, lundi);
+  const jours = groupes.map((g) => new Date(g.jour).getDay()).sort();
+  assert.deepEqual(jours, [2, 4], `apparaît aux jours ${jours}`);
+});
+
+test('une répétition sans jour choisi ne bloque pas', () => {
+  // « Jours choisis » sans aucune case cochée n'est pas une répétition : le
+  // rappel doit rester ponctuel plutôt que de ne jamais retomber.
+  assert.equal(A.occurrenceSuivante(Date.now(), { every: 'week', days: [] }), null);
+  assert.equal(A.tombeCeJour({ every: 'week', days: [] }, Date.now(), Date.now()), false);
+});

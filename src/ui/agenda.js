@@ -6,7 +6,9 @@ import {
   leadById,
   triggerTime,
   TYPES,
-  typeById
+  typeById,
+  REPETITIONS,
+  JOURS_COURTS
 } from '../agenda/parse.js';
 import {
   listReminders,
@@ -50,7 +52,14 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
 
   const addRow = document.getElementById('agenda-add');
   const field = document.getElementById('agenda-field');
+  const champSujet = document.getElementById('agenda-champ-sujet');
+  const dateInput = document.getElementById('agenda-date');
+  const heureInput = document.getElementById('agenda-heure');
+  const repetRow = document.getElementById('agenda-repetition');
+  const repetTitre = document.getElementById('agenda-repet-titre');
+  const joursRow = document.getElementById('agenda-jours-semaine');
   const sendBtn = document.getElementById('agenda-send');
+  const dicterBtn = document.getElementById('agenda-dicter');
   const status = document.getElementById('agenda-status');
 
   let pending = null; // rendez-vous compris, en attente du moment de prévenance
@@ -232,6 +241,7 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
 
     renderSemaine(groupes, maintenant);
     renderTypes();
+    preparerFormulaire();
 
     const visibles = jourChoisi === null ? groupes : groupes.filter((g) => g.jour === jourChoisi);
 
@@ -255,6 +265,7 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
       joursView.appendChild(vide);
     }
 
+    dicterBtn.hidden = !onListen;
     ask.hidden = !pending;
     addRow.hidden = Boolean(pending);
     joursView.hidden = Boolean(pending);
@@ -277,19 +288,93 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
       chip.appendChild(mot);
       chip.addEventListener('click', () => {
         typeChoisi = type.id;
-        field.placeholder = PLACEHOLDERS[type.id];
+        // Un réveil se répète : on bascule sur « tous les jours » plutôt que de
+        // laisser un choix qui n'aurait pas de sens.
+        if (type.id === 'reveil' && repetChoisie === 'une') repetChoisie = 'jours';
         renderTypes();
-        field.focus();
+        preparerFormulaire();
+        if (type.id !== 'reveil') field.focus();
       });
       typesRow.appendChild(chip);
     });
   }
 
   const PLACEHOLDERS = {
-    rdv: 'rendez-vous chez le médecin mardi à 17h',
-    tache: 'arroser les plantes samedi à 10h',
-    reveil: 'réveille-moi à 7h'
+    rdv: 'chez le dentiste',
+    tache: 'arroser les plantes',
+    reveil: ''
   };
+
+  let repetChoisie = 'une';
+  let joursChoisis = [];
+
+  function renderRepetition() {
+    // Un réveil se répète presque toujours : on lui propose « tous les jours »
+    // d'emblée plutôt que « une fois », qui n'a guère de sens pour un réveil.
+    const liste =
+      typeChoisi === 'reveil' ? REPETITIONS.filter((r) => r.id !== 'une') : REPETITIONS;
+
+    repetTitre.textContent = typeChoisi === 'reveil' ? 'Sonner…' : 'Répéter';
+
+    repetRow.innerHTML = '';
+    liste.forEach((rep) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      if (repetChoisie === rep.id) chip.classList.add('chip--on');
+      chip.textContent = rep.label;
+      chip.addEventListener('click', () => {
+        repetChoisie = rep.id;
+        renderRepetition();
+      });
+      repetRow.appendChild(chip);
+    });
+
+    // Les jours ne s'affichent que si on a choisi de les désigner soi-même.
+    joursRow.hidden = repetChoisie !== 'choix';
+    joursRow.innerHTML = '';
+    if (repetChoisie === 'choix') {
+      // Lundi en premier : c'est l'ordre d'une semaine en France, pas celui du
+      // tableau des jours en JavaScript, qui commence au dimanche.
+      [1, 2, 3, 4, 5, 6, 0].forEach((jour) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip chip--jour';
+        if (joursChoisis.includes(jour)) chip.classList.add('chip--on');
+        chip.textContent = JOURS_COURTS[jour];
+        chip.addEventListener('click', () => {
+          const at = joursChoisis.indexOf(jour);
+          if (at >= 0) joursChoisis.splice(at, 1);
+          else joursChoisis.push(jour);
+          renderRepetition();
+        });
+        joursRow.appendChild(chip);
+      });
+    }
+  }
+
+  function recurrenceChoisie() {
+    const rep = REPETITIONS.find((r) => r.id === repetChoisie);
+    if (!rep || !rep.valeur) return null;
+    if (rep.id === 'choix') {
+      return joursChoisis.length ? { every: 'week', days: [...joursChoisis].sort() } : null;
+    }
+    return rep.valeur;
+  }
+
+  // Prépare le formulaire : jour du filtre en cours, ou aujourd'hui.
+  function preparerFormulaire() {
+    const jour = new Date(jourChoisi || Date.now());
+    dateInput.value = [
+      jour.getFullYear(),
+      String(jour.getMonth() + 1).padStart(2, '0'),
+      String(jour.getDate()).padStart(2, '0')
+    ].join('-');
+    if (!heureInput.value) heureInput.value = typeChoisi === 'reveil' ? '07:00' : '10:00';
+    champSujet.hidden = typeChoisi === 'reveil';
+    field.placeholder = PLACEHOLDERS[typeChoisi];
+    renderRepetition();
+  }
 
   /* --------------------------------------------- la question de prévenance */
 
@@ -348,6 +433,20 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
     status.textContent = phrase;
   }
 
+  // La parole reste la voie la plus rapide pour qui la maîtrise : une phrase
+  // entière plutôt que quatre champs. Elle vient en complément du formulaire,
+  // pas à sa place — au clavier, deviner la bonne formule ne valait rien.
+  dicterBtn.addEventListener('click', () => {
+    if (!onListen) return;
+    voice.stop();
+    status.textContent = 'Dis-moi tout : « rendez-vous chez le dentiste jeudi à 10 heures »…';
+    onListen((entendu) => {
+      if (!entendu) return;
+      status.textContent = `J’ai entendu « ${entendu} ».`;
+      soumettrePhrase(entendu);
+    });
+  });
+
   semaineAvant.addEventListener('click', () => deplacer(-7));
   semaineApres.addEventListener('click', () => deplacer(7));
 
@@ -394,8 +493,41 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
   /* ------------------------------------------------------------- l'ajout */
 
   function submitText() {
-    const text = field.value.trim();
-    if (!text) return;
+    if (!dateInput.value || !heureInput.value) {
+      status.textContent = 'Choisis un jour et une heure.';
+      return;
+    }
+
+    const [an, mois, jour] = dateInput.value.split('-').map(Number);
+    const [h, m] = heureInput.value.split(':').map(Number);
+    const quand = new Date(an, mois - 1, jour, h, m, 0, 0);
+
+    const sujet = typeChoisi === 'reveil' ? '' : field.value.trim();
+    if (typeChoisi !== 'reveil' && !sujet) {
+      status.textContent = 'Dis-moi de quoi il s’agit.';
+      field.focus();
+      return;
+    }
+
+    field.value = '';
+    status.textContent = '';
+    startAsk(
+      {
+        subject: sujet,
+        type: typeChoisi,
+        at: quand.getTime(),
+        recurrence: recurrenceChoisie(),
+        vague: false,
+        source: sujet
+      },
+      { spoken: false }
+    );
+  }
+
+  // Ancienne voie, conservée pour la parole : « rendez-vous chez le médecin
+  // mardi à 17 h » dit à la créature reste compris. C'est au clavier que la
+  // saisie libre ne valait rien.
+  function soumettrePhrase(text) {
     const reminder = parseReminder(text);
     if (reminder) {
       // La nature choisie au doigt l'emporte sur celle devinée dans la phrase :
@@ -406,17 +538,17 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
       }
     }
     if (!reminder) {
-      status.textContent =
-        'Je n’ai pas trouvé de date. Essaie « rendez-vous chez le dentiste jeudi à 10 h ».';
+      status.textContent = 'Je n’ai pas trouvé de date dans cette phrase.';
       return;
     }
-    field.value = '';
-    status.textContent = '';
     startAsk(reminder, { spoken: false });
   }
 
   sendBtn.addEventListener('click', submitText);
   field.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitText();
+  });
+  heureInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') submitText();
   });
 

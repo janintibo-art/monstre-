@@ -443,6 +443,19 @@ Le ton de la créature et la durée de son apparition en dépendent — cinq min
 pour un réveil, trois pour un rendez-vous — et un réveil qui dirait « n'oublie
 pas » sonnerait faux.
 
+**La saisie se fait par sélecteurs**, pas par phrase : un champ pour le message,
+un sélecteur de jour, un sélecteur d'heure, et le mode de répétition. Taper
+« chez le dentiste jeudi à 10 h » oblige à deviner une formule, et l'analyse
+échoue à la moindre variante — c'est acceptable à l'oral, où l'on ne peut pas
+faire autrement, pas au clavier où le téléphone offre déjà de bons sélecteurs.
+
+La parole reste disponible d'un bouton, pour qui va plus vite en une phrase.
+
+**Les répétitions** couvrent ce qu'on demande vraiment : une fois, tous les
+jours, du lundi au vendredi, chaque semaine, ou des jours choisis un par un. Un
+réveil de semaine passe du vendredi au lundi sans sonner le samedi — ce qui
+n'était pas exprimable avec un simple pas de sept jours.
+
 **L'agenda lui-même** s'ouvre depuis la barre du haut. Une bande montre les sept
 prochains jours avec des pastilles colorées : on lit la charge de la semaine sans
 lire un seul mot. En dessous, les rappels groupés par jour, avec leur heure en

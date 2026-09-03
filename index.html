@@ -299,9 +299,35 @@
 
           <div id="agenda-add">
             <div class="chip-row" id="agenda-types"></div>
-            <div class="chat-input">
-              <input id="agenda-field" type="text" placeholder="rendez-vous chez le médecin mardi à 17h" autocomplete="off" />
-              <button id="agenda-send">Ajouter</button>
+
+            <!-- Le message seul. La date et l'heure se choisissent en dessous :
+                 taper « chez le dentiste jeudi à 10 h » oblige à deviner une
+                 formule, et l'analyse échoue à la moindre variante. -->
+            <label class="field" id="agenda-champ-sujet">
+              <span>Quoi ?</span>
+              <input id="agenda-field" type="text" maxlength="80" placeholder="chez le dentiste" autocomplete="off" />
+            </label>
+
+            <div class="agenda-quand">
+              <label class="field">
+                <span>Quel jour ?</span>
+                <input id="agenda-date" type="date" />
+              </label>
+              <label class="field">
+                <span>À quelle heure ?</span>
+                <input id="agenda-heure" type="time" />
+              </label>
+            </div>
+
+            <div class="field">
+              <span id="agenda-repet-titre">Répéter</span>
+              <div id="agenda-repetition" class="chip-row"></div>
+              <div id="agenda-jours-semaine" class="chip-row" hidden></div>
+            </div>
+
+            <div class="row">
+              <button id="agenda-send" class="agenda-ajouter">Ajouter</button>
+              <button id="agenda-dicter" type="button">🎤 Tout dire d'un coup</button>
             </div>
             <p id="agenda-status" class="hint" aria-live="polite"></p>
           </div>

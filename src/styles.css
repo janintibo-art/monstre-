@@ -1856,6 +1856,34 @@ select {
   flex: none;
 }
 
+/* Repliée, la fiche doit se faire oublier : c'est un bandeau d'information sur
+   une scène qui est le sujet même de l'application. */
+.fiche--replie {
+  max-width: 210px;
+}
+
+.fiche--replie .fiche__bascule {
+  padding: 5px 10px;
+  min-height: 38px;
+  gap: 8px;
+}
+
+.fiche--replie .identity__name {
+  font-size: 15px;
+}
+
+/* Le stade disparaît une fois repliée : « nouveau-né · curieux et plutôt
+   timide » n'a rien à faire dans un bandeau réduit, et il était de toute façon
+   tronqué. */
+.fiche--replie .identity__stage {
+  display: none;
+}
+
+.fiche--replie .fiche__resume i {
+  width: 6px;
+  height: 6px;
+}
+
 .fiche {
   border-radius: 18px;
   border: 1px solid rgba(233, 238, 245, 0.14);
@@ -1869,9 +1897,9 @@ select {
 .fiche__bascule {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 9px 12px;
+  padding: 7px 10px;
   background: none;
   border: none;
   color: var(--bone);
@@ -2254,4 +2282,60 @@ select {
 .game-card--scene {
   border-color: rgba(255, 183, 74, 0.4);
   background: linear-gradient(180deg, rgba(255, 183, 74, 0.1), var(--ink-2));
+}
+
+/* --------------------- Saisie d'un rappel dans l'agenda ------------------ */
+
+.agenda-quand {
+  display: flex;
+  gap: 10px;
+}
+
+.agenda-quand .field {
+  flex: 1;
+  min-width: 0;
+}
+
+.agenda-quand input {
+  width: 100%;
+  min-height: 46px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(233, 238, 245, 0.14);
+  background: var(--ink-2);
+  color: var(--bone);
+  font-size: 15px;
+}
+
+.agenda-ajouter {
+  flex: 1;
+  min-height: 50px;
+  border-radius: 14px;
+  border: none;
+  background: var(--glow);
+  color: #06231c;
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Les jours de la semaine : sept pastilles courtes, pas des étiquettes. */
+.chip--jour {
+  min-width: 46px;
+  padding: 8px 6px;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.confort .agenda-quand input {
+  min-height: 56px;
+  font-size: 17px;
+}
+
+.confort .chip--jour {
+  min-width: 56px;
+  font-size: 14px;
 }

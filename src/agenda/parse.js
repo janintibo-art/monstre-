@@ -67,6 +67,19 @@ export const TYPES = {
   }
 };
 
+// Formes de répétition proposées à la saisie. Elles couvrent ce qu'on demande
+// vraiment à un réveil ou à un rappel : une fois, tous les jours, les jours
+// ouvrés, ou un choix de jours.
+export const REPETITIONS = [
+  { id: 'une', label: 'Une fois', valeur: null },
+  { id: 'jours', label: 'Tous les jours', valeur: { every: 'day' } },
+  { id: 'ouvres', label: 'Du lundi au vendredi', valeur: { every: 'week', days: [1, 2, 3, 4, 5] } },
+  { id: 'semaine', label: 'Chaque semaine', valeur: { every: 'week' } },
+  { id: 'choix', label: 'Jours choisis', valeur: { every: 'week', days: [] } }
+];
+
+export const JOURS_COURTS = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
+
 export function typeById(id) {
   return TYPES[id] || TYPES.rdv;
 }
@@ -378,6 +391,51 @@ function labelFor(minutes) {
 }
 
 // Date du rappel, à partir de la date du rendez-vous et du choix de prévenance.
+// Prochaine occurrence d'un rappel répété, à partir d'une date donnée.
+//
+// Une répétition peut porter sur une liste de jours de la semaine : « du lundi
+// au vendredi » n'avance pas de sept jours, il avance jusqu'au prochain jour
+// ouvré. Sans ce calcul, un réveil de semaine sonnerait aussi le dimanche.
+export function occurrenceSuivante(quand, recurrence) {
+  const d = new Date(quand);
+  if (!recurrence) return null;
+
+  // Une liste de jours fait autorité, même vide : « aucun jour coché » veut
+  // dire aucune répétition, pas « chaque semaine ». Retomber sur un pas
+  // hebdomadaire donnerait une répétition que personne n'a demandée.
+  if (Array.isArray(recurrence.days)) {
+    if (!recurrence.days.length) return null;
+    for (let i = 1; i <= 7; i += 1) {
+      const essai = new Date(d);
+      essai.setDate(essai.getDate() + i);
+      if (recurrence.days.includes(essai.getDay())) return essai;
+    }
+    return null;
+  }
+
+  if (recurrence.every === 'day') d.setDate(d.getDate() + 1);
+  else if (recurrence.every === 'week') d.setDate(d.getDate() + 7);
+  else if (recurrence.every === 'month') d.setMonth(d.getMonth() + 1);
+  else d.setDate(d.getDate() + 1);
+  return d;
+}
+
+// Ce rappel tombe-t-il ce jour-là ?
+export function tombeCeJour(recurrence, date, depart) {
+  if (!recurrence) return false;
+  if (Array.isArray(recurrence.days)) {
+    return recurrence.days.length ? recurrence.days.includes(new Date(date).getDay()) : false;
+  }
+  if (recurrence.every === 'day') return true;
+  if (recurrence.every === 'week') {
+    return new Date(date).getDay() === new Date(depart).getDay();
+  }
+  if (recurrence.every === 'month') {
+    return new Date(date).getDate() === new Date(depart).getDate();
+  }
+  return false;
+}
+
 export function triggerTime(at, lead) {
   const target = new Date(at);
   if (!lead || lead.kind === 'offset') {
