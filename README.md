@@ -1000,9 +1000,16 @@ la transition se fait comme un lever de soleil accéléré.
 
 ## Les espèces
 
-Cinq espèces, chacune avec son œuf et ses formes jeune et adulte :
-**Gigglehorn**, **Moonberry**, **Braisillon** (renardeau de braise),
-**Sylvanou** (créature des bois) et **Ondinelle** (créature des eaux).
+**Onze espèces**, chacune avec son œuf et ses formes jeune et adulte :
+Gigglehorn, Moonberry, **Braisillon** (renardeau de braise), **Sylvanou**
+(créature des bois), **Ondinelle** (créature des eaux), **Gemmelin** (cristal),
+**Bouffenuage** (nuage), **Nocturnelle** (nuit), **Scarabin** (carapace),
+**Champillon** (champignon) et **Étincelou** (électrique).
+
+Un test vérifie qu'aucune texture de créature n'est trop sombre : le jeu passe
+la moitié du temps en scène nocturne, où une créature déjà foncée devient une
+silhouette noire — et sa planche de marche, affichée sur le fond du téléphone,
+disparaît complètement.
 
 L'espèce et le paysage sont tirés de la graine de l'œuf, puis **enregistrés** :
 une fois attribués, ils ne bougent plus. Le génome aussi est conservé tel quel
@@ -1159,9 +1166,9 @@ techniques et les noms de fichiers attendus :
 
 Les invites prêtes à coller dans un générateur d'images, écrites pour que le
 résultat passe correctement dans Meshy — pose en A, fond neutre, membres
-dégagés — sont dans [docs/INVITES-CHATGPT.md](docs/INVITES-CHATGPT.md). Elles
-couvrent trois nouvelles espèces, les objets de soin, le décor, les horizons et
-les icônes.
+dégagés — sont dans [docs/INVITES-CHATGPT.md](docs/INVITES-CHATGPT.md), et trois
+espèces supplémentaires dans
+[docs/INVITES-TROIS-NOUVELLES-CREATURES.md](docs/INVITES-TROIS-NOUVELLES-CREATURES.md).
 
 Les fichiers bruts conviennent, même très lourds : `tools/decimate_glb.py`
 simplifie le maillage et `tools/optimize_glb.py` recompresse les textures.

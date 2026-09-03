@@ -56,6 +56,48 @@ export const SPECIES = [
       baby: 'jeune.glb',
       teen: 'vieux.glb'
     }
+  },
+  {
+    id: 'gemmelin',
+    name: 'Gemmelin',
+    folder: 'gemmelin',
+    egg: 'oeuf.glb',
+    stages: { baby: 'jeune.glb', teen: 'vieux.glb' }
+  },
+  {
+    id: 'bouffenuage',
+    name: 'Bouffenuage',
+    folder: 'bouffenuage',
+    egg: 'oeuf.glb',
+    stages: { baby: 'jeune.glb', teen: 'vieux.glb' }
+  },
+  {
+    id: 'nocturnelle',
+    name: 'Nocturnelle',
+    folder: 'nocturnelle',
+    egg: 'oeuf.glb',
+    stages: { baby: 'jeune.glb', teen: 'vieux.glb' }
+  },
+  {
+    id: 'scarabin',
+    name: 'Scarabin',
+    folder: 'scarabin',
+    egg: 'oeuf.glb',
+    stages: { baby: 'jeune.glb', teen: 'vieux.glb' }
+  },
+  {
+    id: 'champillon',
+    name: 'Champillon',
+    folder: 'champillon',
+    egg: 'oeuf.glb',
+    stages: { baby: 'jeune.glb', teen: 'vieux.glb' }
+  },
+  {
+    id: 'etincelou',
+    name: 'Étincelou',
+    folder: 'etincelou',
+    egg: 'oeuf.glb',
+    stages: { baby: 'jeune.glb', teen: 'vieux.glb' }
   }
 ];
 

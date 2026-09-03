@@ -184,3 +184,60 @@ test('chaque décor a sa maison et son île, et les modèles existent', async ()
     });
   });
 });
+
+test('aucune créature n’est trop sombre pour être vue la nuit', async () => {
+  const { readFileSync: lire } = await import('node:fs');
+  const { SPECIES } = await import('../src/game/species.js');
+
+  // Le jeu passe la moitié du temps en scène nocturne, où la lumière tombe à
+  // moins d'un tiers. Une créature dont la texture est déjà très sombre y
+  // devient une silhouette noire — et sa planche de marche, affichée sur le
+  // fond du téléphone, disparaît complètement.
+  //
+  // On lit l'image de couleur de base directement dans le GLB et l'on mesure
+  // sa luminosité moyenne, sans décoder l'image : les en-têtes PNG et JPEG
+  // suffisent à repérer un fichier, et on échantillonne les octets bruts.
+  function clarte(fichier) {
+    const donnees = lire(fichier);
+    const longueur = donnees.readUInt32LE(12);
+    const json = JSON.parse(donnees.toString('utf8', 20, 20 + longueur));
+    const debutBin = 12 + 8 + longueur + 8;
+
+    const materiau = json.materials?.[0];
+    const base = materiau?.pbrMetallicRoughness?.baseColorTexture;
+    if (!base) return null;
+
+    const image = json.images?.[json.textures[base.index].source];
+    if (!image || image.bufferView === undefined) return null;
+
+    const vue = json.bufferViews[image.bufferView];
+    const debut = debutBin + (vue.byteOffset || 0);
+    const octets = donnees.subarray(debut, debut + vue.byteLength);
+
+    // Un JPEG compressé n'a pas de rapport simple entre ses octets et la
+    // luminosité : on se contente de vérifier qu'une image existe.
+    if (octets[0] === 0xff && octets[1] === 0xd8) return null;
+
+    let somme = 0;
+    let compte = 0;
+    for (let i = 0; i < octets.length; i += 97) {
+      somme += octets[i];
+      compte += 1;
+    }
+    return compte ? somme / compte : null;
+  }
+
+  const { existsSync: existe } = await import('node:fs');
+
+  SPECIES.forEach((espece) => {
+    // Toutes les espèces n'ont pas de forme adulte propre : Gigglehorn n'a
+    // qu'un stade et reprend le précédent.
+    ['jeune.glb', 'vieux.glb'].forEach((fichier) => {
+      const chemin = `./public/assets/models/${espece.folder}/${fichier}`;
+      if (!existe(chemin)) return;
+      const valeur = clarte(chemin);
+      if (valeur === null) return;
+      assert.ok(valeur > 20, `${espece.id}/${fichier} : texture presque noire (${valeur.toFixed(0)})`);
+    });
+  });
+});
