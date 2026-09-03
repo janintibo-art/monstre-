@@ -729,7 +729,13 @@ async function boot() {
       vfx.emit('hearts', head, { count: big ? 8 : 3 });
       applyEffects(pet.needs, { fun: big ? 6 : 2, affection: 1 });
     },
-    onEncourage: () => {
+    onEncourage: (quoi) => {
+      // « ecoute » n'est pas un échec : la créature se tourne vers le joueur et
+      // attend. C'est ce qui fait qu'on lui parle à elle, pas à un micro.
+      if (quoi === 'ecoute') {
+        if (monster) monster.react('listen', 1.2);
+        return;
+      }
       sfx.refuse();
       if (monster) monster.react('pet', 0.6);
     }

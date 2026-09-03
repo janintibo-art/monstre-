@@ -87,6 +87,8 @@ export const GUIDE = [
     body: [
       'Le bouton « Jeux » ouvre des petits jeux éducatifs : couleurs, formes, compter, premières lettres, calcul, suites logiques, mémoire, lecture de l’heure.',
       'Chaque consigne est lue à voix haute par la créature, donc un enfant qui ne sait pas encore lire peut jouer tout seul. Le bouton « Relire » la répète autant de fois qu’on veut.',
+      'Coche **Jouer à la voix** en haut de la liste : la créature pose la question, écoute ta réponse, réagit et enchaîne toute seule. Tu n’as plus rien à toucher. Elle penche la tête quand c’est à toi de parler.',
+      'Deux jeux sont faits pour ça : **Devine à quoi je pense**, où elle décrit quelque chose, et **Répète après moi**, où il suffit de redire le mot qu’elle dit.',
       'Il n’y a ni chronomètre, ni vies, ni son d’échec. Une erreur donne un indice, trois erreurs donnent la réponse et on passe à la suite. On apprend, on ne se fait pas gronder.',
       'Indique l’âge de l’enfant dans les réglages : les jeux proposés et leur difficulté s’adaptent tout seuls, et la créature parle plus lentement pour les plus jeunes.'
     ]

@@ -282,6 +282,14 @@ export function createMonster(genome, textures = {}) {
       if (reaction === 'wash') root.rotation.y += Math.sin(time * 26) * 0.14;
       if (reaction === 'play') root.position.y += Math.abs(Math.sin(time * 11)) * 0.18;
       if (reaction === 'scold') head.rotation.x = 0.4;
+
+      // « Écoute » : la tête se penche légèrement de côté et s'immobilise.
+      // C'est la posture universelle de l'attention — et elle dit au joueur
+      // que c'est à lui de parler, sans qu'aucun texte ne l'annonce.
+      if (reaction === 'listen') {
+        head.rotation.z = 0.22;
+        head.rotation.x = -0.08;
+      }
       if (reactionTime <= 0) reaction = null;
     }
   }

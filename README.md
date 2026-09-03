@@ -191,10 +191,19 @@ précision réelle, c'est ce qu'on fait de sa sortie (`src/audio/hearing.js`) :
   en dessous du seuil, la créature demande de répéter au lieu de répondre à
   côté.
 
-**Répondre aux jeux à la voix** (bouton dans chaque question) est le cas où
-c'est le plus fiable, puisque les réponses affichées servent de vocabulaire. Ça
-sert deux publics d'un coup : l'enfant qui ne lit pas encore, et la personne
-dont les doigts visent moins bien qu'avant.
+**Le mode voix** transforme le questionnaire en conversation : la créature pose
+la question, **attend d'avoir fini de parler**, écoute, réagit et enchaîne. On
+ne touche plus l'écran. Sans cette attente, le micro s'ouvrirait pendant qu'elle
+parle et n'entendrait qu'elle-même.
+
+Elle penche la tête pendant qu'elle écoute — la posture universelle de
+l'attention, qui dit au joueur que c'est à lui de parler sans qu'aucun texte ne
+l'annonce. Après trois incompréhensions, elle rend la main au doigt : insister
+davantage devient pénible.
+
+C'est là que la reconnaissance est la plus fiable, puisque les réponses
+affichées servent de vocabulaire. Et ça sert deux publics d'un coup : l'enfant
+qui ne lit pas encore, et la personne dont les doigts visent moins bien qu'avant.
 
 Deux moteurs, essayés dans cet ordre :
 
@@ -529,6 +538,8 @@ Le bouton **🎓 Jeux** ouvre quinze jeux, chacun avec sa propre mécanique :
 | Que vient après ? | Logique | 5 et + |
 | Répète après moi | Mémoire | 4 et + |
 | Quelle heure est-il ? | Temps | 6 et + |
+| Devine à quoi je pense | Vocabulaire | 4 et + |
+| Répète après moi | Prononciation | 3 et + |
 | Trouvez l'intrus | Logique | 5 et + |
 | Complétez le proverbe | Langue | 12 et + |
 | Les mots (synonymes, contraires) | Langue | 8 et + |

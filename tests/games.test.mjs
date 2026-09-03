@@ -143,3 +143,47 @@ test('le guide couvre les sujets qui bloquent un débutant', async () => {
     assert.ok(s.icon && s.title, `${s.id} : titre ou icône manquant`);
   });
 });
+
+test('les jeux à la voix sont signalés et jouables au doigt', async () => {
+  const { GAMES } = await import('../src/games/index.js');
+  const voix = GAMES.filter((g) => g.voix);
+  assert.ok(voix.length >= 2, 'trop peu de jeux conçus pour la voix');
+
+  const { createSession } = await import('../src/games/session.js');
+  voix.forEach((jeu) => {
+    // Un jeu qui n'existe qu'à la voix exclut ceux qui ne peuvent pas parler,
+    // ou qui jouent dans le bus. Les réponses restent proposées à l'écran.
+    const session = createSession(jeu, { level: 2, seed: 3 });
+    const question = session.next();
+    assert.ok(question.choices.length >= 2, `${jeu.id} : injouable au doigt`);
+    assert.equal(question.choices.filter((c) => c.correct).length, 1);
+  });
+});
+
+test('un jeu qui exige le micro disparaît sans micro', async () => {
+  const { GAMES, gamesForBand } = await import('../src/games/index.js');
+  const { bandById } = await import('../src/state/profile.js');
+  const band = bandById('7-8');
+
+  const avec = gamesForBand(band, { micro: true }).map((g) => g.id);
+  const sans = gamesForBand(band, { micro: false }).map((g) => g.id);
+
+  const exigeants = GAMES.filter((g) => g.voixSeulement).map((g) => g.id);
+  assert.ok(exigeants.length >= 1, 'aucun jeu ne dépend du micro');
+  exigeants.forEach((id) => {
+    if (avec.includes(id)) {
+      assert.ok(!sans.includes(id), `« ${id} » proposé sans micro alors qu’il en dépend`);
+    }
+  });
+});
+
+test('la créature attend la fin de sa phrase avant d’écouter', async () => {
+  const { readFileSync } = await import('node:fs');
+  const source = readFileSync('src/ui/games.js', 'utf8');
+  // Ouvrir le micro pendant qu'elle parle lui ferait entendre sa propre voix.
+  assert.match(
+    source,
+    /say\(question\.prompt,[\s\S]{0,80}ecouterReponse/,
+    'l’écoute ne suit pas la fin de la question'
+  );
+});

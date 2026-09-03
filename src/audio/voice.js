@@ -153,7 +153,7 @@ export function createVoice() {
     );
   }
 
-  function tts(text, profile) {
+  function tts(text, profile, onDone) {
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) {
       babble(text, profile); // pas de moteur vocal : on retombe sur le babil
       return;
@@ -173,9 +173,11 @@ export function createVoice() {
     };
     utterance.onend = () => {
       ttsActive = false;
+      if (onDone) onDone();
     };
     utterance.onerror = () => {
       ttsActive = false;
+      if (onDone) onDone();
     };
 
     window.speechSynthesis.speak(utterance);
@@ -205,8 +207,14 @@ export function createVoice() {
   // borne donc la hauteur ici, quel que soit le profil recu.
   const HAUTEUR_MAX = 1.12;
 
-  function narrate(text, profile = { pitch: 1.05, rate: 0.95, timbre: 'triangle' }) {
-    if (!text) return { spoken: false };
+  // `onDone` permet d'enchaîner : dire la consigne, PUIS écouter. Sans ce
+  // signal, le micro s'ouvrirait pendant que la créature parle et n'entendrait
+  // qu'elle-même.
+  function narrate(text, profile = { pitch: 1.05, rate: 0.95, timbre: 'triangle' }, onDone) {
+    if (!text) {
+      if (onDone) onDone();
+      return { spoken: false };
+    }
     stop();
     if (mode === 'off') return { spoken: false };
 
@@ -214,16 +222,25 @@ export function createVoice() {
       // Surtout PAS de babil ici. Le babil ne prononce rien : il rythme. Sur
       // une consigne, il ne transmet aucune information et couvre le texte
       // affiche a l'ecran, qui lui est lisible. Mieux vaut le silence.
+      //
+      // On previent quand meme l'appelant : sans moteur vocal, l'enchainement
+      // vocal doit se faire tout de suite au lieu d'attendre une fin qui ne
+      // viendra jamais.
+      if (onDone) setTimeout(onDone, 200);
       return { spoken: false, raison: 'aucune synthèse vocale' };
     }
 
-    tts(text, {
-      ...profile,
-      pitch: Math.min(profile.pitch || 1, HAUTEUR_MAX),
-      // Un peu plus lent que la parole ordinaire : une consigne doit etre
-      // comprise du premier coup, pas seulement entendue.
-      rate: Math.max(0.6, (profile.rate || 1) * 0.9)
-    });
+    tts(
+      text,
+      {
+        ...profile,
+        pitch: Math.min(profile.pitch || 1, HAUTEUR_MAX),
+        // Un peu plus lent que la parole ordinaire : une consigne doit etre
+        // comprise du premier coup, pas seulement entendue.
+        rate: Math.max(0.6, (profile.rate || 1) * 0.9)
+      },
+      onDone
+    );
     return { spoken: true };
   }
 

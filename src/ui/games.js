@@ -59,10 +59,25 @@ export function createGamesUi({
 
   const repeatBtn = document.getElementById('game-repeat');
   const voiceBtn = document.getElementById('game-voice');
+  const modeVoixCase = document.getElementById('field-jeu-voix');
+  const modeVoixLigne = document.getElementById('games-mode-voix');
   const whyBtn = document.getElementById('game-why');
   const quitBtn = document.getElementById('game-quit');
 
   const tutor = createTutor(getPet);
+
+  // Mode voix : la créature pose la question, écoute, réagit, enchaîne. On ne
+  // touche plus l'écran du tout. C'est ce qui transforme un questionnaire en
+  // conversation.
+  const CLE_MODE_VOIX = 'monstre.jeux.voix';
+  let modeVoix = false;
+  let essaisVoix = 0;
+
+  try {
+    modeVoix = localStorage.getItem(CLE_MODE_VOIX) === '1';
+  } catch {
+    /* stockage indisponible */
+  }
 
   let session = null;
   let locked = false;
@@ -80,12 +95,17 @@ export function createGamesUi({
     timers = [];
   }
 
-  function say(text) {
-    if (!text) return;
+  // `apres` est appelé quand la phrase est FINIE. Sans ce signal, le micro
+  // s'ouvrirait pendant que la créature parle et n'entendrait qu'elle-même.
+  function say(text, apres) {
+    if (!text) {
+      if (apres) apres();
+      return;
+    }
     // C'est la créature qui lit la consigne — cela fait partie du plaisir —
     // mais `narrate` borne sa hauteur : au-delà, une phrase de dix mots n'est
     // plus compréhensible.
-    const dit = voice.narrate(text, voiceProfile(getPet(), currentBand()));
+    const dit = voice.narrate(text, voiceProfile(getPet(), currentBand()), apres);
     if (!dit.spoken && feedbackEl && dit.raison) {
       // Aucun moteur vocal : la consigne reste lisible à l'écran, on ne la
       // remplace pas par du babil qui la couvrirait pour rien.
@@ -97,7 +117,10 @@ export function createGamesUi({
 
   function renderList() {
     const band = currentBand();
-    const games = gamesForBand(band);
+    const games = gamesForBand(band, { micro: Boolean(onListen) });
+
+    modeVoixCase.checked = modeVoix;
+    modeVoixLigne.hidden = !onListen;
 
     intro.textContent =
       band.id === 'none'
@@ -207,7 +230,10 @@ export function createGamesUi({
 
     renderChoices(question);
     voiceBtn.hidden = !onListen;
-    say(question.prompt);
+    essaisVoix = 0;
+
+    // En mode voix, on écoute dès que la question est posée — pas avant.
+    say(question.prompt, modeVoix && onListen ? () => ecouterReponse(question) : null);
 
     // Jeu de memoire : on montre la suite, puis on rend la main.
     if (question.showSequence) {
@@ -493,6 +519,44 @@ export function createGamesUi({
   talkQuit.addEventListener('click', () => {
     voice.stop();
     renderList();
+  });
+
+  // Écoute la réponse et réagit. Trois tentatives, puis on laisse le doigt
+  // reprendre la main : insister davantage devient pénible.
+  function ecouterReponse(question) {
+    if (!session || session.question !== question || locked) return;
+    feedbackEl.textContent = 'Je t’écoute…';
+
+    if (onEncourage) onEncourage('ecoute');
+
+    onListen((heard) => {
+      if (!session || session.question !== question) return;
+
+      const choice = matchChoice(heard, question.choices);
+      if (choice) {
+        const button = choicesEl.querySelector(`[data-key="${CSS.escape(choice.key)}"]`);
+        if (button) submit(choice.key, button);
+        return;
+      }
+
+      essaisVoix += 1;
+      if (essaisVoix >= 3) {
+        feedbackEl.textContent = `J’ai entendu « ${heard} ». Touche la bonne réponse.`;
+        say('Je n’arrive pas à comprendre. Touche la réponse, ça ira plus vite.');
+        return;
+      }
+      feedbackEl.textContent = `J’ai entendu « ${heard} »…`;
+      say('Je n’ai pas compris. Tu peux redire ?', () => ecouterReponse(question));
+    }, question.choices);
+  }
+
+  modeVoixCase.addEventListener('change', () => {
+    modeVoix = modeVoixCase.checked;
+    try {
+      localStorage.setItem(CLE_MODE_VOIX, modeVoix ? '1' : '0');
+    } catch {
+      /* stockage indisponible */
+    }
   });
 
   /* ---------------------------------------------------------------- dessins */

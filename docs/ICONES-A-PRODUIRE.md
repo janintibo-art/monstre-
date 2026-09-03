@@ -112,6 +112,16 @@ famille cohérente : même épaisseur de trait, même palette.
 
 ---
 
+## Lot 6 — Deux jeux à la voix ★ quand tu veux
+
+Deux jeux ajoutés en v67 n'ont pas encore d'icône. Ils gardent leur emoji en
+attendant, tout fonctionne.
+
+| Fichier | Jeu | Sujet |
+| --- | --- | --- |
+| `jeu-devinette.png` | Devine à quoi je pense | Un point d'interrogation dans une bulle de dialogue |
+| `jeu-repete.png` | Répète après moi | Deux bulles de dialogue face à face, l'une pleine, l'autre vide |
+
 ## Lot 5 — Les avatars de profil ✅ fait
 
 Douze petites images pour se choisir une figure à la création du profil. Elles

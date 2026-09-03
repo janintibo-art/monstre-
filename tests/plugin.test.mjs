@@ -446,13 +446,20 @@ test('chaque jeu et chaque avatar a son image déclarée', async () => {
   const { AVATARS } = await import('../src/state/profiles.js');
   const { existsSync: existe } = await import('node:fs');
 
-  // Le nom de fichier ne suit pas toujours l'identifiant interne — « synonymes »
+  // Un jeu peut n'avoir aucune icône : il garde alors son emoji, c'est prévu.
+  // Ce qui est interdit, c'est de DÉCLARER un fichier qui n'existe pas — le
+  // bouton chercherait une image absente à chaque affichage.
+  //
+  // Le nom de fichier ne suit pas toujours l'identifiant interne : « synonymes »
   // s'appelle « jeu-mots », « capitales » s'appelle « jeu-geographie ». C'est
   // exactement le genre d'écart qui passe inaperçu jusqu'à l'écran.
   GAMES.forEach((jeu) => {
     const fichier = ICON_FILES[`jeu:${jeu.id}`];
-    assert.ok(fichier, `aucune icône déclarée pour le jeu « ${jeu.id} »`);
-    assert.ok(existe(`public/assets/icons/${fichier}`), `${fichier} : fichier absent`);
+    if (!fichier) {
+      assert.ok(jeu.icon, `le jeu « ${jeu.id} » n’a ni icône ni emoji de repli`);
+      return;
+    }
+    assert.ok(existe(`public/assets/icons/${fichier}`), `${fichier} : déclaré mais absent`);
   });
 
   AVATARS.forEach((emoji) => {
