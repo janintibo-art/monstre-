@@ -538,3 +538,32 @@ test('l’agenda permet d’atteindre n’importe quelle date', () => {
   // une navigation : le sélecteur natif y va d'un geste.
   assert.match(html, /id="semaine-date"[^>]*type="date"/, 'pas de saut à une date');
 });
+
+test('le manifeste Android reçoit orientation et visibilité du service vocal', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const { writeFileSync, readFileSync: lire, unlinkSync } = await import('node:fs');
+
+  const faux = `<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity android:name=".MainActivity" android:exported="true"></activity>
+    </application>
+</manifest>`;
+
+  const chemin = '/tmp/manifeste-essai.xml';
+  writeFileSync(chemin, faux);
+
+  // Lancé deux fois : le projet Android est régénéré à chaque compilation, mais
+  // le script doit rester sans effet s'il a déjà travaillé.
+  execFileSync('python3', ['tools/patch_manifest.py', chemin]);
+  execFileSync('python3', ['tools/patch_manifest.py', chemin]);
+
+  const sortie = lire(chemin, 'utf8');
+  assert.equal(sortie.split('screenOrientation').length - 1, 1, 'orientation dupliquée');
+
+  // Sans cette déclaration, Android 11+ masque le service de reconnaissance :
+  // le téléphone sait parler, mais l'application ne le voit pas.
+  assert.equal(sortie.split('RecognitionService').length - 1, 1, 'visibilité dupliquée');
+  assert.match(sortie, /<queries>/);
+  unlinkSync(chemin);
+});

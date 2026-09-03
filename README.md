@@ -587,8 +587,11 @@ l'appareil et dans quel cas.
 
 ## Le cadrage : paysage verrouillé
 
-L'orientation est fixée **dans le manifeste Android** (`sensorLandscape`),
-appliqué par le workflow après la génération du projet. Un verrou posé au
+L'orientation est fixée **dans le manifeste Android** (`sensorLandscape`), écrit
+par `tools/patch_manifest.py` après la génération du projet. Le même script y
+déclare la **visibilité du service de reconnaissance vocale** : depuis Android 11,
+une application ne voit pas les services des autres sans le demander, et sans
+cette ligne le téléphone sait parler mais l'application ne le voit pas. Un verrou posé au
 démarrage de l'application arrivait parfois avant que l'activité soit prête et
 ne prenait pas. Le manifeste, lui, s'applique dès la création de la fenêtre. Les
 panneaux peuvent toujours libérer l'orientation à l'exécution : un appel à

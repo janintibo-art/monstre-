@@ -79,31 +79,12 @@ jobs:
           # système qui affiche la créature n'a pas accès au dossier web.
           mkdir -p android/app/src/main/assets/sprites
           cp public/assets/sprites/*.png android/app/src/main/assets/sprites/
-      # L'orientation est fixée dans le manifeste plutôt qu'au démarrage de
-      # l'application : un appel au lancement arrive parfois avant que
-      # l'activité soit prête, et le verrou ne prend pas. Le manifeste, lui,
-      # s'applique dès la création de la fenêtre.
-      #
-      # `sensorLandscape` laisse les deux sens de rotation. Les panneaux peuvent
-      # toujours libérer l'orientation à l'exécution : un appel à
-      # setRequestedOrientation l'emporte sur le manifeste.
-      - name: Verrouiller l'orientation paysage
-        shell: bash
-        run: |
-          manifeste=android/app/src/main/AndroidManifest.xml
-          if grep -q 'screenOrientation' "$manifeste"; then
-            echo "Orientation déjà définie, rien à faire."
-          else
-            # Capacitor déclare toujours l'activité ainsi : on s'accroche à ce
-            # marqueur plutôt qu'au nom du paquet, qui peut changer.
-            sed -i 's|android:name=".MainActivity"|android:name=".MainActivity"\n            android:screenOrientation="sensorLandscape"|' "$manifeste"
-          fi
-          if grep -q 'screenOrientation' "$manifeste"; then
-            echo "Orientation paysage verrouillée."
-          else
-            echo "::warning::Orientation non appliquée : le manifeste a changé de forme."
-          fi
-      - run: |
+      # Le projet Android est régénéré à chaque compilation : ces réglages ne
+      # peuvent pas y être écrits une fois pour toutes. Le script est versionné
+      # et idempotent, donc relisible et testable — contrairement à une suite
+      # de `sed` noyée dans le workflow.
+      - name: Ajuster le manifeste Android
+        run: python3 tools/patch_manifest.py android/app/src/main/AndroidManifest.xml
           chmod +x android/gradlew
           cd android && ./gradlew assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4

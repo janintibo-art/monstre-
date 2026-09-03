@@ -141,3 +141,19 @@ test('les échecs du micro ne sont jamais avalés', async () => {
   assert.match(source, /dernierEchec/, 'aucune trace des échecs');
   assert.match(source, /echec: dernierEchec/, 'l’échec n’est pas consultable');
 });
+
+test('le moteur natif n’est jamais écarté sur la seule réponse du système', async () => {
+  const { readFileSync } = await import('node:fs');
+  const source = readFileSync('src/audio/listen.js', 'utf8');
+  const bloc = source.slice(source.indexOf('async function chargerNatif'), source.indexOf('function browserEngine'));
+
+  // `available()` répond « non » dans plusieurs cas où la reconnaissance
+  // marche : autorisation pas encore accordée, service non listé, système qui
+  // répond mal. S'y fier revenait à s'interdire de tenter.
+  assert.ok(
+    !/nativePlugin = ok \? candidat : null/.test(bloc),
+    'le moteur est encore disqualifié par available()'
+  );
+  assert.match(bloc, /nativePlugin = candidat/, 'le moteur n’est pas retenu');
+  assert.match(bloc, /raisonNatif/, 'aucune raison enregistrée');
+});

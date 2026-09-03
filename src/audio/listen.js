@@ -33,17 +33,48 @@ let nativeChecked = false;
 // personne l'attende.
 //
 // On garde donc le module dans une variable et l'on ne renvoie rien.
+// Raison précise pour laquelle le moteur natif n'est pas retenu. Sans elle,
+// « aucun moteur disponible » ne dit pas s'il manque le module, le service
+// Android, ou l'autorisation.
+let raisonNatif = null;
+
 async function chargerNatif() {
   if (nativeChecked) return;
   nativeChecked = true;
+
+  let module = null;
   try {
-    const module = await import('@capacitor-community/speech-recognition');
-    const candidat = module.SpeechRecognition;
+    module = await import('@capacitor-community/speech-recognition');
+  } catch (error) {
+    raisonNatif = `module introuvable (${error && error.message ? error.message : error})`;
+    nativePlugin = null;
+    return;
+  }
+
+  const candidat = module.SpeechRecognition;
+  if (!candidat) {
+    raisonNatif = 'module chargé mais vide';
+    nativePlugin = null;
+    return;
+  }
+
+  // On NE disqualifie PAS le moteur sur la foi de `available()`.
+  //
+  // Cette fonction interroge le service de reconnaissance d'Android, qui
+  // répond « non » dans plusieurs cas où la reconnaissance marche tout de
+  // même : autorisation micro pas encore accordée, service non listé faute de
+  // déclaration de visibilité, version du système qui répond mal. Refuser le
+  // moteur sur cette seule réponse revenait à s'interdire de tenter.
+  //
+  // On garde donc le module et l'on note ce qu'elle a répondu. Si le démarrage
+  // échoue vraiment, il le dira lui-même, avec un message exploitable.
+  nativePlugin = candidat;
+  try {
     const status = await candidat.available();
     const ok = typeof status === 'boolean' ? status : status && status.available;
-    nativePlugin = ok ? candidat : null;
-  } catch {
-    nativePlugin = null;
+    if (!ok) raisonNatif = 'le système annonce la reconnaissance indisponible — on tente quand même';
+  } catch (error) {
+    raisonNatif = `available() a échoué (${error && error.message ? error.message : error}) — on tente quand même`;
   }
 }
 
@@ -349,7 +380,37 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
     // Consultable depuis les réglages : savoir quel moteur répond évite de
     // chercher un défaut de compréhension là où il n'y a pas de micro du tout.
     get etat() {
-      return { moteur, ecoute: listening, entendu, echec: dernierEchec };
+      return {
+        moteur,
+        ecoute: listening,
+        entendu,
+        echec: dernierEchec,
+        raison: raisonNatif
+      };
+    },
+
+    // Essai complet, déclenché depuis les réglages : charge le module, demande
+    // l'autorisation, et rapporte précisément où ça bloque.
+    async diagnostiquer() {
+      await chargerNatif();
+      if (!nativePlugin) {
+        return { moteur: browserEngine() ? 'browser' : 'aucun', detail: raisonNatif };
+      }
+      try {
+        const permission = await nativePlugin.requestPermissions();
+        const accorde =
+          !permission ||
+          permission.speechRecognition === 'granted' ||
+          permission.speechRecognition === undefined;
+        return {
+          moteur: 'native',
+          detail: accorde
+            ? raisonNatif || 'prêt'
+            : `autorisation micro : ${permission.speechRecognition}`
+        };
+      } catch (error) {
+        return { moteur: 'native', detail: `autorisation refusée (${error && error.message})` };
+      }
     },
     get listening() {
       return listening;

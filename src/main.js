@@ -372,6 +372,7 @@ async function boot() {
   const panels = createPanels({
     getHorizonState: () => world.horizonEtat,
     getMicState: () => listener.etat,
+    onMicTest: () => listener.diagnostiquer(),
     getPet: () => pet,
     voice,
     onMemoryChange: () => save(pet),

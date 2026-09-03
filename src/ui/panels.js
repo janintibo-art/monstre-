@@ -22,6 +22,7 @@ import {
 export function createPanels({
   getHorizonState,
   getMicState,
+  onMicTest,
   onRename,
   onReset,
   onNamed,
@@ -61,6 +62,7 @@ export function createPanels({
   const biomeSelect = document.getElementById('field-biome');
   const horizonEtat = document.getElementById('horizon-etat');
   const microEtat = document.getElementById('micro-etat');
+  const microTest = document.getElementById('btn-micro-test');
   const voiceSelect = document.getElementById('field-voice');
   const voiceTest = document.getElementById('btn-voice-test');
   const providerSelect = document.getElementById('field-provider');
@@ -168,6 +170,22 @@ export function createPanels({
 
   habillerBouton(agendaBtn, 'agenda', '📅', 'Mes pense-bêtes');
   habillerBouton(guideBtn, 'guide', '📖', 'Comment ça marche ?');
+
+  // Essai du micro à la demande. Un diagnostic passif ne dit que ce qui s'est
+  // passé ; celui-ci va chercher la réponse, autorisation comprise.
+  microTest.addEventListener('click', async () => {
+    if (!onMicTest) return;
+    microTest.disabled = true;
+    microEtat.textContent = 'Essai en cours…';
+    const resultat = await onMicTest();
+    const noms = {
+      native: 'moteur du téléphone',
+      browser: 'moteur du navigateur',
+      aucun: 'aucun moteur'
+    };
+    microEtat.textContent = `Micro : ${noms[resultat.moteur] || resultat.moteur}. ${resultat.detail || ''}`.trim();
+    microTest.disabled = false;
+  });
 
   agendaBtn.addEventListener('click', () => {
     closeAll();
@@ -499,6 +517,7 @@ export function createPanels({
         // muet ne donne aucune piste, ni à l'utilisateur ni à qui l'aide.
         microEtat.textContent =
           `Micro : ${noms[etat.moteur] || etat.moteur}.` +
+          (etat.raison ? ` ${etat.raison}.` : '') +
           (etat.echec ? ` Dernier échec : ${etat.echec}.` : '');
       }
       menu.hidden = false;

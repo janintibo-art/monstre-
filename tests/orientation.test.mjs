@@ -63,12 +63,17 @@ test('les deux orientations sont imposées, jamais seulement libérées', async 
 });
 
 test('le manifeste est bien la source du verrou par défaut', () => {
+  // Le réglage a quitté le workflow pour un script versionné : plus lisible,
+  // testable, et le même pour la compilation de test et celle de publication.
   const workflow = readFileSync('.github/workflows/build.yml', 'utf8');
-  assert.match(workflow, /screenOrientation="sensorLandscape"/, 'verrou paysage absent du build');
+  assert.match(workflow, /patch_manifest\.py/, 'le manifeste n’est plus ajusté au build');
+
+  const script = readFileSync('tools/patch_manifest.py', 'utf8');
+  assert.match(script, /screenOrientation="sensorLandscape"/, 'verrou paysage absent');
   // `sensorLandscape` et non `landscape` : les deux sens de rotation doivent
   // rester possibles, sinon le téléphone ne peut se tenir que d'un côté.
   assert.ok(
-    !/screenOrientation="landscape"/.test(workflow),
+    !/screenOrientation="landscape"/.test(script),
     'orientation figée dans un seul sens'
   );
 });
