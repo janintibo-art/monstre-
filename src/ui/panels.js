@@ -2,6 +2,7 @@ import { PROVIDERS, loadConfig, saveConfig, testConnection, listModels } from '.
 import { VOICE_MODES, voiceProfile } from '../audio/voice.js';
 import { BIOMES, biomeById, loadBiomePreference, saveBiomePreference, pickBiome } from '../game/biomes.js';
 import { CYCLE_MODES } from '../game/daylight.js';
+import { QUALITY_MODES } from '../game/quality.js';
 import { knownFacts, forget, daysTogether, playerName } from '../ai/memory.js';
 import { applyIcon } from './icons.js';
 import { exportSave, parseImport } from '../state/save.js';
@@ -36,6 +37,8 @@ export function createPanels({
   onSpeciesFolder,
   onProfiles,
   onAgeChange,
+  getQualityState,
+  onQuality,
   getPet,
   voice,
   daylight
@@ -58,6 +61,8 @@ export function createPanels({
   const directHelp = document.getElementById('direct-help');
   const comfortToggle = document.getElementById('field-comfort');
   const comfortHelp = document.getElementById('comfort-help');
+  const qualitySelect = document.getElementById('field-quality');
+  const qualityEtat = document.getElementById('quality-etat');
   const cycleSelect = document.getElementById('field-cycle');
   const biomeSelect = document.getElementById('field-biome');
   const horizonEtat = document.getElementById('horizon-etat');
@@ -170,6 +175,8 @@ export function createPanels({
 
   habillerBouton(agendaBtn, 'agenda', '📅', 'Mes pense-bêtes');
   habillerBouton(guideBtn, 'guide', '📖', 'Comment ça marche ?');
+  habillerBouton(microTest, 'micro-actif', '🎤', 'Tester le micro');
+  habillerBouton(voiceTest, 'haut-parleur', '🔊', 'Écouter sa voix');
 
   // Essai du micro à la demande. Un diagnostic passif ne dit que ce qui s'est
   // passé ; celui-ci va chercher la réponse, autorisation comprise.
@@ -215,6 +222,38 @@ export function createPanels({
   });
 
   refreshProfile();
+
+  // ------------------------------------------------------------ qualité GPU
+  Object.entries(QUALITY_MODES).forEach(([id, label]) => {
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = label;
+    qualitySelect.appendChild(option);
+  });
+
+  function refreshQuality() {
+    if (!getQualityState) return;
+    const state = getQualityState();
+    qualitySelect.value = state.preference;
+    const actif = QUALITY_MODES[state.active] || state.active;
+    qualityEtat.textContent =
+      state.preference === 'auto'
+        ? state.adapted
+          ? `Auto a réduit la qualité à ${actif} pour garder une animation fluide.`
+          : `Auto utilise actuellement : ${actif}. Il peut baisser d’un cran si les images deviennent trop lentes.`
+        : `Niveau actif : ${actif}.`;
+  }
+
+  refreshQuality();
+  qualitySelect.addEventListener('change', async () => {
+    qualitySelect.disabled = true;
+    try {
+      if (onQuality) await onQuality(qualitySelect.value);
+    } finally {
+      qualitySelect.disabled = false;
+      refreshQuality();
+    }
+  });
 
   // ------------------------------------------------------------------- cycle
   Object.keys(CYCLE_MODES).forEach((id) => {
@@ -500,6 +539,7 @@ export function createPanels({
       refreshProviderUI();
       refreshProfile();
       refreshOverlay();
+      refreshQuality();
       // Compte rendu du fond : trois images chargées et shader compilé, ou la
       // raison précise du contraire.
       if (getHorizonState) {
@@ -561,6 +601,7 @@ export function createPanels({
   return {
     setExternalOpen,
     refreshProfile,
+    syncQuality: refreshQuality,
     askName(currentName) {
       // Le bapteme ne doit jamais s'empiler sur un autre panneau.
       menu.hidden = true;

@@ -238,6 +238,9 @@ export function createModelMonster(gltf, genome) {
     reaction = type;
     reactionTime = duration;
     if (type === 'pet' || type === 'eat') playGesture(['agree', 'gesture', 'wave']);
+    if (type === 'wave') playGesture(['wave', 'gesture', 'agree']);
+    if (type === 'scratch') playGesture(['gesture', 'agree']);
+    if (type === 'yawn') playGesture(['idle', 'gesture']);
   }
 
   // Joue le clip de reveil au sortir de l'oeuf, si le modele en a un.
@@ -380,6 +383,10 @@ export function createModelMonster(gltf, genome) {
       if (reaction === 'wash') root.rotation.y += Math.sin(time * 24) * 0.12;
       if (reaction === 'play') root.position.y += Math.abs(Math.sin(time * 10)) * 0.16;
       if (reaction === 'pet') anim.rotation.z += Math.sin(time * 16) * 0.06;
+      if (reaction === 'observe') anim.rotation.z += 0.1;
+      if (reaction === 'scratch') anim.rotation.z -= 0.08;
+      if (reaction === 'yawn') anim.rotation.x -= 0.09;
+      if (reaction === 'wave') anim.rotation.z += Math.sin(time * 9) * 0.08;
       if (reactionTime <= 0) reaction = null;
     }
 

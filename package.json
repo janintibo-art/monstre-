@@ -1,7 +1,7 @@
 {
   "name": "monstre-de-compagnie",
   "productName": "Monstre de Compagnie",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Un monstre de compagnie 3D avec une IA de comportement embarquee.",
   "author": "Votre Nom <vous@example.com>",
   "license": "MIT",

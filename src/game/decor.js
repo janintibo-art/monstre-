@@ -23,9 +23,11 @@ function firstMesh(object) {
   return found;
 }
 
-export function createDecor(scene) {
+export function createDecor(scene, options = {}) {
   const groups = []; // { mesh, items:[...] }
   let landmark = null;
+  let density = Number.isFinite(options.density) ? Math.max(0.4, Math.min(1.2, options.density)) : 1;
+  let buildGeneration = 0;
 
   // La maison habitée : un filet de fumée à la cheminée, et une lueur chaude
   // aux fenêtres dès que le soir tombe. Deux détails minuscules qui changent
@@ -80,10 +82,21 @@ export function createDecor(scene) {
 
   const braises = { position: null, secousse: 0 };
 
-  function clear() {
+  function disposeMaterial(material) {
+    const list = Array.isArray(material) ? material : [material];
+    list.filter(Boolean).forEach((m) => m.dispose());
+  }
+
+  function clear(cancelBuild = true) {
+    if (cancelBuild) buildGeneration += 1;
     groups.forEach((g) => {
       scene.remove(g.mesh);
       g.mesh.geometry.dispose();
+      // Les matériaux sont clonés pour chaque InstancedMesh. Les textures, elles,
+      // viennent du cache GLTF et restent partagées : on libère donc le matériau
+      // sans détruire sa map, sinon le prochain décor réutiliserait une texture
+      // déjà invalidée côté GPU.
+      disposeMaterial(g.mesh.material);
     });
     groups.length = 0;
     landmark = null;
@@ -94,7 +107,8 @@ export function createDecor(scene) {
   }
 
   async function build(biome, seed, base = import.meta.env.BASE_URL || './') {
-    clear();
+    const mine = ++buildGeneration;
+    clear(false);
     const plan = biome.decor || [];
     if (!plan.length) return;
 
@@ -107,10 +121,19 @@ export function createDecor(scene) {
       plan.map((entry) => loadModel(base + DECOR_MODELS[entry.model]))
     );
 
+    // Un autre build a pu démarrer pendant le chargement des GLB. Dans ce cas
+    // celui-ci n'a plus le droit de poser quoi que ce soit dans la scène.
+    if (mine !== buildGeneration) return false;
+
     plan.forEach((entry, planIndex) => {
       const gltf = loaded[planIndex];
       const source = gltf && firstMesh(gltf.scene);
       if (!source || !entry.count) return; // modele absent : on continue sans
+
+      // Maison, feu et île restent toujours présents. Seule la végétation
+      // répétée varie avec le niveau graphique.
+      const critique = entry.landmark || entry.feu || entry.altitude;
+      const count = critique ? entry.count : Math.max(1, Math.round(entry.count * density));
 
       source.updateWorldMatrix(true, false);
       const box = new THREE.Box3().setFromObject(source);
@@ -140,7 +163,7 @@ export function createDecor(scene) {
       material.depthWrite = true;
       if (material.map) material.map.anisotropy = 16;
 
-      const mesh = new THREE.InstancedMesh(geometry, material, entry.count);
+      const mesh = new THREE.InstancedMesh(geometry, material, count);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.frustumCulled = false;
@@ -152,13 +175,13 @@ export function createDecor(scene) {
       const scale = new THREE.Vector3();
       const items = [];
 
-      for (let i = 0; i < entry.count; i += 1) {
+      for (let i = 0; i < count; i += 1) {
         // Un repère — la maison — est posé à un endroit fixe, jamais au hasard :
         // la créature doit pouvoir y aller dormir, et le joueur doit le
         // retrouver au même endroit d'une fois sur l'autre.
         let angle = entry.landmark
           ? entry.angle || -0.9
-          : ((i + rng() * 0.7) / entry.count) * Math.PI * 2 + planIndex * 0.9;
+          : ((i + rng() * 0.7) / count) * Math.PI * 2 + planIndex * 0.9;
 
         if (!entry.landmark) {
           const front = Math.atan2(Math.sin(angle), Math.cos(angle));
@@ -247,6 +270,11 @@ export function createDecor(scene) {
       scene.add(mesh);
       groups.push({ mesh, items });
     });
+    return mine === buildGeneration;
+  }
+
+  function setDensity(value) {
+    density = Number.isFinite(value) ? Math.max(0.4, Math.min(1.2, value)) : 1;
   }
 
   const matrix = new THREE.Matrix4();
@@ -351,6 +379,7 @@ export function createDecor(scene) {
     update,
     clear,
     setNight,
+    setDensity,
     // Position d'accueil devant la maison, ou null si le décor n'en a pas.
     get home() {
       return landmark ? landmark.devant : null;

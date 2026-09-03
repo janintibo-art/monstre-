@@ -256,6 +256,8 @@ export function createMonster(genome, textures = {}) {
       let base = 0.35 * -side;
       if (action === 'dance') base = -1.6 * -side + Math.sin(time * 8) * 0.4;
       if (reaction === 'pet') base += Math.sin(time * 14) * 0.3;
+      if (reaction === 'scratch' && i === 1) base = -1.15 + Math.sin(time * 18) * 0.18;
+      if (reaction === 'wave' && i === 0) base = 1.55 + Math.sin(time * 12) * 0.28;
       pivot.rotation.z = lerp(pivot.rotation.z, base, Math.min(dt * 8, 1));
       pivot.rotation.x = armSwing * side;
     });
@@ -282,6 +284,15 @@ export function createMonster(genome, textures = {}) {
       if (reaction === 'wash') root.rotation.y += Math.sin(time * 26) * 0.14;
       if (reaction === 'play') root.position.y += Math.abs(Math.sin(time * 11)) * 0.18;
       if (reaction === 'scold') head.rotation.x = 0.4;
+      if (reaction === 'observe') {
+        head.rotation.z = 0.18;
+        head.rotation.x = -0.06;
+      }
+      if (reaction === 'scratch') head.rotation.z = -0.16;
+      if (reaction === 'yawn') {
+        head.rotation.x = -0.18;
+        mouth.scale.y = 1.7;
+      }
 
       // « Écoute » : la tête se penche légèrement de côté et s'immobilise.
       // C'est la posture universelle de l'attention — et elle dit au joueur

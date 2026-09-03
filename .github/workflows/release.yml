@@ -85,8 +85,11 @@ jobs:
       # de `sed` noyée dans le workflow.
       - name: Ajuster le manifeste Android
         run: python3 tools/patch_manifest.py android/app/src/main/AndroidManifest.xml
+      - name: Compiler l'APK de debug
+        run: |
           chmod +x android/gradlew
-          cd android && ./gradlew assembleDebug --no-daemon
+          cd android
+          ./gradlew assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: apk

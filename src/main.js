@@ -16,6 +16,13 @@ import { applyIcon } from './ui/icons.js';
 import { createKitchen } from './game/food.js';
 import { resolveBiome, horizonUrl, HORIZON_MOMENTS } from './game/biomes.js';
 import { createDaylight } from './game/daylight.js';
+import {
+  loadQualityPreference,
+  saveQualityPreference,
+  resolveQuality,
+  qualityPreset,
+  lowerQuality
+} from './game/quality.js';
 import { createBrain } from './ai/brain.js';
 import { applyEffects, wellbeing } from './ai/needs.js';
 import { nudge } from './ai/personality.js';
@@ -182,6 +189,8 @@ async function boot() {
   let biome = resolveBiome(pet);
   const base = import.meta.env.BASE_URL || './';
   const groundTexture = await loadTexture(base + biome.ground);
+  let qualityPreference = loadQualityPreference();
+  let activeQuality = resolveQuality(qualityPreference);
 
   // Jeton de generation. Chaque operation asynchrone note la generation au
   // depart ; si elle a change a l'arrivee (reset, changement de decor rapide),
@@ -193,7 +202,7 @@ async function boot() {
     canvas,
     { ...textures, ground: groundTexture },
     biome,
-    { reducedMotion: REDUCED_MOTION }
+    { reducedMotion: REDUCED_MOTION, quality: activeQuality }
   );
 
   // Les trois images d'horizon du décor. Chargées à part : elles ne sont pas
@@ -203,7 +212,10 @@ async function boot() {
     const images = await Promise.all(
       HORIZON_MOMENTS.map((moment) => loadTexture(horizonUrl(forBiome, moment, base)))
     );
-    if (stale(g) || biome !== forBiome) return;
+    if (stale(g) || biome !== forBiome) {
+      images.filter(Boolean).forEach((texture) => texture.dispose());
+      return;
+    }
     const jeu = {};
     HORIZON_MOMENTS.forEach((moment, i) => {
       if (images[i]) jeu[moment] = images[i];
@@ -214,8 +226,18 @@ async function boot() {
   // promesse etait rejetee, personne ne l'ecoutait, et l'horizon manquait
   // silencieusement. C'est exactement ce qui s'est produit.
   loadHorizon(biome).catch((error) => console.error('Horizon indisponible :', error));
-  const decor = createDecor(world.scene);
-  decor.build(biome, pet.seed);
+  const decor = createDecor(world.scene, { density: qualityPreset(activeQuality).decorDensity });
+
+  async function buildDecor(forBiome = biome) {
+    try {
+      return await decor.build(forBiome, pet.seed);
+    } catch (error) {
+      console.error('Décor 3D indisponible :', error);
+      return false;
+    }
+  }
+
+  buildDecor(biome);
 
   const daylight = createDaylight(world);
   daylight.setBiome(biome);
@@ -229,6 +251,26 @@ async function boot() {
 
   const ambience = createAmbience();
   setMuted(!loadAmbience());
+
+  let panels = null;
+  let autoAdapted = false;
+
+  async function applyActiveQuality(next, { rebuild = true } = {}) {
+    if (!next) return activeQuality;
+    const changed = next !== activeQuality;
+    activeQuality = next;
+    world.setQuality(activeQuality);
+    decor.setDensity(qualityPreset(activeQuality).decorDensity);
+    if (changed && rebuild) await buildDecor(biome);
+    if (panels && panels.syncQuality) panels.syncQuality();
+    return activeQuality;
+  }
+
+  async function changeQualityPreference(preference) {
+    qualityPreference = saveQualityPreference(preference);
+    autoAdapted = false;
+    return applyActiveQuality(resolveQuality(qualityPreference));
+  }
 
   // Les repas. La jauge de faim ne monte qu'une fois le plat termine : c'est ce
   // qui donne au geste une duree, et donc quelque chose a regarder.
@@ -301,6 +343,7 @@ async function boot() {
   let recallTimer = 3;
   let ambientTimer = 0;
   let chatterTimer = 12 + Math.random() * 14;
+  let microTimer = 7 + Math.random() * 10;
   let decision = { action: 'idle', emotion: 'calme', urgency: 0 };
   let hatching = 0;
 
@@ -370,7 +413,7 @@ async function boot() {
   else await spawnEgg();
 
   // ------------------------------------------------------------- interface
-  const panels = createPanels({
+  panels = createPanels({
     getHorizonState: () => world.horizonEtat,
     getMicState: () => listener.etat,
     onMicTest: () => listener.diagnostiquer(),
@@ -399,6 +442,8 @@ async function boot() {
       // deja ouvert, sinon la liste resterait celle de l'ancienne tranche.
       if (games.isOpen) games.open();
     },
+    getQualityState: () => ({ preference: qualityPreference, active: activeQuality, adapted: autoAdapted }),
+    onQuality: (preference) => changeQualityPreference(preference),
     onImport: (imported) => {
       reset(); // l'actuel devient la copie de secours
       save(imported);
@@ -411,10 +456,13 @@ async function boot() {
       const wanted = next;
       const texture = await loadTexture(base + biome.ground);
       // Deux changements rapides : seule la derniere demande s'applique.
-      if (stale(g) || biome !== wanted) return;
+      if (stale(g) || biome !== wanted) {
+        if (texture) texture.dispose();
+        return;
+      }
       world.applyBiome(biome, texture);
       daylight.setBiome(biome);
-      decor.build(biome, pet.seed);
+      await buildDecor(biome);
       // Sans ce `catch`, une erreur ici disparaissait sans laisser de trace : la
   // promesse etait rejetee, personne ne l'ecoutait, et l'horizon manquait
   // silencieusement. C'est exactement ce qui s'est produit.
@@ -436,10 +484,13 @@ async function boot() {
       biome = resolveBiome(pet);
       const g = generation;
       loadTexture(base + biome.ground).then((texture) => {
-        if (stale(g)) return;
+        if (stale(g)) {
+          if (texture) texture.dispose();
+          return;
+        }
         world.applyBiome(biome, texture);
         daylight.setBiome(biome);
-        decor.build(biome, pet.seed);
+        buildDecor(biome);
         // Sans ce `catch`, une erreur ici disparaissait sans laisser de trace : la
   // promesse etait rejetee, personne ne l'ecoutait, et l'horizon manquait
   // silencieusement. C'est exactement ce qui s'est produit.
@@ -1027,8 +1078,51 @@ async function boot() {
   // l'ecran se figeait sans un mot. On l'attrape, on l'affiche, et on continue
   // tant que c'est possible.
   let errorCount = 0;
+  let perfFrames = 0;
+  let perfSeconds = 0;
+  let perfChauffe = 0;
+
+  // Une image plus lente que cette durée n'est pas une performance : c'est une
+  // pause. Changement d'application, ramasse-miettes, chargement d'un modèle.
+  //
+  // Le seuil était à 80 ms, ce qui écartait aussi tout ce qui tourne sous
+  // 12,5 images par seconde — c'est-à-dire exactement les appareils qu'il
+  // fallait aider. À une demi-seconde, on ne rejette plus que de vrais gels.
+  const PAUSE_MS = 0.5;
+
+  // On ne mesure rien pendant les premières secondes : au démarrage, les
+  // modèles se chargent et les shaders se compilent. Juger la machine sur ce
+  // moment-là reviendrait à la condamner sur son pire instant.
+  const CHAUFFE = 6;
+
+  function watchAutoQuality(dt) {
+    if (qualityPreference !== 'auto' || autoAdapted || activeQuality === 'economy') return;
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+    if (!(dt > 0) || dt >= PAUSE_MS) return;
+
+    if (perfChauffe < CHAUFFE) {
+      perfChauffe += dt;
+      return;
+    }
+
+    perfFrames += 1;
+    perfSeconds += dt;
+    if (perfFrames < 180) return;
+    const average = perfSeconds / perfFrames;
+    perfFrames = 0;
+    perfSeconds = 0;
+    // En dessous d'environ 42 FPS de moyenne sur trois secondes, Auto baisse
+    // d'un cran et y reste jusqu'au prochain changement manuel / redémarrage.
+    if (average > 1 / 42) {
+      autoAdapted = true;
+      applyActiveQuality(lowerQuality(activeQuality)).catch((error) =>
+        console.error('Adaptation graphique impossible :', error)
+      );
+    }
+  }
 
   function step(dt, time) {
+    watchAutoQuality(dt);
     pointerActive = Math.max(0, pointerActive - dt);
 
     const sleeping = asleep || decision.action === 'sleep';
@@ -1100,6 +1194,27 @@ async function boot() {
         lookAt: lookTarget,
         speaking: voice.level()
       });
+
+      // Micro-scènes sans texte : la créature observe, se gratte, bâille ou
+      // salue de temps en temps quand rien d'important ne se passe. Ces gestes
+      // évitent l'impression de figurine qui attend une commande du joueur.
+      microTimer -= dt;
+      if (microTimer <= 0) {
+        microTimer = 10 + Math.random() * 18;
+        const disponible =
+          !chat.isOpen &&
+          !games.isOpen &&
+          !guide.isOpen &&
+          !sleeping &&
+          !kitchen.hasFood &&
+          pointerActive <= 0 &&
+          (decision.action === 'idle' || decision.action === 'explore');
+        if (disponible) {
+          const roll = Math.random();
+          const geste = roll < 0.3 ? 'observe' : roll < 0.55 ? 'scratch' : roll < 0.78 ? 'yawn' : 'wave';
+          monster.react(geste, geste === 'observe' ? 1.8 : 1.35);
+        }
+      }
 
       // Effets continus, cadences par un minuteur : emettre a chaque image
       // saturerait la reserve de particules en une seconde.

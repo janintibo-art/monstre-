@@ -710,6 +710,31 @@ Leur géométrie est un **anneau**, pas un carré : le masque du shader n'ouvre 
 nappe qu'entre 0,30 et 1,0 de la demi-largeur, soit 29 % de pixels calculés pour
 rien sur des surfaces vues de biais qui couvrent une grande part de l'écran.
 
+## La qualité graphique
+
+Quatre niveaux — **Auto, Économie, Normal, Magnifique** — qui agissent sur la
+résolution de rendu, la taille des ombres, les nuages, les particules et la
+densité du décor. La maison, le feu et l'île ne varient jamais : passer en
+Économie ne doit pas effacer l'identité d'un lieu.
+
+**Auto** part d'un niveau prudent et ne choisit jamais Magnifique — le maximum
+reste un choix volontaire. Il surveille ensuite la fluidité et descend d'un cran
+si la moyenne tombe sous 42 images par seconde.
+
+Deux garde-fous ont demandé réflexion :
+
+- **Une image très lente n'est pas une performance, c'est une pause.** Mais le
+  seuil qui les écarte doit rester haut : à 80 ms, on écartait aussi tout ce qui
+  tourne sous 12,5 images par seconde — c'est-à-dire exactement les appareils
+  qu'il fallait aider. Il est à une demi-seconde.
+- **Rien n'est mesuré pendant les six premières secondes.** Au démarrage, les
+  modèles se chargent et les shaders se compilent : juger la machine sur ce
+  moment-là reviendrait à la condamner sur son pire instant.
+
+Et une densité d'écran élevée **n'est pas** un signe de faiblesse — tous les
+téléphones haut de gamme dépassent 3. Elle ne compte que lorsqu'on ne sait rien
+d'autre de l'appareil.
+
 ## Le relief
 
 Le sol était un disque parfaitement plat — c'est ce qui donnait cet aspect de

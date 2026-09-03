@@ -14,6 +14,7 @@ import './games.test.mjs';
 import './profiles.test.mjs';
 import './food.test.mjs';
 import './chifoumi.test.mjs';
+import './quality.test.mjs';
 import './species.test.mjs';
 import './hearing.test.mjs';
 import './agenda.test.mjs';

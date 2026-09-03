@@ -64,9 +64,9 @@ export const BIOMES = [
       // L'île dérive lentement dans le ciel. Elle donne au décor une profondeur
       // que le sol seul ne peut pas produire.
       { model: 'ile', count: 1, radius: [17, 17], height: [5.5, 5.5], altitude: [10, 10], orbit: 0.012, sway: 0 },
-      { model: 'arbre', count: 7, radius: [7, 9.6], height: [4, 6], sway: 0.022 },
-      { model: 'champignon', count: 9, radius: [6, 8.4], height: [0.5, 1.1], sway: 0.01 },
-      { model: 'plante', count: 6, radius: [6.2, 8.2], height: [0.8, 1.4], sway: 0.05 }
+      { model: 'arbre', count: 4, radius: [7, 9.6], height: [4, 6], sway: 0.022 },
+      { model: 'champignon', count: 6, radius: [6, 8.4], height: [0.5, 1.1], sway: 0.01 },
+      { model: 'plante', count: 4, radius: [6.2, 8.2], height: [0.8, 1.4], sway: 0.05 }
     ]
   },
   {

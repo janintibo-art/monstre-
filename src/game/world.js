@@ -1,13 +1,16 @@
 import * as THREE from 'three';
 import { hauteurSol } from './terrain.js';
+import { qualityPreset } from './quality.js';
 
 // Le monde : un petit terrarium nocturne. Une seule lumiere directionnelle
 // porte les ombres, le reste n'est que remplissage colore.
 
 export function createWorld(canvas, textures = {}, biome = null, options = {}) {
   const mouvementsReduits = Boolean(options.reducedMotion);
+  let qualityLevel = options.quality || 'normal';
+  let quality = qualityPreset(qualityLevel);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -260,24 +263,46 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
     horizonEtat.shader = 'compilé';
   };
 
+  function disposeHorizonTextures(set) {
+    if (!set) return;
+    const uniques = new Set(Object.values(set).filter(Boolean));
+    uniques.forEach((texture) => texture.dispose());
+  }
+
   function setHorizon(textures) {
     const noms = ['matin', 'midi', 'soir'];
+    const previous = horizonMat.userData.textures;
     horizonEtat.images = noms.filter((n) => textures && textures[n]).length;
     const valides = horizonEtat.images === noms.length;
     horizon.visible = Boolean(valides);
     horizonEtat.visible = horizon.visible;
-    if (!valides) return;
-    ['matin', 'midi', 'soir'].forEach((moment) => {
+
+    if (!valides) {
+      // Un chargement partiel ne doit pas rester en mémoire. L'ancien jeu de
+      // textures est lui aussi libéré : le fond est masqué, donc plus rien ne
+      // doit le retenir côté GPU.
+      disposeHorizonTextures(previous);
+      disposeHorizonTextures(textures);
+      horizonMat.userData.textures = null;
+      horizonMat.uniforms.mapA.value = null;
+      horizonMat.uniforms.mapB.value = null;
+      horizonMat.uniforms.presence.value = 0;
+      return;
+    }
+
+    noms.forEach((moment) => {
       const texture = textures[moment];
       texture.wrapS = THREE.RepeatWrapping;
       texture.repeat.set(HORIZON_REPET, 1);
       texture.anisotropy = anisotropie;
       texture.colorSpace = THREE.SRGBColorSpace;
     });
+
     horizonMat.userData.textures = textures;
     horizonMat.uniforms.mapA.value = textures.midi;
     horizonMat.uniforms.mapB.value = textures.midi;
     horizonMat.uniforms.presence.value = 1;
+    if (previous && previous !== textures) disposeHorizonTextures(previous);
   }
 
   // Ciel étoilé.
@@ -486,7 +511,7 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
   const key = new THREE.DirectionalLight(0xfff1d8, 1.9);
   key.position.set(4, 7, 4);
   key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.mapSize.set(quality.shadowSize, quality.shadowSize);
   key.shadow.camera.near = 1;
   key.shadow.camera.far = 30;
   key.shadow.camera.left = -9;
@@ -735,6 +760,25 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
   motes.frustumCulled = false;
   scene.add(motes);
 
+  function setQuality(level) {
+    qualityLevel = level || 'normal';
+    quality = qualityPreset(qualityLevel);
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio));
+    key.shadow.mapSize.set(quality.shadowSize, quality.shadowSize);
+    // Three.js ne recrée pas toujours la cible d'ombre après un changement de
+    // taille. La libérer ici force une reconstruction propre à l'image suivante.
+    if (key.shadow.map) {
+      key.shadow.map.dispose();
+      key.shadow.map = null;
+    }
+    skyMat.uniforms.nuageForce.value = quality.cloudStrength;
+    moteGeometry.setDrawRange(0, Math.max(8, Math.round(moteCount * quality.particleScale)));
+    starGeo.setDrawRange(0, Math.max(360, Math.round(starCount * (0.58 + quality.particleScale * 0.42))));
+    resize();
+    return qualityLevel;
+  }
+
   // Applique un decor. Depuis l'ajout du cycle jour/nuit, la lumiere n'est plus
   // fixee ici : le decor ne fournit que son sol et sa couleur d'accent, l'heure
   // fait le reste. Sinon un decor imposerait une ambiance de nuit en plein midi.
@@ -768,6 +812,7 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
   }
 
   if (biome) applyBiome(biome, textures.ground || null);
+  setQuality(qualityLevel);
 
   // --- Pointeur ---
   const raycaster = new THREE.Raycaster();
@@ -945,6 +990,10 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
     setFocus,
     shake,
     applyBiome,
+    setQuality,
+    get qualityLevel() {
+      return qualityLevel;
+    },
     update,
     render,
     resize,

@@ -165,6 +165,7 @@ export const GUIDE = [
     title: 'Le décor et l’heure',
     body: [
       'Quatre paysages : prairie, sous-bois, éboulis, terre sèche. Chaque créature a le sien, tiré de son œuf, mais tu peux en choisir un autre dans les réglages.',
+      'Le réglage **Qualité graphique** propose Auto, Économie, Normal et Magnifique. Auto privilégie la fluidité et peut réduire les effets si le téléphone peine.',
       'Le jeu suit l’heure réelle : il fait jour chez toi, il fait jour chez elle, avec le soleil qui se lève à l’est et les ombres qui s’allongent le soir. La nuit, les étoiles sortent et la créature s’endort.',
       'Le mode « Accéléré » fait défiler une journée entière en vingt-quatre minutes, pour voir le cycle sans attendre.'
     ]
