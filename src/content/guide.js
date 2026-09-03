@@ -88,6 +88,8 @@ export const GUIDE = [
       'Le bouton « Jeux » ouvre des petits jeux éducatifs : couleurs, formes, compter, premières lettres, calcul, suites logiques, mémoire, lecture de l’heure.',
       'Chaque consigne est lue à voix haute par la créature, donc un enfant qui ne sait pas encore lire peut jouer tout seul. Le bouton « Relire » la répète autant de fois qu’on veut.',
       'Coche **Jouer à la voix** en haut de la liste : la créature pose la question, écoute ta réponse, réagit et enchaîne toute seule. Tu n’as plus rien à toucher. Elle penche la tête quand c’est à toi de parler.',
+      'Le **chifoumi** se joue autrement : pas de panneau, la créature reste dans son décor. Tu choisis pierre, feuille ou ciseaux — au doigt ou à la voix — et vous abattez vos mains en même temps. Elle boude quand elle perd et danse quand elle gagne.',
+      'Elle ne triche pas : elle choisit son coup avant de voir le tien. Mais elle observe ce que tu joues le plus souvent, alors ne prends pas d’habitude.',
       'Deux jeux sont faits pour ça : **Devine à quoi je pense**, où elle décrit quelque chose, et **Répète après moi**, où il suffit de redire le mot qu’elle dit.',
       'Il n’y a ni chronomètre, ni vies, ni son d’échec. Une erreur donne un indice, trois erreurs donnent la réponse et on passe à la suite. On apprend, on ne se fait pas gronder.',
       'Indique l’âge de l’enfant dans les réglages : les jeux proposés et leur difficulté s’adaptent tout seuls, et la créature parle plus lentement pour les plus jeunes.'

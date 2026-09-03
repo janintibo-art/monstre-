@@ -49,6 +49,10 @@ const FICHIERS = {
   'jeu:anagrammes': 'jeu-anagrammes.png',
   'jeu:monnaie': 'jeu-monnaie.png',
   'jeu:capitales': 'jeu-geographie.png'
+  // Devinette, Répète et Chifoumi n'ont pas encore d'icône : ils gardent leur
+  // emoji. On ne DÉCLARE pas un fichier absent — le bouton le chercherait à
+  // chaque affichage. La liste de ce qui manque est dans
+  // docs/ICONES-A-PRODUIRE.md.
 };
 
 // Avatars de profil.

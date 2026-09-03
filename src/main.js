@@ -37,6 +37,7 @@ import { createListener } from './audio/listen.js';
 import { contextLexicon } from './audio/hearing.js';
 import { createGamesUi } from './ui/games.js';
 import { createGuide } from './ui/guide.js';
+import { createChifoumi } from './ui/chifoumi.js';
 import { createAgendaUi, createRecall } from './ui/agenda.js';
 import { parseReminder } from './agenda/parse.js';
 import { dueReminders, listReminders } from './agenda/store.js';
@@ -720,6 +721,10 @@ async function boot() {
       expectedChoices = choices || null;
       listener.start({ pace: listeningPace() });
     },
+    onChifoumi: () => {
+      games.close();
+      chifoumi.ouvrir();
+    },
     onCelebrate: (big = false) => {
       sfx.reussite();
       if (!monster) return;
@@ -743,6 +748,48 @@ async function boot() {
   });
 
   const guide = createGuide({ voice, voiceProfile, getPet: () => pet });
+
+  // Le chifoumi se joue dans la scène : la créature reste visible, elle réagit
+  // à chaque manche. C'est le seul jeu où l'on joue vraiment CONTRE elle.
+  const chifoumi = createChifoumi({
+    getPet: () => pet,
+    voice,
+    voiceProfile,
+    onListen: (onHeard, choices) => {
+      talkTarget = onHeard;
+      expectedChoices = choices || null;
+      listener.start({ pace: 'fast' });
+    },
+    onReaction: (issue) => {
+      if (!monster) return;
+      if (issue === 'compte') {
+        monster.react('listen', 1.6);
+        return;
+      }
+      if (issue === 'gagne') {
+        // Le joueur gagne : elle boude un instant, puis passe à autre chose.
+        sfx.refuse();
+        monster.react('scold', 1.2);
+        brain.forceAction('sulk', 2);
+        return;
+      }
+      if (issue === 'perd') {
+        sfx.reussite();
+        monster.react('play', 1.4);
+        brain.forceAction('dance', 3);
+        vfx.emit('sparkleTrail', monster.headWorldPosition(), { count: 10 });
+        return;
+      }
+      sfx.touche();
+      monster.react('pet', 1);
+    },
+    onQuit: () => {
+      applyEffects(pet.needs, { fun: 8, affection: 3 });
+      save(pet);
+    }
+  });
+
+  chifoumi.setToggleHandler((open) => setScreenOpen('chifoumi', open));
 
   // Le pense-bête. La créature demande toujours quand prévenir : sans ça, on
   // est averti à l'heure du rendez-vous, c'est-à-dire trop tard.

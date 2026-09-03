@@ -29,6 +29,7 @@ export function createGamesUi({
   voiceProfile,
   onAnswer, // meme voie de reponse que le chat : memoire, IA, voix
   onListen, // demande d'ecoute au micro
+  onChifoumi, // jeu joué dans la scène, hors panneau
   onCelebrate,
   onEncourage
 }) {
@@ -149,6 +150,28 @@ export function createGamesUi({
     papoter.append(pIcon, pBody);
     papoter.addEventListener('click', () => startTalk());
     listView.appendChild(papoter);
+
+    // Le chifoumi ne s'ouvre pas dans ce panneau : il ferme tout et se joue
+    // dans le décor. Sa carte le dit.
+    if (onChifoumi) {
+      const duel = document.createElement('button');
+      duel.type = 'button';
+      duel.className = 'game-card game-card--scene';
+      const dIcon = document.createElement('span');
+      dIcon.className = 'game-card__icon';
+      dIcon.appendChild(iconContent('jeu:chifoumi', '✊'));
+      const dBody = document.createElement('span');
+      dBody.className = 'game-card__body';
+      const dName = document.createElement('strong');
+      dName.textContent = 'Chifoumi';
+      const dSkill = document.createElement('span');
+      dSkill.className = 'game-card__skill';
+      dSkill.textContent = 'Duel · dans le décor, face à elle';
+      dBody.append(dName, dSkill);
+      duel.append(dIcon, dBody);
+      duel.addEventListener('click', () => onChifoumi());
+      listView.appendChild(duel);
+    }
 
     games.forEach((game) => {
       const card = document.createElement('button');

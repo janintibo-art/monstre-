@@ -121,6 +121,7 @@ attendant, tout fonctionne.
 | --- | --- | --- |
 | `jeu-devinette.png` | Devine à quoi je pense | Un point d'interrogation dans une bulle de dialogue |
 | `jeu-repete.png` | Répète après moi | Deux bulles de dialogue face à face, l'une pleine, l'autre vide |
+| `jeu-chifoumi.png` | Chifoumi | Un poing humain et une patte de monstre face à face |
 
 ## Lot 5 — Les avatars de profil ✅ fait
 

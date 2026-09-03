@@ -505,6 +505,30 @@ attendre un vrai rendez-vous. Sans elle, la notification suffit.
 > versions sont donc résolues en dehors du bloc, sous des noms qui n'appartiennent
 > qu'au module.
 
+## Le chifoumi
+
+Le seul jeu qui se joue **dans la scène**, sans panneau. Les autres cachent la
+créature derrière une liste de questions ; celui-ci la laisse au milieu de son
+décor et ne pose que deux barres, en haut et en bas. On la voit bouder quand
+elle perd et danser quand elle gagne.
+
+Trois choses en font un jeu plutôt qu'un pile ou face :
+
+- **Elle ne triche jamais.** Son coup est choisi avant l'affichage, sans jamais
+  regarder celui du joueur. Un test le vérifie sur 9 000 parties contre un
+  adversaire imprévisible : elle doit rester autour d'un tiers de victoires.
+- **Elle apprend.** Elle observe ce que le joueur a joué le plus souvent, en
+  pondérant les coups récents, et tente de le contrer — comme le font les
+  humains entre eux. Contre quelqu'un de prévisible, elle gagne trois fois
+  sur quatre.
+- **Son caractère se lit dans son jeu.** Une créature timide joue au hasard,
+  une effrontée lit le jeu. On affronte quelqu'un, pas un générateur.
+
+Elle commente sans jamais se moquer : un enfant qui perd trois fois de suite
+doit avoir envie de rejouer. Un test relit toutes ses formules.
+
+On répond au doigt ou à la voix.
+
 ## Discuter, pas seulement jouer
 
 La première carte de l'écran Jeux est **Papoter avec moi**. La créature propose

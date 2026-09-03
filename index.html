@@ -240,6 +240,26 @@
         </div>
       </div>
 
+      <!-- Chifoumi : joué dans la scène, sans panneau qui cache la créature -->
+      <div id="chifoumi" class="chifoumi" hidden>
+        <div class="chifoumi__haut">
+          <span id="chifoumi-score" class="chifoumi__score"></span>
+          <button id="chifoumi-quitter" type="button" class="icon-button" aria-label="Arrêter">×</button>
+        </div>
+
+        <div id="chifoumi-revele" class="chifoumi__revele">
+          <img id="chifoumi-joueur" alt="" class="chifoumi__main chifoumi__main--joueur" />
+          <img id="chifoumi-creature" alt="" class="chifoumi__main chifoumi__main--creature" />
+        </div>
+
+        <p id="chifoumi-verdict" class="chifoumi__verdict" aria-live="polite"></p>
+
+        <div class="chifoumi__bas">
+          <div id="chifoumi-coups" class="chifoumi__coups"></div>
+          <button id="chifoumi-micro" type="button" class="chifoumi__micro" aria-label="Dire son coup">🎤</button>
+        </div>
+      </div>
+
       <!-- Agenda -->
       <div id="agenda" role="dialog" aria-modal="true" aria-label="Agenda" class="panel panel--wide" hidden>
         <div class="panel__head">
