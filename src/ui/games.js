@@ -82,7 +82,15 @@ export function createGamesUi({
 
   function say(text) {
     if (!text) return;
-    voice.narrate(text, voiceProfile(getPet(), currentBand()));
+    // C'est la créature qui lit la consigne — cela fait partie du plaisir —
+    // mais `narrate` borne sa hauteur : au-delà, une phrase de dix mots n'est
+    // plus compréhensible.
+    const dit = voice.narrate(text, voiceProfile(getPet(), currentBand()));
+    if (!dit.spoken && feedbackEl && dit.raison) {
+      // Aucun moteur vocal : la consigne reste lisible à l'écran, on ne la
+      // remplace pas par du babil qui la couvrirait pour rien.
+      feedbackEl.dataset.muet = '1';
+    }
   }
 
   /* ---------------------------------------------------------- liste des jeux */

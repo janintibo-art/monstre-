@@ -495,7 +495,11 @@ export function createPanels({
           browser: 'moteur du navigateur',
           aucun: 'aucun moteur disponible'
         };
-        microEtat.textContent = `Micro : ${noms[etat.moteur] || etat.moteur}.`;
+        // On affiche aussi la dernière erreur du moteur : sans elle, un micro
+        // muet ne donne aucune piste, ni à l'utilisateur ni à qui l'aide.
+        microEtat.textContent =
+          `Micro : ${noms[etat.moteur] || etat.moteur}.` +
+          (etat.echec ? ` Dernier échec : ${etat.echec}.` : '');
       }
       menu.hidden = false;
     }

@@ -246,6 +246,18 @@
           <button id="agenda-close" class="icon-button" aria-label="Fermer">×</button>
         </div>
         <div class="panel__body">
+          <!-- Navigation : on ne reste pas prisonnier des sept prochains jours -->
+          <div class="semaine-nav">
+            <button id="semaine-avant" type="button" class="semaine-nav__fleche" aria-label="Semaine précédente">‹</button>
+            <span id="semaine-titre" class="semaine-nav__titre"></span>
+            <button id="semaine-apres" type="button" class="semaine-nav__fleche" aria-label="Semaine suivante">›</button>
+          </div>
+          <div class="semaine-nav__saut">
+            <label for="semaine-date">Aller à une date</label>
+            <input id="semaine-date" type="date" />
+            <button id="semaine-aujourdhui" type="button">Aujourd’hui</button>
+          </div>
+
           <!-- Bande de la semaine : sept jours, avec le nombre de rappels -->
           <div id="agenda-semaine" class="semaine"></div>
 

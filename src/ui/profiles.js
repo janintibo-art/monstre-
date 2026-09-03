@@ -66,7 +66,14 @@ export function createProfilePicker({ onChoose, onToggle, voice, voiceProfile, g
 
   function dire(texte) {
     if (!voixActive || !voice || !texte) return;
-    voice.narrate(texte, voiceProfile ? voiceProfile(getPet ? getPet() : {}, currentBand()) : undefined);
+    // Voix de l'application, pas celle de la créature : ces phrases expliquent
+    // comment se servir du logiciel. Le débit suit tout de même la tranche
+    // d'âge choisie, quand elle est connue.
+    const resultat = voice.explain(texte, { rate: currentBand().rate });
+    if (!resultat.spoken && voiceBtn) {
+      voiceBtn.classList.remove('icon-button--actif');
+      voiceBtn.title = 'Aucune voix disponible sur cet appareil';
+    }
   }
 
   if (voiceBtn) {

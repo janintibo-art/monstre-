@@ -1982,3 +1982,86 @@ select {
     max-height: 120px;
   }
 }
+
+/* ------------------------ Navigation de l'agenda ------------------------- */
+
+.semaine-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.semaine-nav__titre {
+  flex: 1;
+  text-align: center;
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.semaine-nav__fleche {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 12px;
+  border: 1px solid rgba(233, 238, 245, 0.14);
+  background: var(--ink-2);
+  color: var(--bone);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.semaine-nav__saut {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.semaine-nav__saut input[type='date'] {
+  flex: 1;
+  min-width: 130px;
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(233, 238, 245, 0.14);
+  background: var(--ink-2);
+  color: var(--bone);
+  font-size: 14px;
+}
+
+.semaine-nav__saut button {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(111, 227, 196, 0.4);
+  background: transparent;
+  color: var(--glow);
+  cursor: pointer;
+  flex: none;
+}
+
+/* Le champ de saisie et son bouton : sans ces deux règles, le bouton était
+   poussé hors de l'écran par un champ qui refusait de rétrécir. */
+.chat-input {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.chat-input input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.chat-input button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}

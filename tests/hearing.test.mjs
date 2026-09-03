@@ -128,3 +128,16 @@ test('le compte à rebours court ne s’arme qu’après avoir capté un mot', a
   const fonction = source.slice(source.indexOf('function bumpSilence'), source.indexOf('function capter'));
   assert.match(fonction, /entendu\s*\?/, 'le délai ne dépend pas de ce qui a été capté');
 });
+
+test('les échecs du micro ne sont jamais avalés', async () => {
+  const { readFileSync } = await import('node:fs');
+  const source = readFileSync('src/audio/listen.js', 'utf8');
+
+  // Un `catch` vide sur le démarrage du moteur transforme une panne précise
+  // — service absent, langue non installée, reconnaissance déjà en cours — en
+  // « ça ne marche pas », sans la moindre piste.
+  const vides = source.match(/\.catch\(\(\)\s*=>\s*\{\s*\/\*[^*]*\*\/\s*\}\)/g) || [];
+  assert.equal(vides.length, 0, `${vides.length} erreur(s) avalée(s) en silence`);
+  assert.match(source, /dernierEchec/, 'aucune trace des échecs');
+  assert.match(source, /echec: dernierEchec/, 'l’échec n’est pas consultable');
+});

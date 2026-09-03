@@ -36,6 +36,11 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
   const semaineView = document.getElementById('agenda-semaine');
   const joursView = document.getElementById('agenda-jours');
   const typesRow = document.getElementById('agenda-types');
+  const semaineTitre = document.getElementById('semaine-titre');
+  const semaineAvant = document.getElementById('semaine-avant');
+  const semaineApres = document.getElementById('semaine-apres');
+  const semaineDate = document.getElementById('semaine-date');
+  const semaineAujourdhui = document.getElementById('semaine-aujourdhui');
 
   const ask = document.getElementById('agenda-ask');
   const askWhat = document.getElementById('agenda-what');
@@ -53,7 +58,8 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
 
   function say(text) {
     if (!text) return;
-    voice.narrate(text, voiceProfile(getPet(), currentBand()));
+    // Confirmations et questions de l'agenda : c'est l'application qui parle.
+    voice.explain(text, { rate: currentBand().rate });
   }
 
   /* ------------------------------------------------------------- l'agenda */
@@ -63,6 +69,33 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
 
   let jourChoisi = null; // filtre par jour, ou null pour toute la semaine
   let typeChoisi = 'rdv';
+
+  // Premier jour de la fenêtre affichée. Sans lui, on restait prisonnier des
+  // sept prochains jours : impossible de noter un rendez-vous le mois prochain.
+  let debutFenetre = null;
+
+  const MOIS_LONGS = [
+    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+  ];
+
+  function minuit(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function fenetre() {
+    return debutFenetre ? new Date(debutFenetre) : minuit(Date.now());
+  }
+
+  function deplacer(jours) {
+    const d = fenetre();
+    d.setDate(d.getDate() + jours);
+    debutFenetre = minuit(d).getTime();
+    jourChoisi = null;
+    render();
+  }
 
   function memeJour(a, b) {
     const x = new Date(a);
@@ -82,9 +115,21 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
   // semaine — c'est ce qu'on regarde en premier dans un agenda, avant même le
   // détail d'une journée.
   function renderSemaine(groupes, maintenant) {
+    const depart = fenetre();
+    const fin = new Date(depart);
+    fin.setDate(fin.getDate() + 6);
+
+    // Le titre nomme le mois — et l'année dès qu'on quitte l'année en cours.
+    const memeMois = depart.getMonth() === fin.getMonth();
+    const anneeCourante = new Date(maintenant).getFullYear();
+    const annee = depart.getFullYear() === anneeCourante ? '' : ` ${depart.getFullYear()}`;
+    semaineTitre.textContent = memeMois
+      ? `${MOIS_LONGS[depart.getMonth()]}${annee}`
+      : `${MOIS_LONGS[depart.getMonth()]} – ${MOIS_LONGS[fin.getMonth()]}${annee}`;
+
     semaineView.innerHTML = '';
     for (let i = 0; i < 7; i += 1) {
-      const jour = new Date(maintenant);
+      const jour = new Date(depart);
       jour.setDate(jour.getDate() + i);
       jour.setHours(0, 0, 0, 0);
 
@@ -95,7 +140,9 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
       case_.type = 'button';
       case_.className = 'semaine__jour';
       if (jourChoisi === jour.getTime()) case_.classList.add('semaine__jour--choisi');
-      if (i === 0) case_.classList.add('semaine__jour--aujourdhui');
+      if (jour.getTime() === minuit(maintenant).getTime()) {
+        case_.classList.add('semaine__jour--aujourdhui');
+      }
 
       const nom = document.createElement('span');
       nom.className = 'semaine__nom';
@@ -175,7 +222,13 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
     const profileId = getActiveId();
     prune(profileId);
     const maintenant = Date.now();
-    const groupes = parJour(profileId, 7, maintenant);
+    // On demande assez de jours pour couvrir la fenêtre affichée, puis on ne
+    // garde que ceux qui y tombent.
+    const depart = fenetre();
+    const decalage = Math.round((depart.getTime() - minuit(maintenant).getTime()) / 86400000);
+    const tous = parJour(profileId, Math.max(7, decalage + 7), maintenant);
+    const finFenetre = depart.getTime() + 7 * 86400000;
+    const groupes = tous.filter((g) => g.jour >= depart.getTime() && g.jour < finFenetre);
 
     renderSemaine(groupes, maintenant);
     renderTypes();
@@ -295,6 +348,26 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
     status.textContent = phrase;
   }
 
+  semaineAvant.addEventListener('click', () => deplacer(-7));
+  semaineApres.addEventListener('click', () => deplacer(7));
+
+  semaineAujourdhui.addEventListener('click', () => {
+    debutFenetre = null;
+    jourChoisi = null;
+    render();
+  });
+
+  // Le sélecteur natif permet d'atteindre n'importe quelle date, y compris
+  // dans plusieurs mois : c'est plus rapide que d'appuyer douze fois sur une
+  // flèche, et l'interface est celle que la personne connaît déjà.
+  semaineDate.addEventListener('change', () => {
+    if (!semaineDate.value) return;
+    const [an, mois, jour] = semaineDate.value.split('-').map(Number);
+    debutFenetre = minuit(new Date(an, mois - 1, jour)).getTime();
+    jourChoisi = debutFenetre;
+    render();
+  });
+
   cancelBtn.addEventListener('click', () => {
     pending = null;
     render();
@@ -396,7 +469,7 @@ export function createRecall({ getPet, voice, voiceProfile }) {
   let repeatTimer = null;
 
   function say(text) {
-    voice.narrate(text, voiceProfile(getPet(), currentBand()));
+    voice.explain(text, { rate: currentBand().rate });
   }
 
   function show(reminder, { onDismiss } = {}) {

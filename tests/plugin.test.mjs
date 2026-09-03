@@ -492,3 +492,42 @@ test('le résumé replié suit les mêmes seuils que les jauges', () => {
   const uniques = [...new Set(seuils)].sort((a, b) => a - b);
   assert.deepEqual(uniques, [18, 40], `seuils incohérents : ${uniques}`);
 });
+
+test('les explications ne sont jamais lues avec la voix de la créature', () => {
+  const voice = readFileSync('src/audio/voice.js', 'utf8');
+
+  // Le profil vocal de la créature monte à 1,85 de hauteur pour un nouveau-né :
+  // charmant sur deux mots, incompréhensible sur une consigne de dix.
+  assert.match(voice, /HAUTEUR_MAX/, 'aucune borne de hauteur pour les consignes');
+  assert.match(voice, /export|function explain/, 'aucune voix d’explication');
+
+  // Et le babil ne doit jamais remplacer une consigne : il ne prononce rien,
+  // il rythme. Il couvrirait le texte affiché sans rien transmettre.
+  const narrate = voice.slice(voice.indexOf('function narrate'), voice.indexOf('function explain'));
+  assert.ok(!/babble\(/.test(narrate), 'le babil remplace encore une consigne');
+
+  // Les écrans d'explication passent par `explain`, pas par la créature.
+  ['src/ui/profiles.js', 'src/ui/guide.js', 'src/ui/agenda.js'].forEach((fichier) => {
+    const source = readFileSync(fichier, 'utf8');
+    assert.ok(!/voice\.narrate/.test(source), `${fichier} : lit une explication avec la voix du monstre`);
+    assert.match(source, /voice\.explain/, `${fichier} : n’utilise pas la voix d’explication`);
+  });
+});
+
+test('le champ de saisie ne pousse pas son bouton hors de l’écran', () => {
+  const css = readFileSync('src/styles.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const bloc = css.slice(css.lastIndexOf('.chat-input input'), css.lastIndexOf('.chat-input button') + 200);
+  // Sans `min-width: 0`, un champ flexible refuse de rétrécir sous la largeur
+  // de son contenu et repousse tout ce qui suit.
+  assert.match(bloc, /min-width:\s*0/, 'le champ refusera de rétrécir');
+  assert.match(bloc, /flex:\s*0 0 auto/, 'le bouton n’est pas protégé');
+});
+
+test('l’agenda permet d’atteindre n’importe quelle date', () => {
+  const html = readFileSync('index.html', 'utf8');
+  assert.match(html, /id="semaine-avant"/, 'pas de navigation vers l’arrière');
+  assert.match(html, /id="semaine-apres"/, 'pas de navigation vers l’avant');
+  // Douze appuis sur une flèche pour atteindre le mois prochain, ce n'est pas
+  // une navigation : le sélecteur natif y va d'un geste.
+  assert.match(html, /id="semaine-date"[^>]*type="date"/, 'pas de saut à une date');
+});

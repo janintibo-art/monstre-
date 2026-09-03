@@ -727,6 +727,21 @@ calcul est dans le shader : rien à recalculer côté processeur.
 **Des étoiles filantes** traversent, une toutes les quarante secondes en
 moyenne — une étoile filante fréquente cesse d'être un événement.
 
+## Trois voix, pas une
+
+- **La créature parle** (`speak`) : babil ou synthèse, avec tout son caractère —
+  hauteur jusqu'à 1,85 pour un nouveau-né.
+- **La créature lit une consigne** (`narrate`) : sa hauteur est **bornée à
+  1,12**. Charmante sur deux mots, cette voix est incompréhensible sur une
+  phrase de dix. Et sans moteur vocal, elle se tait : le babil ne prononce rien,
+  il rythme — il couvrirait le texte affiché sans rien transmettre.
+- **L'application explique** (`explain`) : hauteur neutre, débit posé, aucun
+  timbre de personnage. Un mode d'emploi lu par une voix de dessin animé ne
+  s'écoute pas jusqu'au bout.
+
+L'écran de profil, le guide et l'agenda emploient la troisième. Un test refuse
+qu'ils utilisent celle de la créature.
+
 ## Les sons d'interface
 
 Le manque le plus audible d'un logiciel qui se veut fini : on touche un bouton

@@ -198,18 +198,46 @@ export function createVoice() {
   // c'est le seul moyen qu'un enfant qui ne lit pas encore puisse jouer. Le
   // babil accompagne quand aucun moteur vocal n'est disponible, et l'interface
   // affiche alors la consigne en grand.
-  function narrate(text, profile = { pitch: 1.3, rate: 0.95, timbre: 'triangle' }) {
+  // Hauteur maximale d'une voix qui doit rester comprise.
+  //
+  // Le profil de la creature monte jusqu'a 1,85 pour un nouveau-ne : charmant
+  // pour deux mots de dialogue, inintelligible pour une consigne de dix. On
+  // borne donc la hauteur ici, quel que soit le profil recu.
+  const HAUTEUR_MAX = 1.12;
+
+  function narrate(text, profile = { pitch: 1.05, rate: 0.95, timbre: 'triangle' }) {
     if (!text) return { spoken: false };
     stop();
     if (mode === 'off') return { spoken: false };
-    if (window.speechSynthesis && window.SpeechSynthesisUtterance) {
+
+    if (!hasSpeech()) {
+      // Surtout PAS de babil ici. Le babil ne prononce rien : il rythme. Sur
+      // une consigne, il ne transmet aucune information et couvre le texte
+      // affiche a l'ecran, qui lui est lisible. Mieux vaut le silence.
+      return { spoken: false, raison: 'aucune synthèse vocale' };
+    }
+
+    tts(text, {
+      ...profile,
+      pitch: Math.min(profile.pitch || 1, HAUTEUR_MAX),
       // Un peu plus lent que la parole ordinaire : une consigne doit etre
       // comprise du premier coup, pas seulement entendue.
-      tts(text, { ...profile, rate: Math.max(0.6, profile.rate * 0.9) });
-      return { spoken: true };
-    }
-    babble(text, profile);
-    return { spoken: false };
+      rate: Math.max(0.6, (profile.rate || 1) * 0.9)
+    });
+    return { spoken: true };
+  }
+
+  // Voix des explications.
+  //
+  // Ce n'est pas la creature qui parle : c'est l'application. Hauteur neutre,
+  // debit pose, aucun timbre de personnage. Un mode d'emploi lu par une voix de
+  // dessin anime ne s'ecoute pas jusqu'au bout.
+  function explain(text, { rate = 1 } = {}) {
+    if (!text || mode === 'off') return { spoken: false };
+    stop();
+    if (!hasSpeech()) return { spoken: false, raison: 'aucune synthèse vocale' };
+    tts(text, { pitch: 1, rate: Math.max(0.7, rate * 0.94), timbre: 'triangle' });
+    return { spoken: true };
   }
 
   function hasSpeech() {
@@ -238,6 +266,7 @@ export function createVoice() {
   return {
     speak,
     narrate,
+    explain,
     hasSpeech,
     stop,
     unlock,

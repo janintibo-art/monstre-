@@ -109,7 +109,8 @@ export function createGuide({ voice, voiceProfile, getPet }) {
             .filter(Boolean)
             .map(plain)
             .join(' ');
-          voice.narrate(text, voiceProfile(getPet(), currentBand()));
+          // Le guide est un mode d'emploi : voix neutre, débit posé.
+          voice.explain(text, { rate: currentBand().rate });
         });
         body.appendChild(read);
 

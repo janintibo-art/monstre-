@@ -81,6 +81,7 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
   let entendu = false; // a-t-on capté au moins un mot ?
   let alternatives = [];
   let moteur = 'aucun';
+  let dernierEchec = null; // dernière erreur du moteur, telle qu'il l'a dite
   let silenceTimer = null;
   let hardTimer = null;
   let expected = null;
@@ -161,13 +162,22 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
   /* ------------------------------------------------------------- natif */
 
   async function startNative(plugin) {
-    const permission = await plugin.requestPermissions().catch(() => null);
+    let permission = null;
+    try {
+      permission = await plugin.requestPermissions();
+    } catch (error) {
+      dernierEchec = `autorisation : ${error && error.message ? error.message : error}`;
+      onError('Impossible de demander l’accès au micro.');
+      return;
+    }
+
     const granted =
       !permission ||
       permission.speechRecognition === 'granted' ||
       permission.speechRecognition === undefined;
     if (!granted) {
-      onError('Accès au micro refusé.');
+      dernierEchec = `autorisation refusée (${permission.speechRecognition})`;
+      onError('Accès au micro refusé. Autorise-le dans les réglages du téléphone.');
       return;
     }
 
@@ -205,8 +215,14 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
           capter(matches[0], true);
         }
       })
-      .catch(() => {
-        /* relancé par listeningState, ou conclu par le silence */
+      .catch((error) => {
+        // L'erreur était avalée : « ça ne marche pas » sans la moindre piste.
+        // Le moteur natif dit pourtant des choses utiles — service absent,
+        // reconnaissance déjà en cours, langue non installée.
+        dernierEchec = String((error && (error.message || error.errorMessage)) || error);
+        if (!entendu && listening) {
+          onError(`Le micro n’a pas démarré : ${dernierEchec}`, { soft: true });
+        }
       });
   }
 
@@ -243,6 +259,7 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
       }
     };
     browser.onerror = (event) => {
+      dernierEchec = String(event.error);
       if (event.error === 'no-speech') return; // le silence s'en chargera
       clearTimers();
       setState(false);
@@ -290,7 +307,10 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
     moteur = kind || 'aucun';
     if (kind === 'native') await startNative(nativePlugin);
     else if (kind === 'browser') startBrowser(browserEngine());
-    else onError("Ce téléphone n'a pas de reconnaissance vocale disponible.");
+    else {
+      dernierEchec = 'aucun moteur détecté';
+      onError("Ce téléphone n'a pas de reconnaissance vocale disponible.");
+    }
   }
 
   function stop() {
@@ -329,7 +349,7 @@ export function createListener({ onPartial, onFinal, onState, onError, getContex
     // Consultable depuis les réglages : savoir quel moteur répond évite de
     // chercher un défaut de compréhension là où il n'y a pas de micro du tout.
     get etat() {
-      return { moteur, ecoute: listening, entendu };
+      return { moteur, ecoute: listening, entendu, echec: dernierEchec };
     },
     get listening() {
       return listening;
