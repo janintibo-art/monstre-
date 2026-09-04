@@ -127,7 +127,8 @@ export const GUIDE = [
     title: 'Adapter à qui joue',
     body: [
       'Dans les réglages, **Profil du joueur** va de 3 ans à « Confort ». Ça change trois choses : les jeux proposés, leur difficulté, et la façon dont la créature parle.',
-      'Le jeu s’affiche en paysage, parce que la créature a besoin de largeur. Les réglages, le guide, la conversation et les jeux, eux, suivent la rotation du téléphone : tourne-le comme tu veux pour les lire.',
+      'Dans les réglages, **Orientation du jeu** te laisse choisir : suivre le téléphone, rester en paysage, ou rester en portrait. En portrait la créature a moins de largeur, alors son aire de jeu se réduit d’autant pour qu’elle reste toujours visible.',
+      'Les réglages, le guide, la conversation et les jeux passent toujours en portrait : ce sont des listes et des formulaires, ils se lisent mieux à la verticale.',
       'Le profil **Confort** agrandit le texte et les boutons, ralentit un peu la voix, et met en avant les jeux calmes : proverbes, intrus, vocabulaire, géographie, rendre la monnaie. Aucun chronomètre nulle part, dans aucun jeu, quel que soit le profil.',
       'La case **Texte et boutons agrandis** peut être cochée séparément : on peut avoir cinquante ans et préférer de gros caractères.',
       'Quand une IA est branchée, le profil règle aussi son ton. Elle ne parle pas à une personne âgée comme à un enfant de six ans — et la consigne lui interdit explicitement d’être infantilisante.'

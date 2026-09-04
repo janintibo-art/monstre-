@@ -862,17 +862,30 @@ export function createWorld(canvas, textures = {}, biome = null, options = {}) {
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
 
-    // Angle de vue fixe. Le jeu est verrouille en paysage, ou la largeur
-    // visible depasse neuf unites : il n'y a plus rien a compenser, et ouvrir
-    // l'angle ne ferait que rapetisser la creature pour rien.
+    // L'angle de vue s'ouvre quand l'écran est étroit. En portrait, la largeur
+    // visible tombe à moins d'une unité : sans cela, la créature n'aurait
+    // presque plus la place de bouger.
+    camera.fov = camera.aspect < 1 ? 54 : camera.aspect < 1.4 ? 48 : 42;
+    camera.updateProjectionMatrix();
+
     const distance = Math.hypot(camera.position.y - 1, camera.position.z);
     const halfWidth = distance * Math.tan((camera.fov * Math.PI) / 360) * camera.aspect;
 
-    // La camera suit une partie du deplacement, donc la creature peut s'ecarter
-    // davantage que la demi-largeur brute sans sortir du cadre. Le plafond la
-    // garde sur le sol et a portee de regard.
-    playBounds.x = Math.min(4, Math.max(1.4, (halfWidth / (1 - FOLLOW)) * 0.7));
-    playBounds.z = 3;
+    // L'aire de jeu suit la largeur RÉELLEMENT visible, sans plancher.
+    //
+    // Il y en avait un, à 1,4 unité. En paysage il ne servait à rien — la
+    // largeur visible atteint 4,6. En portrait elle tombe à 1,3 : le plancher
+    // autorisait donc la créature à sortir du cadre, et c'est exactement ce
+    // qu'elle faisait.
+    //
+    // La caméra suit une partie du déplacement, ce qui laisse un peu de marge
+    // au-delà de la demi-largeur brute ; le plafond garde la créature sur le
+    // sol et à portée de regard.
+    playBounds.x = Math.min(4, Math.max(0.75, halfWidth * (1 + FOLLOW * 0.5) * 0.78));
+
+    // La profondeur suit aussi : sur un écran étroit, le sol visible devant la
+    // créature est plus court.
+    playBounds.z = Math.min(3, Math.max(1.6, halfWidth * 0.9));
   }
 
   // Ramene un point dans l'aire visible. Utilise aussi bien pour les cibles de

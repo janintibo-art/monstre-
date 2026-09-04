@@ -9,9 +9,11 @@ ne change rien.
 
 Deux ajustements :
 
-**Orientation.** Le verrou paysage posé au démarrage de l'application arrive
-parfois avant que l'activité soit prête et ne prend pas. Le manifeste, lui,
-s'applique dès la création de la fenêtre.
+**Orientation.** `sensorLandscape` n'est plus qu'un **défaut de démarrage** :
+depuis que l'utilisateur peut choisir son orientation, c'est la préférence
+enregistrée qui décide, appliquée dès le premier écran. Le manifeste garantit
+seulement que le jeu s'ouvre dans une orientation utilisable si rien n'a encore
+été choisi, et que la fenêtre ne pivote pas pendant le chargement.
 
 **Visibilité du service vocal.** Depuis Android 11, une application ne « voit »
 pas les services des autres sans les déclarer. Sans cette déclaration,

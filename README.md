@@ -653,7 +653,22 @@ il ne reste que **deux unités de large** contre plus de neuf en paysage. Élarg
 l'angle pour compenser rapetissait la créature au point de perdre ce qu'on
 était venu regarder — cette compensation a donc été retirée.
 
-**Le paysage vaut pour le jeu, pas pour les écrans de lecture.** Réglages,
+**L'orientation de la scène se choisit** dans les réglages : comme on tient le
+téléphone, toujours en paysage, ou toujours en portrait. Par défaut, on suit le
+téléphone.
+
+Le portrait posait un problème : la créature quittait le cadre. La cause n'était
+pas l'orientation mais un **plancher fixe** de 1,4 unité sur l'aire de jeu. En
+paysage il ne servait à rien — la largeur visible atteint 4,6 — mais en portrait
+elle tombe à 1,3, et le plancher autorisait donc la créature à sortir. L'aire
+suit maintenant la largeur réellement visible, calculée depuis l'angle de vue et
+la forme de l'écran, sans plancher. Et l'angle s'ouvre de 42° à 54° sur un écran
+étroit, pour rendre un peu de place.
+
+Un test rejoue le calcul sur cinq formes d'écran et vérifie que l'aire tient
+toujours dans ce que la caméra montre.
+
+**Le portrait vaut de toute façon pour les écrans de lecture.** Réglages,
 profils, conversation, jeux éducatifs, guide et pense-bête passent tous en
 **portrait** : ce sont des listes et des formulaires, ils se lisent mieux à la
 verticale et le clavier y prend moins de place. Le paysage revient dès que le

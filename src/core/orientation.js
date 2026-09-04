@@ -55,8 +55,41 @@ async function appliquer(etat) {
   }
 }
 
+// Préférence de l'utilisateur pour la scène de jeu.
+//
+// Le paysage donne plus de largeur à la créature, mais tenir son téléphone
+// d'une main en portrait est souvent plus commode — surtout pour un rappel vu
+// en passant. Les deux se valent, et c'est à la personne de choisir.
+const CLE_JEU = 'monstre.orientation';
+
+export function loadGameOrientation() {
+  try {
+    const valeur = localStorage.getItem(CLE_JEU);
+    return valeur === 'paysage' || valeur === 'portrait' ? valeur : 'auto';
+  } catch {
+    return 'auto';
+  }
+}
+
+export function saveGameOrientation(valeur) {
+  try {
+    if (valeur === 'auto') localStorage.removeItem(CLE_JEU);
+    else localStorage.setItem(CLE_JEU, valeur);
+  } catch {
+    /* stockage indisponible */
+  }
+}
+
+// Applique l'orientation voulue pour la scène. En « auto », on rend la main au
+// téléphone : l'aire de jeu s'adapte d'elle-même à la forme de l'écran.
+export function applyGameOrientation() {
+  const choix = loadGameOrientation();
+  if (choix === 'auto') return releaseOrientation();
+  return appliquer(choix);
+}
+
 export function lockLandscape() {
-  return appliquer('paysage');
+  return applyGameOrientation();
 }
 
 export function lockPortrait() {
@@ -80,8 +113,9 @@ export async function releaseOrientation() {
 export function setScreenOpen(nom, ouvert) {
   if (ouvert) ouverts.add(nom);
   else ouverts.delete(nom);
-  // Un écran de lecture ouvert : portrait. Plus aucun : retour au paysage.
-  return ouverts.size ? lockPortrait() : lockLandscape();
+  // Un écran de lecture ouvert : portrait. Plus aucun : on rend à la scène
+  // l'orientation choisie par l'utilisateur.
+  return ouverts.size ? lockPortrait() : applyGameOrientation();
 }
 
 // Ancienne signature, conservée : un booléen unique pour l'ensemble des

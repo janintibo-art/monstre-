@@ -5,6 +5,7 @@ import { CYCLE_MODES } from '../game/daylight.js';
 import { QUALITY_MODES } from '../game/quality.js';
 import { knownFacts, forget, daysTogether, playerName } from '../ai/memory.js';
 import { applyIcon } from './icons.js';
+import { loadGameOrientation, saveGameOrientation, applyGameOrientation } from '../core/orientation.js';
 import { exportSave, parseImport } from '../state/save.js';
 import * as overlay from '../agenda/overlay.js';
 import { bandById, comfortEnabled, applyComfortClass } from '../state/profile.js';
@@ -64,6 +65,7 @@ export function createPanels({
   const qualitySelect = document.getElementById('field-quality');
   const qualityEtat = document.getElementById('quality-etat');
   const cycleSelect = document.getElementById('field-cycle');
+  const orientationSelect = document.getElementById('field-orientation');
   const biomeSelect = document.getElementById('field-biome');
   const horizonEtat = document.getElementById('horizon-etat');
   const microEtat = document.getElementById('micro-etat');
@@ -210,7 +212,15 @@ export function createPanels({
 
   directToggle.addEventListener('change', () => {
     saveDirectStart(directToggle.checked);
-    refreshProfile();
+    orientationSelect.value = loadGameOrientation();
+  orientationSelect.addEventListener('change', () => {
+    saveGameOrientation(orientationSelect.value);
+    // Le changement ne prend effet qu'à la fermeture des panneaux, qui sont
+    // eux-mêmes en portrait : l'appliquer maintenant ferait pivoter l'écran
+    // sous les doigts de l'utilisateur.
+  });
+
+  refreshProfile();
   });
 
   comfortToggle.addEventListener('change', () => {

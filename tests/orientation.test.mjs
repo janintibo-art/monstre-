@@ -116,3 +116,50 @@ test('demander l’orientation ne rejette jamais, même sans module natif', asyn
   await assert.doesNotReject(() => O.lockPortrait());
   await assert.doesNotReject(() => O.releaseOrientation());
 });
+
+test('l’utilisateur choisit l’orientation de la scène', async () => {
+  const { loadGameOrientation, saveGameOrientation } = await import('../src/core/orientation.js');
+
+  // Par défaut, on suit le téléphone : les deux orientations se valent, et
+  // c'est à la personne de décider comment elle tient son appareil.
+  saveGameOrientation('auto');
+  assert.equal(loadGameOrientation(), 'auto');
+
+  ['paysage', 'portrait'].forEach((choix) => {
+    saveGameOrientation(choix);
+    assert.equal(loadGameOrientation(), choix);
+  });
+
+  // Une valeur inconnue ne doit pas bloquer le jeu dans un état absurde.
+  localStorage.setItem('monstre.orientation', 'diagonale');
+  assert.equal(loadGameOrientation(), 'auto');
+  saveGameOrientation('auto');
+});
+
+test('l’aire de jeu ne dépasse jamais la largeur visible', () => {
+  const source = readFileSync('src/game/world.js', 'utf8');
+
+  // Un plancher fixe autorisait la créature à sortir du cadre en portrait, où
+  // la largeur visible tombe sous ce plancher. L'aire doit suivre le calcul,
+  // pas une constante.
+  assert.ok(
+    !/Math\.max\(1\.4,/.test(source),
+    'le plancher qui laissait la créature sortir du cadre est encore là'
+  );
+  assert.match(source, /playBounds\.x = Math\.min\(4, Math\.max\(0\.7\d?,/, 'aire de jeu non calculée');
+
+  // Et l'angle de vue doit s'ouvrir sur un écran étroit, sinon il ne resterait
+  // presque plus de place pour bouger.
+  assert.match(source, /camera\.fov = camera\.aspect < 1/, 'angle de vue figé');
+
+  // Reproduction du calcul : dans toutes les formes d'écran, l'aire doit tenir
+  // dans ce que la caméra montre.
+  const FOLLOW = 0.35;
+  const distance = Math.hypot(2.1 - 1, 5.4);
+  [0.46, 0.62, 1, 1.6, 2.17].forEach((aspect) => {
+    const fov = aspect < 1 ? 54 : aspect < 1.4 ? 48 : 42;
+    const demi = distance * Math.tan((fov * Math.PI) / 360) * aspect;
+    const x = Math.min(4, Math.max(0.75, demi * (1 + FOLLOW * 0.5) * 0.78));
+    assert.ok(x <= demi, `rapport ${aspect} : aire ${x.toFixed(2)} > visible ${demi.toFixed(2)}`);
+  });
+});
