@@ -90,6 +90,8 @@
             <input id="field-name" type="text" maxlength="16" />
           </label>
 
+          <button id="btn-boutique">🛍️ Boutique</button>
+
           <button id="btn-agenda">📅 Mes pense-bêtes</button>
 
           <div class="field" id="row-overlay" hidden>
@@ -263,6 +265,20 @@
               <button id="profile-cancel" type="button">Annuler</button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Boutique -->
+      <div id="boutique" role="dialog" aria-modal="true" aria-label="Boutique" class="panel panel--wide" hidden>
+        <div class="panel__head">
+          <h2>Boutique</h2>
+          <button id="boutique-close" class="icon-button" aria-label="Fermer">×</button>
+        </div>
+        <div class="panel__body">
+          <p id="boutique-solde" class="boutique__solde"></p>
+          <p id="boutique-intro" class="hint"></p>
+          <div id="boutique-liste" class="boutique-liste"></div>
+          <p id="boutique-status" class="hint" aria-live="polite"></p>
         </div>
       </div>
 

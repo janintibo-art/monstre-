@@ -1045,6 +1045,41 @@ L'heure du cycle pilote aussi le comportement : en mode accéléré, la créatur
 s'endort vraiment quand la nuit tombe. Changer de mode ne provoque pas de flash,
 la transition se fait comme un lever de soleil accéléré.
 
+## Les points et la boutique
+
+Une monnaie, gagnée en jouant, en prenant soin de la créature et en revenant la
+voir. Trois principes ont décidé du reste :
+
+- **On gagne en jouant, pas en attendant.** Une rente de présence existe, mais
+  elle est versée au plus une fois toutes les quatre heures : elle récompense la
+  régularité, jamais le temps passé devant l'écran.
+- **On ne perd jamais rien.** Pas de dette, pas d'expiration, pas de solde
+  négatif. Pour des enfants et des personnes âgées, la seule tension acceptable
+  est celle de l'envie.
+- **Des plafonds quotidiens, pas des compte-à-rebours.** Répéter le même jeu
+  vingt fois rapporte de moins en moins, ce qui pousse à varier sans jamais
+  bloquer personne devant une attente.
+
+**On n'achète que du choix.** Aucun article ne rend la créature plus docile, ne
+remplit une jauge ni ne fait gagner un jeu — un jeu pour enfants où l'argent
+donne un avantage apprend une mauvaise leçon. Un test refuse tout article qui
+porterait un bonus.
+
+Cinq espèces sont jouables d'emblée : il faut de quoi jouer avant d'avoir de
+quoi acheter. Les six autres se débloquent à 120 points, et **le prochain œuf
+suit le choix** au lieu d'être tiré au sort.
+
+## Les tempéraments
+
+Chaque espèce naît avec un penchant — grognon, joyeux, timide, curieux,
+gourmand, calme, espiègle, rêveur. Ce ne sont pas des caractères figés mais des
+**décalages** appliqués au tirage initial, bornés à 0,25. Au-delà, le
+tempérament écraserait tout ce que le joueur construit ensuite par les soins, et
+c'est l'inverse du but : on choisit un tempérament, on élève un caractère.
+
+L'effet est mesurable et vérifié par un test : un Gemmelin grognon est en
+moyenne deux fois moins sociable qu'un Bouffenuage joyeux.
+
 ## Les espèces
 
 **Onze espèces**, chacune avec son œuf et ses formes jeune et adulte :

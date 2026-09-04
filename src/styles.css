@@ -2358,3 +2358,90 @@ select {
 .hint--alerte {
   color: var(--amber);
 }
+
+/* -------------------------------- Boutique ------------------------------- */
+
+.boutique__solde {
+  margin: 0 0 4px;
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--amber);
+}
+
+.boutique-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.boutique-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(233, 238, 245, 0.12);
+  background: var(--ink-2);
+}
+
+.boutique-item--choisi {
+  border-color: var(--glow);
+  background: linear-gradient(180deg, rgba(111, 227, 196, 0.12), var(--ink-2));
+}
+
+/* La vignette est la première image de la planche de marche : la créature
+   qu'on achète, pas une icône générique. */
+.boutique-item__vignette {
+  width: 54px;
+  height: 54px;
+  flex: none;
+  object-fit: none;
+  object-position: 0 0;
+  border-radius: 12px;
+  background: rgba(9, 14, 29, 0.6);
+}
+
+.boutique-item__corps {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.boutique-item__corps strong {
+  font-family: var(--display);
+  font-size: 16px;
+}
+
+.boutique-item__trait {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.boutique-item__action {
+  flex: none;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--glow);
+  background: transparent;
+  color: var(--glow);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.boutique-item__action:disabled {
+  opacity: 0.4;
+  border-color: rgba(233, 238, 245, 0.2);
+  color: var(--muted);
+  cursor: default;
+}
+
+.boutique-item__action--choisi {
+  background: var(--glow);
+  color: #06231c;
+  border-color: var(--glow);
+}

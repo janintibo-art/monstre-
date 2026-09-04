@@ -45,6 +45,9 @@ import { contextLexicon } from './audio/hearing.js';
 import { createGamesUi } from './ui/games.js';
 import { createGuide } from './ui/guide.js';
 import { createChifoumi } from './ui/chifoumi.js';
+import { createBoutique } from './ui/boutique.js';
+import { gagner, visiter, recompenseDePartie, GAINS } from './state/points.js';
+import { prochaineEspece } from './state/boutique.js';
 import { createAgendaUi, createRecall } from './ui/agenda.js';
 import { parseReminder } from './agenda/parse.js';
 import { dueReminders, listReminders } from './agenda/store.js';
@@ -429,6 +432,7 @@ async function boot() {
     onMemoryChange: () => save(pet),
     onGuide: () => guide.open(),
     onAgenda: () => agenda.open(),
+    onBoutique: () => boutique.open(),
     onSpeciesFolder: () => species.folder,
     onProfiles: () => {
       // Changer de profil change la sauvegarde a charger : on repart proprement
@@ -484,7 +488,9 @@ async function boot() {
       generation += 1; // tout chargement en cours devient caduc
       kitchen.clear();
       reset();
-      pet = createPet();
+      // L'espèce choisie en boutique décide du prochain œuf. Sans choix, le
+      // hasard reprend la main — et il couvre les onze espèces.
+      pet = createPet(Date.now() >>> 0, prochaineEspece(getActiveId()));
       brain = createBrain(pet.seed);
       species = speciesById(pet.species);
       currentModelUrl = null;
@@ -711,6 +717,7 @@ async function boot() {
     }
 
     sfx.soin();
+    gagner(getActiveId(), GAINS.soin, 'soin');
 
     if (care.id === 'feed') {
       // On sert, on ne remplit pas : la jauge montera quand le plat sera mange.
@@ -783,6 +790,12 @@ async function boot() {
       games.close();
       chifoumi.ouvrir();
     },
+    onGain: (correct, total) => {
+      const points = recompenseDePartie(correct, total);
+      const r = gagner(getActiveId(), points, 'jeux');
+      boutique.render();
+      return r;
+    },
     onCelebrate: (big = false) => {
       sfx.reussite();
       if (!monster) return;
@@ -836,6 +849,11 @@ async function boot() {
         brain.forceAction('sulk', 2);
         return;
       }
+      if (issue === 'gagne' || issue === 'perd') {
+        // On gagne des points en jouant, pas seulement en gagnant : perdre
+        // contre sa créature ne doit pas être puni deux fois.
+        gagner(getActiveId(), issue === 'gagne' ? GAINS.duelGagne : GAINS.duelJoue, 'duel');
+      }
       if (issue === 'perd') {
         sfx.reussite();
         monster.react('play', 1.4);
@@ -869,6 +887,16 @@ async function boot() {
   });
 
   const recall = createRecall({ getPet: () => pet, voice, voiceProfile });
+
+  const boutique = createBoutique({ voice });
+  boutique.setToggleHandler((open) => setScreenOpen('boutique', open));
+
+  // Une visite rapporte, au plus une fois toutes les quatre heures : c'est la
+  // régularité qu'on récompense, jamais le temps passé devant l'écran.
+  const rente = visiter(getActiveId());
+  if (rente.gagne > 0) {
+    setTimeout(() => say(`Content de te revoir ! Tiens, ${rente.gagne} points.`, 4200), 2600);
+  }
 
   agenda.setToggleHandler((open) => setScreenOpen('agenda', open));
 
@@ -964,6 +992,7 @@ async function boot() {
     vfx.flash('#fff3d0', 0.85, 520);
     world.shake(0.45);
     sfx.eclosion();
+    gagner(getActiveId(), GAINS.eclosion);
     egg.burst();
     vfx.emit('hatchBurst', center);
     vfx.emit('shards', center);

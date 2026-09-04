@@ -2,7 +2,7 @@ import { createNeeds, decayNeeds, wellbeing } from '../ai/needs.js';
 import { createPersonality } from '../ai/personality.js';
 import { createMemory, ensureMemory, consolidate } from '../ai/memory.js';
 import { createGenome } from '../ai/genome.js';
-import { pickSpecies } from '../game/species.js';
+import { pickSpecies, especeConnue, speciesById, temperamentOf } from '../game/species.js';
 import { pickBiome } from '../game/biomes.js';
 
 export const SAVE_VERSION = 5;
@@ -32,7 +32,20 @@ export const STAGE_LABELS = {
   adult: 'adulte'
 };
 
-export function createPet(seed = Date.now() >>> 0) {
+// Applique les décalages du tempérament, en gardant chaque trait entre 0 et 1.
+function appliquerTemperament(traits, species) {
+  const biais = temperamentOf(species).biais;
+  const sortie = { ...traits };
+  Object.entries(biais).forEach(([trait, decalage]) => {
+    if (sortie[trait] === undefined) return;
+    sortie[trait] = Math.max(0.05, Math.min(0.95, sortie[trait] + decalage));
+  });
+  return sortie;
+}
+
+// `especeVoulue` vient de la boutique : quand le joueur a choisi son prochain
+// œuf, on ne tire plus au sort. Sans choix, le hasard reprend la main.
+export function createPet(seed = Date.now() >>> 0, especeVoulue = null) {
   return {
     version: SAVE_VERSION,
     seed,
@@ -45,11 +58,18 @@ export function createPet(seed = Date.now() >>> 0) {
     lastSeen: Date.now(),
     age: 0,
     growth: 0,
-    species: pickSpecies(seed).id,
+    species: especeConnue(especeVoulue) ? especeVoulue : pickSpecies(seed).id,
     biome: pickBiome(seed).id,
     genome: createGenome(seed),
     needs: createNeeds(),
-    personality: createPersonality(seed),
+    // Le caractère part du tirage, puis se décale selon le tempérament de
+    // l'espèce. Ce n'est qu'un point de départ : les soins continuent de le
+    // faire évoluer, sinon on ne choisirait pas un compagnon, on le
+    // subirait.
+    personality: appliquerTemperament(
+      createPersonality(seed),
+      especeConnue(especeVoulue) ? speciesById(especeVoulue) : pickSpecies(seed)
+    ),
     memory: createMemory()
   };
 }

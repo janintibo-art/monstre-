@@ -30,6 +30,7 @@ export function createGamesUi({
   onAnswer, // meme voie de reponse que le chat : memoire, IA, voix
   onListen, // demande d'ecoute au micro
   onChifoumi, // jeu joué dans la scène, hors panneau
+  onGain, // points gagnés en fin de partie
   onCelebrate,
   onEncourage
 }) {
@@ -400,7 +401,12 @@ export function createGamesUi({
     for (let i = 0; i < Math.max(1, summary.correct); i += 1) {
       displayEl.appendChild(iconContent('etoile', '⭐'));
     }
-    feedbackEl.textContent = summary.message;
+    // Les points sont annoncés avec le bilan : une récompense qu'on ne voit
+    // pas n'en est pas une.
+    const gain = onGain ? onGain(summary.correct, summary.total) : null;
+    feedbackEl.textContent = gain && gain.gagne > 0
+      ? `${summary.message} +${gain.gagne} points !`
+      : summary.message;
     say(`${summary.correct} sur ${summary.total}. ${summary.message}`);
     if (onCelebrate) onCelebrate(summary.correct >= summary.total * 0.8);
 

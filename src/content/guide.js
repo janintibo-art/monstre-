@@ -83,6 +83,19 @@ export const GUIDE = [
     ]
   },
   {
+    id: 'points',
+    icon: '🛍️',
+    title: 'Les points et la boutique',
+    body: [
+      'Tu gagnes des **points** en jouant aux jeux, en gagnant au chifoumi, en prenant soin de ta créature, et simplement en revenant la voir.',
+      'Rester des heures devant l’écran ne rapporte rien de plus : c’est le fait de **revenir** qui compte, au plus une fois toutes les quatre heures.',
+      'Répéter le même jeu vingt fois rapporte de moins en moins. Varie les activités, tu gagneras davantage.',
+      'Dans la **boutique** (menu ···), tu peux débloquer de nouvelles espèces. Ton prochain œuf donnera alors la créature que tu as choisie, au lieu d’une surprise.',
+      'Chaque espèce a son **tempérament** : grognon, joyeux, timide, curieux, gourmand, calme, espiègle ou rêveur. Ce n’est qu’un point de départ — la façon dont tu t’en occupes fera le reste.',
+      'On n’achète jamais un avantage : rien dans la boutique ne remplit une jauge ni ne fait gagner un jeu.'
+    ]
+  },
+  {
     id: 'jeux',
     icon: '🎓',
     title: 'Les jeux pour apprendre',

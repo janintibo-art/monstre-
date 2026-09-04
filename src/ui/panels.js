@@ -34,6 +34,7 @@ export function createPanels({
   onImport,
   onGuide,
   onAgenda,
+  onBoutique,
   onAmbience,
   onSpeciesFolder,
   onProfiles,
@@ -52,6 +53,7 @@ export function createPanels({
 
   const guideBtn = document.getElementById('btn-guide');
   const agendaBtn = document.getElementById('btn-agenda');
+  const boutiqueBtn = document.getElementById('btn-boutique');
   const overlayRow = document.getElementById('row-overlay');
   const overlayHelp = document.getElementById('overlay-help');
   const overlayAllow = document.getElementById('btn-overlay-allow');
@@ -194,6 +196,11 @@ export function createPanels({
     };
     microEtat.textContent = `Micro : ${noms[resultat.moteur] || resultat.moteur}. ${resultat.detail || ''}`.trim();
     microTest.disabled = false;
+  });
+
+  boutiqueBtn.addEventListener('click', () => {
+    closeAll();
+    if (onBoutique) onBoutique();
   });
 
   agendaBtn.addEventListener('click', () => {
