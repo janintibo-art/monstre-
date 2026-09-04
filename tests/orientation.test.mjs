@@ -173,3 +173,23 @@ test('l’aire de jeu ne dépasse jamais la largeur visible', () => {
     assert.ok(x <= demi, `rapport ${aspect} : aire ${x.toFixed(2)} > visible ${demi.toFixed(2)}`);
   });
 });
+
+test('rien de blanc ne précède l’écran de présentation', async () => {
+  const script = readFileSync('tools/patch_manifest.py', 'utf8');
+
+  // Depuis Android 12, le système affiche son propre écran d'attente avant que
+  // la moindre ligne de code tourne : l'icône sur le fond du thème, blanc par
+  // défaut. Les attributs n'existent qu'à partir de l'API 31, d'où values-v31.
+  assert.match(script, /values-v31/, 'aucun réglage de l’écran système');
+  assert.match(script, /windowSplashScreenBackground/, 'fond de l’écran système non défini');
+
+  const html = readFileSync('index.html', 'utf8');
+  const avantCss = html.slice(0, html.indexOf('styles.css') >= 0 ? html.indexOf('styles.css') : html.length);
+
+  // Et la page elle-même doit être sombre AVANT sa feuille de style : une vue
+  // sans CSS est blanche, et ce blanc se voit sur un téléphone lent.
+  assert.match(avantCss, /background:\s*#0b0f1e/i, 'fond de page non posé avant la feuille de style');
+
+  const config = JSON.parse(readFileSync('capacitor.config.json', 'utf8'));
+  assert.ok(config.android?.backgroundColor, 'fond de la vue native non défini');
+});

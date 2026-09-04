@@ -74,7 +74,11 @@ jobs:
           if [ ! -d android ]; then npx cap add android; fi
           npx cap sync android
           # Icone et ecran de demarrage generes depuis assets/
-          npx --yes @capacitor/assets@3 generate --android
+          npx --yes @capacitor/assets@3 generate --android \
+            --splashBackgroundColor '#0B0F1E' \
+            --splashBackgroundColorDark '#0B0F1E' \
+            --iconBackgroundColor '#141A33' \
+            --iconBackgroundColorDark '#141A33'
           # Les planches de marche vont dans les assets natifs : la fenêtre
           # système qui affiche la créature n'a pas accès au dossier web.
           mkdir -p android/app/src/main/assets/sprites

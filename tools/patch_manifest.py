@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ajuste le manifeste Android engendré par Capacitor.
+"""Ajuste le projet Android engendré par Capacitor.
 
     python3 tools/patch_manifest.py android/app/src/main/AndroidManifest.xml
 
@@ -7,7 +7,7 @@ Le projet Android est régénéré à chaque compilation : ces réglages ne peuv
 pas y être écrits une fois pour toutes. Le script est idempotent — le relancer
 ne change rien.
 
-Deux ajustements :
+Trois ajustements :
 
 **Orientation de démarrage.** `sensorPortrait`, et non paysage.
 
@@ -21,12 +21,34 @@ pivotait aussitôt pour demander le prénom. Une rotation pour rien, dès la
 première seconde. `sensorPortrait` accepte les deux sens du portrait, et laisse
 le jeu prendre l'orientation voulue au moment où il commence vraiment.
 
+**Écran de démarrage système.** Depuis Android 12, le système affiche lui-même
+un écran d'attente avant que la moindre ligne de code tourne : l'icône de
+l'application, dans un cercle, sur le fond défini par le thème. Ce fond est
+blanc par défaut — d'où ce petit logo carré sur blanc qui précédait le vrai
+écran de présentation. Les attributs correspondants n'existent qu'à partir de
+l'API 31, ils vont donc dans un fichier `values-v31/`.
+
 **Visibilité du service vocal.** Depuis Android 11, une application ne « voit »
 pas les services des autres sans les déclarer. Sans cette déclaration,
 `SpeechRecognizer.isRecognitionAvailable()` répond non — et le micro paraît
 absent alors que le téléphone sait parfaitement reconnaître la parole.
 """
 import sys
+
+FOND = "#0B0F1E"
+
+# Le thème de lancement de Capacitor. S'il changeait de nom, la surcharge
+# resterait sans effet — sans rien casser pour autant.
+STYLES_V31 = f"""<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="android:windowSplashScreenBackground">{FOND}</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">{FOND}</item>
+        <item name="android:windowBackground">@drawable/splash</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+    </style>
+</resources>
+"""
 
 QUERIES = """    <queries>
         <intent>
@@ -39,6 +61,21 @@ INTENT = """        <intent>
             <action android:name="android.speech.RecognitionService" />
         </intent>
 """
+
+
+def ecrire_styles(chemin_manifeste):
+    """Pose le fond sombre de l'écran de démarrage système (Android 12+)."""
+    import pathlib
+
+    res = pathlib.Path(chemin_manifeste).parent / "res" / "values-v31"
+    res.mkdir(parents=True, exist_ok=True)
+    cible = res / "styles.xml"
+
+    if cible.exists() and FOND in cible.read_text(encoding="utf-8"):
+        return "fond de démarrage déjà posé"
+
+    cible.write_text(STYLES_V31, encoding="utf-8")
+    return "fond de démarrage système assombri"
 
 
 def patch(chemin):
@@ -75,7 +112,9 @@ def patch(chemin):
     with open(chemin, "w", encoding="utf-8") as f:
         f.write(source)
 
-    print("Manifeste ajusté :", ", ".join(faits))
+    faits.append(ecrire_styles(chemin))
+
+    print("Projet Android ajusté :", ", ".join(faits))
     return source
 
 
