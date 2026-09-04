@@ -82,6 +82,33 @@ export function phrase(issue, rng = Math.random) {
   return liste[Math.floor(rng() * liste.length) % liste.length];
 }
 
+// Remarque sur le déroulement de la partie.
+//
+// C'est ce qui distingue un adversaire d'un distributeur de résultats : elle
+// remarque qu'on répète le même coup, qu'on enchaîne les victoires, qu'on vient
+// de renverser la partie. Elle ne le dit pas à chaque manche — une créature qui
+// commente tout devient bavarde — mais assez pour qu'on sente qu'elle suit.
+//
+// Elle révèle ainsi ce qu'elle observe, et donc comment la battre : dire « tu
+// joues souvent pierre » est une information loyale, pas une moquerie.
+export function commentaire(historique, compte, rng = Math.random) {
+  const derniers = historique.slice(-4);
+
+  if (derniers.length >= 3) {
+    const identiques = derniers.slice(-3).every((c) => c === derniers[derniers.length - 1]);
+    if (identiques) {
+      return `Tu joues souvent ${NOMS[derniers[derniers.length - 1]].toLowerCase()}, dis donc.`;
+    }
+  }
+
+  if (compte.gagne >= 3 && compte.perd === 0) return 'Tu ne me laisses rien !';
+  if (compte.perd >= 3 && compte.gagne === 0) return 'Je commence à te connaître.';
+  if (compte.gagne === compte.perd && compte.gagne >= 2) return 'On est à égalité, ça se joue.';
+
+  // La plupart du temps, elle ne dit rien de plus que le résultat.
+  return rng() < 0.25 ? 'Encore ?' : null;
+}
+
 // Bilan de fin de manche.
 export function bilan({ gagne, perd, egalite }) {
   const total = gagne + perd + egalite;

@@ -817,6 +817,11 @@ async function boot() {
         monster.react('listen', 1.6);
         return;
       }
+      if (issue === 'bat') {
+        // Elle bat la mesure du décompte, comme on secoue le poing.
+        monster.react('play', 0.5);
+        return;
+      }
       if (issue === 'gagne') {
         // Le joueur gagne : elle boude un instant, puis passe à autre chose.
         sfx.refuse();
@@ -1174,6 +1179,8 @@ async function boot() {
       // en regardant ailleurs, ce qui est exactement ce qu'on ne veut pas voir.
       const foodAt = kitchen.target;
       if (foodAt) lookTarget.set(foodAt.x, 0.4, foodAt.z);
+      // Elle regarde le joueur, pas le décor : c'est à lui qu'elle joue.
+      if (chifoumi.ouvert) lookTarget.set(0, 1.4, 6);
 
       // Tant qu'elle n'est pas arrivée chez elle, elle marche : jouer la pose
       // de sommeil en traversant le terrain serait absurde.
@@ -1255,7 +1262,16 @@ async function boot() {
         chatterTimer = 18 + Math.random() * 26;
         // Pas de bavardage pendant un jeu ou la lecture du guide : deux voix
         // qui se chevauchent rendent la consigne incomprehensible.
-        if (!chat.isOpen && !games.isOpen && !guide.isOpen && !sleeping && !kitchen.hasFood) {
+        // Rien de spontané pendant un duel : elle a autre chose à dire, et deux
+        // voix qui se chevauchent rendent le décompte incompréhensible.
+        if (
+          !chat.isOpen &&
+          !games.isOpen &&
+          !guide.isOpen &&
+          !sleeping &&
+          !kitchen.hasFood &&
+          !chifoumi.ouvert
+        ) {
           say(spontaneousLine(pet, decision.emotion));
         }
       }

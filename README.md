@@ -525,6 +525,19 @@ créature derrière une liste de questions ; celui-ci la laisse au milieu de son
 décor et ne pose que deux barres, en haut et en bas. On la voit bouder quand
 elle perd et danser quand elle gagne.
 
+**Le duel efface le reste de l'interface.** La barre de soins, la fiche et la
+ligne de pensée disparaissent : elles parlaient d'autre chose par-dessus la
+partie — la ligne de pensée annonçait « il inspecte un recoin » pendant qu'on
+l'affrontait. Et la créature vient se placer face au joueur, ne bouge plus,
+compte à voix haute et bat la mesure. Une créature qui vaque à ses occupations
+pendant qu'on l'affronte n'est pas un adversaire, c'est un décor.
+
+Elle **remarque aussi ce qu'on joue** : « tu joues souvent pierre, dis donc »,
+« tu ne me laisses rien ». C'est une information loyale — elle dit exactement ce
+qu'elle observe, donc comment la battre. Mais pas à chaque manche : un test
+vérifie qu'elle se tait au moins trois fois sur cinq, sans quoi elle couvrirait
+le décompte.
+
 Trois choses en font un jeu plutôt qu'un pile ou face :
 
 - **Elle ne triche jamais.** Son coup est choisi avant l'affichage, sans jamais

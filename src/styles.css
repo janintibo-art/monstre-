@@ -2339,3 +2339,16 @@ select {
   min-width: 56px;
   font-size: 14px;
 }
+
+/* Duel en cours : le monde s'efface pour laisser la scène au jeu. La barre de
+   soins, la ligne de pensée et la fiche n'ont rien à faire là — elles parlaient
+   d'autre chose par-dessus la partie. */
+.duel-en-cours .actionbar,
+.duel-en-cours .thought,
+.duel-en-cours .fiche,
+.duel-en-cours .bubble,
+.duel-en-cours .topbar__actions {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}

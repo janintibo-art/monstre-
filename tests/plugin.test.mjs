@@ -655,3 +655,19 @@ test('les tests ne supposent rien du système sur lequel ils tournent', () => {
     });
   });
 });
+
+test('le duel efface le reste de l’interface', () => {
+  const css = readFileSync('src/styles.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const bloc = css.slice(css.indexOf('.duel-en-cours'));
+
+  // La barre de soins, la ligne de pensée et la fiche parlaient d'autre chose
+  // par-dessus la partie — et la ligne de pensée disait littéralement « il
+  // inspecte un recoin » pendant qu'on l'affrontait.
+  ['.actionbar', '.thought', '.fiche', '.bubble'].forEach((cible) => {
+    assert.ok(bloc.includes(cible), `${cible} reste visible pendant le duel`);
+  });
+
+  const source = readFileSync('src/main.js', 'utf8');
+  // Et rien de spontané ne doit sortir pendant qu'elle compte.
+  assert.match(source, /!chifoumi\.ouvert/, 'la créature bavarde pendant le duel');
+});

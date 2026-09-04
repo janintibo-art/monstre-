@@ -1,4 +1,12 @@
-import { COUPS, NOMS, coupCreature, resultat, phrase, bilan } from '../games/chifoumi.js';
+import {
+  COUPS,
+  NOMS,
+  coupCreature,
+  resultat,
+  phrase,
+  commentaire,
+  bilan
+} from '../games/chifoumi.js';
 import { currentBand } from '../state/profiles.js';
 
 // Le chifoumi.
@@ -103,11 +111,15 @@ export function createChifoumi({
     verdict.textContent = '';
     if (onReaction) onReaction('compte');
 
+    // Elle compte à voix haute et bat la mesure. Sans cela, on joue devant une
+    // créature qui regarde ailleurs — c'est ce qui rendait le duel décoratif.
     COMPTE.forEach((mot, i) => {
       later(() => {
         verdict.textContent = mot;
-        if (i === COMPTE.length - 1) devoiler(coup, sien);
-      }, i * 520);
+        dire(mot);
+        if (onReaction) onReaction('bat');
+        if (i === COMPTE.length - 1) later(() => devoiler(coup, sien), 420);
+      }, i * 620);
     });
   }
 
@@ -131,6 +143,15 @@ export function createChifoumi({
     // La créature commente. Elle ne se moque jamais : un enfant qui perd trois
     // fois de suite doit avoir envie de rejouer.
     dire(phrase(issue), () => {
+      // Une remarque sur la partie, quand il y a quelque chose à remarquer.
+      const remarque = manche < MANCHES ? commentaire(historique, compte) : null;
+      if (remarque) {
+        verdict.textContent = remarque;
+        dire(remarque, () => {
+          occupe = false;
+        });
+        return;
+      }
       occupe = false;
       if (manche >= MANCHES) later(finir, 400);
     });
@@ -186,13 +207,18 @@ export function createChifoumi({
     demarrer();
     racine.hidden = false;
     micro.hidden = !onListen;
+    // Le reste de l'interface s'efface : on ne joue pas au chifoumi par-dessus
+    // une barre de soins et une ligne de pensée qui parle d'autre chose.
+    document.documentElement.classList.add('duel-en-cours');
     if (onToggle) onToggle(true);
+    dire('Alors, on joue ? Choisis ton coup.');
   }
 
   function fermer() {
     clearTimers();
     voice.stop();
     racine.hidden = true;
+    document.documentElement.classList.remove('duel-en-cours');
     if (onToggle) onToggle(false);
     if (onQuit) onQuit();
   }

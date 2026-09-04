@@ -93,3 +93,41 @@ test('le bilan reste engageant quel que soit le score', () => {
     assert.ok(/\?|!/.test(texte), 'le bilan n’invite pas à rejouer');
   });
 });
+
+test('elle remarque ce que joue le joueur, sans se moquer', () => {
+  const rng = createRng(11);
+
+  // Trois fois le même coup : elle le signale. C'est une information loyale —
+  // elle dit exactement ce qu'elle observe, et donc comment la battre.
+  const repete = C.commentaire(['pierre', 'pierre', 'pierre'], { gagne: 1, perd: 1, egalite: 0 }, rng);
+  assert.match(repete, /pierre/i, 'elle ne remarque pas la répétition');
+
+  // Et elle reconnaît le mérite du joueur qui gagne.
+  const domine = C.commentaire(['pierre', 'feuille'], { gagne: 3, perd: 0, egalite: 0 }, rng);
+  assert.ok(domine && domine.length > 5, 'aucune remarque sur une série de victoires');
+
+  // Aucune formule blessante, quelle que soit la situation.
+  const meprisant = /nul|bête|perdant|facile|évidemment|mauvais/i;
+  for (let i = 0; i < 300; i += 1) {
+    const compte = {
+      gagne: i % 5,
+      perd: (i * 3) % 5,
+      egalite: i % 3
+    };
+    const dit = C.commentaire(['pierre', 'ciseaux', 'feuille'], compte, rng);
+    if (dit) assert.ok(!meprisant.test(dit), `remarque blessante : « ${dit} »`);
+  }
+});
+
+test('elle ne commente pas chaque manche', () => {
+  const rng = createRng(5);
+  let muettes = 0;
+  for (let i = 0; i < 200; i += 1) {
+    // Partie banale : rien à signaler la plupart du temps.
+    if (!C.commentaire(['pierre', 'feuille', 'ciseaux'], { gagne: 1, perd: 1, egalite: 0 }, rng)) {
+      muettes += 1;
+    }
+  }
+  // Une créature qui commente tout devient bavarde et couvre le décompte.
+  assert.ok(muettes > 120, `elle parle trop (${200 - muettes} fois sur 200)`);
+});
