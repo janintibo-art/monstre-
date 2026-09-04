@@ -2352,3 +2352,9 @@ select {
   pointer-events: none;
   transition: opacity 200ms ease;
 }
+
+/* Un compte rendu qui signale un problème doit se distinguer d'une simple
+   explication : sans quoi on le lit comme du texte d'aide et on l'ignore. */
+.hint--alerte {
+  color: var(--amber);
+}

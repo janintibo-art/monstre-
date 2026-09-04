@@ -42,6 +42,52 @@ export async function available() {
   return Boolean(api());
 }
 
+// Canal de notification dédié aux réveils.
+//
+// Sur Android 8 et suivants, c'est le CANAL qui porte le son, la vibration et
+// l'importance — pas la notification. Sans canal déclaré, tout part sur celui
+// par défaut, dont l'importance est basse : la notification s'affiche en
+// silence, sans vibration et sans réveiller l'écran. Pour un réveil, c'est
+// exactement l'inverse de ce qu'on veut.
+//
+// Le canal doit être créé AVANT toute notification, et ses réglages sont figés
+// à sa création : Android refuse de les modifier ensuite. C'est pourquoi les
+// réveils ont leur propre canal, séparé des simples rappels.
+const CANAUX = {
+  reveil: {
+    id: 'monstre-reveil',
+    name: 'Réveils',
+    description: 'Sonne à l’heure du réveil.',
+    importance: 5,
+    visibility: 1,
+    vibration: true
+  },
+  rappel: {
+    id: 'monstre-rappel',
+    name: 'Rappels',
+    description: 'Rendez-vous et tâches.',
+    importance: 4,
+    visibility: 1,
+    vibration: true
+  }
+};
+
+let canauxPrets = false;
+
+async function preparerCanaux() {
+  if (canauxPrets) return;
+  await chargerPlugin();
+  if (!api() || !api().createChannel) return;
+  try {
+    for (const canal of Object.values(CANAUX)) {
+      await api().createChannel(canal);
+    }
+    canauxPrets = true;
+  } catch {
+    /* certaines plateformes n'ont pas de canaux : la notification part quand même */
+  }
+}
+
 export async function ensurePermission() {
   await chargerPlugin();
   if (!api()) return false;
@@ -69,6 +115,9 @@ export async function schedule(reminder, petName = 'Ton monstre') {
   const when = triggerTime(reminder.at, reminder.lead);
   if (when <= Date.now()) return false;
 
+  await preparerCanaux();
+  const canal = reminder.type === 'reveil' ? CANAUX.reveil : CANAUX.rappel;
+
   try {
     await api().schedule({
       notifications: [
@@ -79,6 +128,10 @@ export async function schedule(reminder, petName = 'Ton monstre') {
             ? `${reminder.subject} — ${formatWhen(reminder.at, new Date(when))}`
             : `Rendez-vous ${formatWhen(reminder.at, new Date(when))}`,
           schedule: { at: new Date(when), allowWhileIdle: true },
+          channelId: canal.id,
+          // Le son par défaut du téléphone : imposer un fichier obligerait à
+          // l'embarquer, et l'utilisateur ne pourrait plus le changer.
+          sound: undefined,
           // La notification reste tant qu'on ne l'a pas ouverte : c'est
           // l'équivalent le plus proche d'une créature qui attend qu'on la
           // remarque.

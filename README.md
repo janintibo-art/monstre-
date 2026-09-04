@@ -431,6 +431,25 @@ au soir. « La veille au soir » n'est pas un décalage en minutes mais une heur
 fixe la veille, ce qui n'a rien à voir pour un rendez-vous à 8 h du matin. Et un
 rappel ne tombe jamais après le rendez-vous, même mal réglé.
 
+**Un réveil sonne à l'heure exacte** : la question de la prévenance ne lui est
+pas posée. Elle l'était, et choisir « une heure avant » faisait sonner le réveil
+de 7 h à 6 h sans que rien ne le laisse deviner.
+
+Il a aussi **son propre canal de notification**. Sur Android 8 et suivants,
+c'est le canal qui porte le son, la vibration et l'importance — pas la
+notification. Sans canal déclaré, tout part sur celui par défaut, dont
+l'importance est basse : la notification s'affiche en silence, sans vibration.
+Pour un réveil, l'inverse exact de ce qu'on veut. Et comme les réglages d'un
+canal sont figés à sa création, réveils et rappels ont chacun le leur.
+
+**L'agenda dit ce qui a réellement été programmé.** Annoncer « c'est noté » sans
+vérifier revient à mentir, et un rappel qui ne sonne pas ne se découvre qu'au
+moment où l'on comptait dessus. S'il manque une autorisation, elle est nommée.
+
+Un bouton **« Essayer le réveil »** en déclenche un dans quinze secondes, avec
+toute la chaîne réelle. C'est le seul moyen de vérifier sans attendre le
+lendemain matin.
+
 Le moment venu, une notification système arrive **même application fermée**. En
 ouvrant, la créature accourt, s'agite et répète toutes les vingt secondes
 jusqu'à ce qu'on appuie sur « C'est noté ». Un rendez-vous récurrent est alors

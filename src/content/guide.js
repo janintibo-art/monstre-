@@ -60,6 +60,8 @@ export const GUIDE = [
       'Le bouton **📅 en haut de l’écran** ouvre ton agenda. Une bande montre les sept prochains jours avec des pastilles de couleur : d’un coup d’œil, tu vois les journées chargées.',
       'Trois sortes de rappels : **un rendez-vous** (turquoise), **une tâche à faire** (ambre) et **un réveil** (rose). Choisis-en un, puis dis ou écris ta phrase.',
       'Dis-lui simplement : « **j’ai rendez-vous chez le médecin mardi à 17 h** », « **rappelle-moi d’arroser les plantes samedi** » ou « **réveille-moi à 7 h** ». Elle comprend la date et l’heure toute seule, au micro comme au clavier.',
+      'Un réveil sonne **à l’heure exacte** : on ne te demande pas quand prévenir, ce serait absurde. Il a aussi sa propre sonnerie, plus insistante qu’un simple rappel.',
+      'Le bouton **⏱️ Essayer le réveil** en bas de l’agenda en déclenche un dans quinze secondes, avec toute la chaîne réelle. C’est le seul moyen de vérifier sans attendre le lendemain matin — et il te dit clairement si les autorisations manquent.',
       'Un réveil se répète tous les jours sans que tu aies à le demander — personne ne se lève une seule fois — et la créature insiste plus longtemps que pour un simple rappel.',
       '**Elle demande ensuite quand te prévenir** : une heure avant, le matin même, la veille au soir… C’est la question que tout le monde oublie de préciser, et sans elle un pense-bête arrive toujours trop tard.',
       'Le moment venu, ton téléphone t’alerte même si l’application est fermée. En ouvrant, la créature accourt et répète le rendez-vous jusqu’à ce que tu appuies sur « C’est noté ».',

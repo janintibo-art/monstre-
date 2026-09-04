@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { installEnv } from './_env.mjs';
 
 installEnv();
@@ -333,4 +334,49 @@ test('une répétition sans jour choisi ne bloque pas', () => {
   // rappel doit rester ponctuel plutôt que de ne jamais retomber.
   assert.equal(A.occurrenceSuivante(Date.now(), { every: 'week', days: [] }), null);
   assert.equal(A.tombeCeJour({ every: 'week', days: [] }, Date.now(), Date.now()), false);
+});
+
+test('un réveil sonne à l’heure, jamais avant', () => {
+  const source = readFileSync('src/ui/agenda.js', 'utf8');
+
+  // Poser la question de la prévenance pour un réveil était une faute : choisir
+  // « une heure avant » faisait sonner le réveil de 7 h à 6 h, et rien ne le
+  // laissait deviner.
+  const bloc = source.slice(source.indexOf('function startAsk'), source.indexOf('function confirm'));
+  assert.match(bloc, /type === 'reveil'/, 'la question est encore posée pour un réveil');
+  assert.match(bloc, /leadById\('moment'\)/, 'le réveil n’est pas forcé à l’heure exacte');
+
+  // Et le calcul lui-même doit être neutre.
+  const midi = new Date(2026, 8, 8, 7, 0).getTime();
+  assert.equal(A.triggerTime(midi, A.leadById('moment')), midi);
+});
+
+test('les réveils ont leur propre canal de notification', () => {
+  const source = readFileSync('src/agenda/notify.js', 'utf8');
+
+  // Sur Android 8 et suivants, c'est le canal qui porte le son, la vibration et
+  // l'importance. Sans canal déclaré, tout part sur celui par défaut, dont
+  // l'importance est basse : la notification s'affiche en silence.
+  assert.match(source, /createChannel/, 'aucun canal créé');
+  assert.match(source, /importance: 5/, 'le canal des réveils n’est pas prioritaire');
+  assert.match(source, /channelId/, 'la notification n’utilise pas le canal');
+
+  // Les réglages d'un canal sont figés à sa création : un réveil et un simple
+  // rappel ne peuvent donc pas partager le même.
+  assert.match(source, /monstre-reveil/, 'canal des réveils absent');
+  assert.match(source, /monstre-rappel/, 'canal des rappels absent');
+});
+
+test('l’agenda dit ce qui a réellement été programmé', () => {
+  const source = readFileSync('src/ui/agenda.js', 'utf8');
+
+  // Annoncer « c'est noté » sans vérifier que quelque chose a été programmé
+  // revient à mentir — et un rappel qui ne sonne pas ne se découvre qu'au
+  // moment où l'on comptait dessus.
+  assert.match(source, /dernierEtat/, 'aucun compte rendu de programmation');
+  assert.match(source, /les notifications ne sont pas autorisées/, 'les manques ne sont pas nommés');
+
+  // Et l'on doit pouvoir vérifier sans attendre le lendemain matin.
+  const html = readFileSync('index.html', 'utf8');
+  assert.match(html, /id="agenda-essai"/, 'aucun moyen d’essayer le réveil');
 });

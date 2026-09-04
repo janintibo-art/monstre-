@@ -60,6 +60,7 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
   const joursRow = document.getElementById('agenda-jours-semaine');
   const sendBtn = document.getElementById('agenda-send');
   const dicterBtn = document.getElementById('agenda-dicter');
+  const essaiBtn = document.getElementById('agenda-essai');
   const status = document.getElementById('agenda-status');
 
   let pending = null; // rendez-vous compris, en attente du moment de prévenance
@@ -245,6 +246,12 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
 
     const visibles = jourChoisi === null ? groupes : groupes.filter((g) => g.jour === jourChoisi);
 
+    if (dernierEtat && (!dernierEtat.notifiee || !dernierEtat.promenade)) {
+      intro.classList.add('hint--alerte');
+    } else {
+      intro.classList.remove('hint--alerte');
+    }
+
     intro.textContent = groupes.length
       ? 'Je te préviendrai, même si l’application est fermée.'
       : 'Dis-moi un rendez-vous, une tâche ou une heure de réveil, et je m’en souviendrai.';
@@ -304,6 +311,9 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
     tache: 'arroser les plantes',
     reveil: ''
   };
+
+  // Compte rendu de la dernière programmation, montré dans la liste.
+  let dernierEtat = null;
 
   let repetChoisie = 'une';
   let joursChoisis = [];
@@ -380,6 +390,14 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
 
   function startAsk(reminder, { spoken = true } = {}) {
     pending = reminder;
+
+    // Un réveil sonne À L'HEURE. Lui poser la question de la prévenance était
+    // une faute : choisir « une heure avant » faisait sonner le réveil de 7 h à
+    // 6 h, et l'utilisateur n'avait aucune raison de s'en douter.
+    if (reminder.type === 'reveil') {
+      confirm(leadById('moment'));
+      return;
+    }
     const quand = formatWhen(reminder.at);
     askWhat.textContent = reminder.subject
       ? `${capitalize(reminder.subject)}, ${quand}.`
@@ -419,23 +437,73 @@ export function createAgendaUi({ getPet, voice, voiceProfile, onListen, getSpeci
     // La permission n'est demandée qu'ici : au moment où elle sert vraiment,
     // pas au premier lancement où personne ne comprend pourquoi.
     const ok = await notify.ensurePermission();
-    if (ok) await notify.schedule(item, getPet().name);
+    const notifiee = ok ? await notify.schedule(item, getPet().name) : false;
+
     // Si la promenade sur l'écran est autorisée, elle s'ajoute à la
     // notification : deux façons d'être prévenu valent mieux qu'une.
-    if (getSpeciesFolder) await overlay.schedule(item, getSpeciesFolder());
+    const promenade = getSpeciesFolder
+      ? await overlay.schedule(item, getSpeciesFolder())
+      : false;
+
+    // On dit exactement ce qui a été mis en place.
+    //
+    // Un rappel qui ne sonne pas est le pire défaut possible : on ne s'en rend
+    // compte qu'au moment où l'on comptait dessus. Annoncer « c'est noté » sans
+    // vérifier que quelque chose a réellement été programmé revient à mentir.
+    dernierEtat = { notifiee, promenade, type: item.type };
 
     render();
     const quoi = item.subject || type.label.toLowerCase();
-    const phrase = ok
+    const phrase = notifiee
       ? `C’est noté : ${quoi} ${quand}. Je te préviens ${rappel}.`
-      : `C’est noté : ${quoi} ${quand}. Je te préviendrai quand tu ouvriras l’application — autorise les notifications pour que je te prévienne même fermé.`;
+      : `C’est noté : ${quoi} ${quand}. Mais je ne pourrai te prévenir que si l’application est ouverte.`;
     say(phrase);
-    status.textContent = phrase;
+
+    const manques = [];
+    if (!notifiee) manques.push('les notifications ne sont pas autorisées');
+    if (!promenade) manques.push('la promenade sur l’écran n’est pas autorisée');
+    status.textContent = manques.length
+      ? `${phrase} À corriger : ${manques.join(', ')} (Réglages).`
+      : phrase;
   }
 
   // La parole reste la voie la plus rapide pour qui la maîtrise : une phrase
   // entière plutôt que quatre champs. Elle vient en complément du formulaire,
   // pas à sa place — au clavier, deviner la bonne formule ne valait rien.
+  // Essai immédiat.
+  //
+  // Un réveil ne se vérifie pas autrement : attendre le lendemain matin pour
+  // découvrir qu'il n'a pas sonné n'est pas une façon de mettre au point un
+  // logiciel. Celui-ci part dans quinze secondes, avec toute la chaîne réelle —
+  // notification système et promenade sur l'écran comprises.
+  essaiBtn.addEventListener('click', async () => {
+    essaiBtn.disabled = true;
+    const quand = Date.now() + 15000;
+    const item = addReminder(getActiveId(), {
+      subject: 'essai du réveil',
+      type: 'reveil',
+      at: quand,
+      lead: leadById('moment'),
+      recurrence: null
+    });
+
+    const ok = await notify.ensurePermission();
+    const notifiee = ok ? await notify.schedule(item, getPet().name) : false;
+    const promenade = getSpeciesFolder ? await overlay.schedule(item, getSpeciesFolder()) : false;
+
+    status.textContent =
+      `Essai lancé pour dans 15 secondes. Notification : ${notifiee ? 'oui' : 'NON'}. ` +
+      `Promenade sur l’écran : ${promenade ? 'oui' : 'NON'}. ` +
+      (notifiee || promenade
+        ? 'Ferme l’application pour vérifier.'
+        : 'Aucune des deux n’est autorisée : va dans les Réglages.');
+
+    render();
+    setTimeout(() => {
+      essaiBtn.disabled = false;
+    }, 16000);
+  });
+
   dicterBtn.addEventListener('click', () => {
     if (!onListen) return;
     voice.stop();
