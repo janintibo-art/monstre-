@@ -671,3 +671,35 @@ test('le duel efface le reste de l’interface', () => {
   // Et rien de spontané ne doit sortir pendant qu'elle compte.
   assert.match(source, /!chifoumi\.ouvert/, 'la créature bavarde pendant le duel');
 });
+
+test('un décor peut partager l’horizon d’un autre', async () => {
+  const { BIOMES, HORIZON_MOMENTS, horizonUrl } = await import('../src/game/biomes.js');
+
+  // Produire douze images d'horizon pour chaque nouveau décor serait du travail
+  // perdu : une silhouette de pitons rocheux convient aussi bien à un champ de
+  // lave qu'à une caverne d'améthyste. Le champ `folder` permet ce partage.
+  const dossiers = new Set(BIOMES.map((b) => b.folder || b.id));
+  assert.ok(dossiers.size < BIOMES.length, 'aucun horizon n’est partagé');
+
+  BIOMES.forEach((biome) => {
+    HORIZON_MOMENTS.forEach((moment) => {
+      assert.ok(existsSync(horizonUrl(biome, moment, './public/')), `${biome.id}/${moment} absent`);
+    });
+  });
+});
+
+test('chaque décor a sa dalle de sol, et aucune n’est partagée', async () => {
+  const { BIOMES } = await import('../src/game/biomes.js');
+
+  const sols = BIOMES.map((b) => b.ground);
+  assert.equal(new Set(sols).size, sols.length, 'deux décors partagent leur sol');
+
+  sols.forEach((chemin) => {
+    assert.ok(existsSync(`./public/${chemin}`), `${chemin} : dalle absente`);
+  });
+
+  // Le sol est le seul élément visible partout : deux décors qui le
+  // partageraient se ressembleraient malgré tout le reste.
+  const accents = BIOMES.map((b) => b.accent);
+  assert.equal(new Set(accents).size, accents.length, 'deux décors ont la même couleur d’accent');
+});

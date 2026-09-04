@@ -124,6 +124,113 @@ export const BIOMES = [
       { model: 'plante', count: 4, radius: [6.4, 8.4], height: [0.6, 1], sway: 0.05 },
       { model: 'champignon', count: 2, radius: [6.4, 8], height: [0.4, 0.6], sway: 0.008 }
     ]
+  },
+  // ---------------------------------------------------------------------
+  // Cinq décors ajoutés en v83. Ils réutilisent les horizons existants via
+  // `folder` : une silhouette de pitons rocheux convient aussi bien à un
+  // champ de lave qu'à une caverne d'améthyste, et produire douze images de
+  // plus pour un gain nul serait du travail perdu.
+  // ---------------------------------------------------------------------
+  {
+    id: 'marais',
+    folder: 'mousse',
+    particules: { forme: 'spore', couleur: 0x8fe0c0, chute: -0.02, tourbillon: 0.7 },
+    name: 'Marais',
+    ground: 'assets/textures/ground/marais.jpg',
+    repeat: 3,
+    accent: 0x4fd6b8,
+    mood: 0x1f6a5c,
+    moodMix: 0.2,
+    decor: [
+      { model: 'arbre_loin', count: 10, radius: [13, 21], height: [4.6, 7.4], sway: 0.02 },
+      { model: 'plante_loin', count: 9, radius: [12, 19], height: [1.2, 2.2], sway: 0.04 },
+      { model: 'feu', count: 1, radius: [5.3, 5.3], height: [1.1, 1.1], sway: 0, feu: true, angle: -1.45 },
+      { model: 'chaumiere', count: 1, radius: [6.4, 6.4], height: [2.3, 2.3], sway: 0, landmark: true, angle: -0.85 },
+      { model: 'ile', count: 1, radius: [17, 17], height: [5, 5], altitude: [10, 10], orbit: 0.01, sway: 0 },
+      { model: 'arbre', count: 4, radius: [7.5, 10], height: [3.2, 4.8], sway: 0.026 },
+      { model: 'plante', count: 8, radius: [6.2, 8.6], height: [0.6, 1.3], sway: 0.05 },
+      { model: 'champignon', count: 6, radius: [6, 8], height: [0.35, 0.7], sway: 0.008 }
+    ]
+  },
+  {
+    id: 'volcan',
+    folder: 'roche',
+    particules: { forme: 'braise', couleur: 0xff9a4a, chute: -0.08, tourbillon: 1.1 },
+    name: 'Terres de braise',
+    ground: 'assets/textures/ground/volcan.jpg',
+    repeat: 3,
+    accent: 0xff8a3c,
+    mood: 0x7a2a18,
+    moodMix: 0.22,
+    decor: [
+      { model: 'arbre_loin', count: 6, radius: [14, 21], height: [4.4, 7], sway: 0.01 },
+      { model: 'champignon_loin', count: 7, radius: [12, 19], height: [1.4, 2.6], sway: 0.006 },
+      { model: 'feu', count: 1, radius: [5.3, 5.3], height: [1.3, 1.3], sway: 0, feu: true, angle: -1.45 },
+      { model: 'maison', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
+      { model: 'ile', count: 1, radius: [17, 17], height: [5.5, 5.5], altitude: [10.5, 10.5], orbit: 0.014, sway: 0 },
+      { model: 'arbre', count: 3, radius: [7.8, 10], height: [3.2, 4.6], sway: 0.014 },
+      { model: 'champignon', count: 5, radius: [6.2, 8.4], height: [0.4, 0.8], sway: 0.006 }
+    ]
+  },
+  {
+    id: 'amethyste',
+    folder: 'roche',
+    particules: { forme: 'cristal', couleur: 0xc79bff, chute: -0.015, tourbillon: 0.35 },
+    name: 'Caverne d’améthyste',
+    ground: 'assets/textures/ground/amethyste.jpg',
+    repeat: 3,
+    accent: 0xbf8cff,
+    mood: 0x4a2470,
+    moodMix: 0.2,
+    decor: [
+      { model: 'champignon_loin', count: 9, radius: [12, 20], height: [1.6, 3], sway: 0.005 },
+      { model: 'arbre_loin', count: 5, radius: [14, 21], height: [4.2, 6.6], sway: 0.008 },
+      { model: 'feu', count: 1, radius: [5.3, 5.3], height: [1.1, 1.1], sway: 0, feu: true, angle: -1.45 },
+      { model: 'maison', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
+      { model: 'ile', count: 1, radius: [16, 16], height: [5, 5], altitude: [9.5, 9.5], orbit: 0.009, sway: 0 },
+      { model: 'champignon', count: 7, radius: [6, 8.6], height: [0.4, 0.9], sway: 0.005 },
+      { model: 'plante', count: 4, radius: [6.6, 8.4], height: [0.6, 1.1], sway: 0.03 }
+    ]
+  },
+  {
+    id: 'glace',
+    folder: 'roche',
+    particules: { forme: 'givre', couleur: 0xd8f6ff, chute: 0.18, tourbillon: 0.5 },
+    name: 'Lac gelé',
+    ground: 'assets/textures/ground/glace.jpg',
+    repeat: 3,
+    accent: 0x7fe4ff,
+    mood: 0x2a6a86,
+    moodMix: 0.18,
+    decor: [
+      { model: 'arbre_loin', count: 8, radius: [13, 21], height: [4.6, 7.2], sway: 0.012 },
+      { model: 'plante_loin', count: 6, radius: [12, 19], height: [1.2, 2.2], sway: 0.02 },
+      { model: 'feu', count: 1, radius: [5.3, 5.3], height: [1.2, 1.2], sway: 0, feu: true, angle: -1.45 },
+      { model: 'chaumiere', count: 1, radius: [6.4, 6.4], height: [2.3, 2.3], sway: 0, landmark: true, angle: -0.85 },
+      { model: 'ile', count: 1, radius: [17, 17], height: [5.2, 5.2], altitude: [10, 10], orbit: 0.011, sway: 0 },
+      { model: 'arbre', count: 4, radius: [7.6, 10], height: [3.4, 5], sway: 0.012 },
+      { model: 'plante', count: 5, radius: [6.4, 8.6], height: [0.6, 1.1], sway: 0.02 }
+    ]
+  },
+  {
+    id: 'bonbons',
+    folder: 'prairie',
+    particules: { forme: 'sucre', couleur: 0xffc8f0, chute: -0.025, tourbillon: 0.8 },
+    name: 'Pays des bonbons',
+    ground: 'assets/textures/ground/bonbons.jpg',
+    repeat: 3,
+    accent: 0xff9ad5,
+    mood: 0x8f4a9e,
+    moodMix: 0.14,
+    decor: [
+      { model: 'arbre_loin', count: 8, radius: [13, 21], height: [4.8, 7.6], sway: 0.016 },
+      { model: 'champignon_loin', count: 7, radius: [12, 19], height: [1.5, 2.6], sway: 0.008 },
+      { model: 'feu', count: 1, radius: [5.3, 5.3], height: [1.1, 1.1], sway: 0, feu: true, angle: -1.45 },
+      { model: 'maison', count: 1, radius: [6.4, 6.4], height: [2.4, 2.4], sway: 0, landmark: true, angle: -0.85 },
+      { model: 'ile', count: 1, radius: [17, 17], height: [5.4, 5.4], altitude: [10, 10], orbit: 0.013, sway: 0 },
+      { model: 'champignon', count: 8, radius: [6, 8.8], height: [0.45, 0.95], sway: 0.008 },
+      { model: 'plante', count: 6, radius: [6.4, 8.6], height: [0.7, 1.2], sway: 0.04 }
+    ]
   }
 ];
 
@@ -158,6 +265,7 @@ const PREF_KEY = 'monstre.decor';
 
 export function biomeById(id) {
   return BIOMES.find((b) => b.id === id) || BIOMES[0];
+
 }
 
 // Par defaut le decor decoule de la graine : chaque oeuf a son paysage.
