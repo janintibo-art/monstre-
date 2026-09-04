@@ -69,13 +69,23 @@ test('le manifeste est bien la source du verrou par défaut', () => {
   assert.match(workflow, /patch_manifest\.py/, 'le manifeste n’est plus ajusté au build');
 
   const script = readFileSync('tools/patch_manifest.py', 'utf8');
-  assert.match(script, /screenOrientation="sensorLandscape"/, 'verrou paysage absent');
-  // `sensorLandscape` et non `landscape` : les deux sens de rotation doivent
-  // rester possibles, sinon le téléphone ne peut se tenir que d'un côté.
+
+  // L'orientation du manifeste est celle de la TOUTE PREMIÈRE fenêtre, avant
+  // qu'aucun code n'ait tourné : l'écran de présentation puis le choix du
+  // profil, qui sont des formulaires en portrait. Annoncer le paysage faisait
+  // apparaître le logo couché, puis pivoter aussitôt pour demander le prénom.
+  assert.match(script, /screenOrientation="sensorPortrait"/, 'orientation de démarrage absente');
+
+  // `sensorPortrait` et non `portrait` : les deux sens doivent rester
+  // possibles, sinon le téléphone ne peut se tenir que d'un côté.
   assert.ok(
-    !/screenOrientation="landscape"/.test(script),
+    !/screenOrientation="portrait"/.test(script),
     'orientation figée dans un seul sens'
   );
+
+  // Et l'orientation du JEU, elle, reste un choix de l'utilisateur.
+  const orientation = readFileSync('src/core/orientation.js', 'utf8');
+  assert.match(orientation, /applyGameOrientation/, 'la préférence n’est plus appliquée');
 });
 
 test('aucun module Capacitor n’est renvoyé par une fonction asynchrone', () => {

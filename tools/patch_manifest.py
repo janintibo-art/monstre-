@@ -9,11 +9,17 @@ ne change rien.
 
 Deux ajustements :
 
-**Orientation.** `sensorLandscape` n'est plus qu'un **défaut de démarrage** :
-depuis que l'utilisateur peut choisir son orientation, c'est la préférence
-enregistrée qui décide, appliquée dès le premier écran. Le manifeste garantit
-seulement que le jeu s'ouvre dans une orientation utilisable si rien n'a encore
-été choisi, et que la fenêtre ne pivote pas pendant le chargement.
+**Orientation de démarrage.** `sensorPortrait`, et non paysage.
+
+Ce n'est pas l'orientation du jeu — celle-là se choisit dans les réglages et
+s'applique en JavaScript. C'est celle de la **toute première fenêtre**, avant que
+le moindre code ait tourné : l'écran de présentation, puis le choix du profil.
+Or ces deux écrans sont des formulaires, affichés en portrait.
+
+Le manifeste annonçait le paysage : le logo apparaissait couché, puis l'écran
+pivotait aussitôt pour demander le prénom. Une rotation pour rien, dès la
+première seconde. `sensorPortrait` accepte les deux sens du portrait, et laisse
+le jeu prendre l'orientation voulue au moment où il commence vraiment.
 
 **Visibilité du service vocal.** Depuis Android 11, une application ne « voit »
 pas les services des autres sans les déclarer. Sans cette déclaration,
@@ -48,10 +54,10 @@ def patch(chemin):
         if marqueur in source:
             source = source.replace(
                 marqueur,
-                marqueur + '\n            android:screenOrientation="sensorLandscape"',
+                marqueur + '\n            android:screenOrientation="sensorPortrait"',
                 1,
             )
-            faits.append("orientation paysage")
+            faits.append("orientation de démarrage en portrait")
         else:
             print("::warning::MainActivity introuvable : orientation non appliquée")
     else:

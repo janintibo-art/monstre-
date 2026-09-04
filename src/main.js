@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { loadTextures, loadTexture } from './core/assets.js';
 import { createLoop } from './core/loop.js';
-import { lockLandscape, setScreenOpen } from './core/orientation.js';
+import { applyGameOrientation, setScreenOpen } from './core/orientation.js';
 import { createWorld } from './game/world.js';
 import { createEgg } from './game/egg.js';
 import { createMonster } from './game/monster.js';
@@ -153,18 +153,25 @@ async function boot() {
   // creature et ses souvenirs sont conserves.
   migrateLegacy();
 
-  // Le verrou paysage vient APRES la question du profil. Le poser avant ferait
-  // basculer l'ecran en paysage puis en portrait sous les yeux du joueur, pour
-  // un formulaire qui se remplit au clavier.
+  // L'orientation est décidée AVANT que quoi que ce soit s'affiche.
+  //
+  // Le manifeste ouvre la fenêtre en portrait, ce qui convient à l'écran de
+  // présentation et au choix du profil. Si l'on va droit au jeu, on applique
+  // tout de suite la préférence : la rotation se fait pendant le chargement,
+  // pas sous les yeux du joueur une fois la scène affichée.
+  if (canSkipPicker()) applyGameOrientation();
+
   // « Qui joue ? » est posé à chaque ouverture, sauf si l'on joue seul et qu'on
   // a demandé à ne plus l'être. Sans cette question, un second profil devient
   // introuvable : il faudrait penser à le chercher dans les réglages.
+  //
+  // L'orientation du jeu ne s'applique qu'après cette question : le formulaire
+  // se remplit au clavier, il reste en portrait.
   let seeded = false;
-  if (canSkipPicker()) {
-    lockLandscape();
-  } else {
+  if (!canSkipPicker()) {
     const chosen = await askProfile();
     seeded = Boolean(chosen.isNew);
+    applyGameOrientation();
   }
   applyProfileComfort();
   const canvas = document.getElementById('scene');
