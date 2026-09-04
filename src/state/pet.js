@@ -83,7 +83,8 @@ export function refreshMemory(pet) {
   return pet;
 }
 
-export function advance(pet, dtSeconds, { asleep = false } = {}) {
+// `foyer` porte les apports des compagnons : voir src/state/compagnons.js.
+export function advance(pet, dtSeconds, { asleep = false, foyer = null } = {}) {
   if (!pet.hatched) {
     // L'oeuf mûrit tout seul en deux minutes et demie. Le stimuler va bien plus
     // vite : une dizaine de tapes suffisent.
@@ -92,7 +93,7 @@ export function advance(pet, dtSeconds, { asleep = false } = {}) {
     return pet;
   }
   pet.age += dtSeconds;
-  decayNeeds(pet.needs, dtSeconds, pet.personality, { asleep });
+  decayNeeds(pet.needs, dtSeconds, pet.personality, { asleep, foyer });
   pet.growth += dtSeconds * (wellbeing(pet.needs) / 100);
   const next = stageFor(pet.growth);
   if (next !== pet.stage) pet.stage = next;

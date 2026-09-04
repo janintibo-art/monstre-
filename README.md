@@ -1069,6 +1069,32 @@ Cinq espèces sont jouables d'emblée : il faut de quoi jouer avant d'avoir de
 quoi acheter. Les six autres se débloquent à 120 points, et **le prochain œuf
 suit le choix** au lieu d'être tiré au sort.
 
+## Le foyer
+
+On commence avec une créature. On peut en avoir d'autres — mais **on ne les
+achète pas, on les mérite.** C'est la règle qui donne son sens au reste : un
+enfant qui veut un chat en plus du hamster doit d'abord montrer qu'il nourrit le
+hamster.
+
+Le mérite se mesure en **jours de bon soin** : un jour compte quand la créature
+a terminé la journée avec *tous* ses besoins au-dessus de la moitié. Nourrir ne
+suffit pas, il faut aussi laver, jouer et câliner — c'est la différence entre
+s'occuper d'un animal et le nourrir. Cinq jours pour la deuxième place,
+quatorze pour la troisième, trente pour la quatrième.
+
+On ne peut pas en gagner deux le même jour, et **aucun bouton n'abrège
+l'attente.** Rattraper une semaine d'oubli en une soirée annulerait toute la
+leçon. Un test vérifie qu'aucun point ne peut acheter une place.
+
+**Chaque tempérament apporte autre chose au foyer.** Le gourmand trouve à
+manger et la faim de tout le monde descend plus lentement ; le calme apaise et
+l'on récupère mieux en dormant ; le grognon n'aime pas le désordre et la
+propreté tient mieux. Huit tempéraments, huit apports distincts.
+
+Les effets se cumulent, mais **bornés à 0,45** : sans plancher, quatre
+compagnons apaisants arrêteraient le temps. Il n'y aurait plus rien à faire, et
+le jeu se viderait de son objet à mesure qu'on y réussit.
+
 ## Les tempéraments
 
 Chaque espèce naît avec un penchant — grognon, joyeux, timide, curieux,

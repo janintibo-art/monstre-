@@ -1,5 +1,13 @@
 import { catalogueOeufs, possede, acheter, choisirProchaine, prochaineEspece } from '../state/boutique.js';
 import { solde, depenser } from '../state/points.js';
+import {
+  placesOuvertes,
+  prochainPalier,
+  charger as chargerFoyer,
+  apportDe,
+  PLACES_MAX
+} from '../state/compagnons.js';
+import { speciesById, temperamentOf } from '../game/species.js';
 import { getActiveId } from '../state/profiles.js';
 import { currentBand } from '../state/profiles.js';
 
@@ -10,17 +18,66 @@ import { currentBand } from '../state/profiles.js';
 // gagner un jeu — un jeu pour enfants où l'argent donne un avantage apprend
 // une mauvaise leçon.
 
-export function createBoutique({ voice, onChoix }) {
+import { PALIERS } from '../state/compagnons.js';
+
+const PALIERS_TEXTE = PALIERS;
+
+export function createBoutique({ voice, onChoix, getCreatures }) {
   const panel = document.getElementById('boutique');
   const closeBtn = document.getElementById('boutique-close');
   const soldeEl = document.getElementById('boutique-solde');
   const intro = document.getElementById('boutique-intro');
   const liste = document.getElementById('boutique-liste');
+  const foyerProgres = document.getElementById('foyer-progres');
+  const foyerPlaces = document.getElementById('foyer-places');
   const status = document.getElementById('boutique-status');
   let onToggle = null;
 
   function dire(texte) {
     if (voice) voice.explain(texte, { rate: currentBand().rate });
+  }
+
+  // Le foyer.
+  //
+  // On n'achète pas un compagnon : on le mérite. La barre montre donc des
+  // JOURS DE BON SOIN, pas des points — et il n'y a aucun bouton pour
+  // raccourcir l'attente. C'est le cœur de l'idée : pour avoir un chat en plus
+  // du hamster, il faut d'abord montrer qu'on nourrit le hamster.
+  function renderFoyer(profil, creatures) {
+    const places = placesOuvertes(profil);
+    const suivant = prochainPalier(profil);
+
+    foyerProgres.textContent = suivant
+      ? `Encore ${suivant.restant} jour${suivant.restant > 1 ? 's' : ''} à bien t’occuper de tes créatures pour accueillir la suivante (${suivant.acquis} sur ${suivant.seuil}).`
+      : 'Tu as toutes les places. Ton foyer est au complet.';
+
+    foyerPlaces.innerHTML = '';
+    for (let i = 0; i < PLACES_MAX; i += 1) {
+      const place = document.createElement('div');
+      place.className = 'foyer-place';
+
+      const occupant = creatures[i];
+      if (occupant) {
+        const espece = speciesById(occupant.species);
+        const apport = apportDe(espece.temperament);
+        place.classList.add('foyer-place--occupee');
+        place.innerHTML = '';
+        const nom = document.createElement('strong');
+        nom.textContent = occupant.name;
+        const quoi = document.createElement('span');
+        quoi.textContent = apport.titre;
+        const detail = document.createElement('em');
+        detail.textContent = apport.detail;
+        place.append(nom, quoi, detail);
+      } else if (i < places) {
+        place.classList.add('foyer-place--libre');
+        place.textContent = 'Place libre — un œuf t’attend';
+      } else {
+        place.classList.add('foyer-place--fermee');
+        place.textContent = `À ${PALIERS_TEXTE[i]} jours de bon soin`;
+      }
+      foyerPlaces.appendChild(place);
+    }
   }
 
   function render() {
@@ -29,6 +86,7 @@ export function createBoutique({ voice, onChoix }) {
     const choisie = prochaineEspece(profil);
 
     soldeEl.textContent = `${points} points`;
+    renderFoyer(profil, getCreatures ? getCreatures() : []);
     intro.textContent = choisie
       ? `Le prochain œuf donnera un ${catalogueOeufs().find((a) => a.espece === choisie).nom}.`
       : 'Gagne des points en jouant, en prenant soin de ta créature et en revenant la voir. Le prochain œuf est tiré au hasard.';

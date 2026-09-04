@@ -92,7 +92,10 @@ export const GUIDE = [
       'Répéter le même jeu vingt fois rapporte de moins en moins. Varie les activités, tu gagneras davantage.',
       'Dans la **boutique** (menu ···), tu peux débloquer de nouvelles espèces. Ton prochain œuf donnera alors la créature que tu as choisie, au lieu d’une surprise.',
       'Chaque espèce a son **tempérament** : grognon, joyeux, timide, curieux, gourmand, calme, espiègle ou rêveur. Ce n’est qu’un point de départ — la façon dont tu t’en occupes fera le reste.',
-      'On n’achète jamais un avantage : rien dans la boutique ne remplit une jauge ni ne fait gagner un jeu.'
+      'On n’achète jamais un avantage : rien dans la boutique ne remplit une jauge ni ne fait gagner un jeu.',
+      '**Une deuxième créature ne s’achète pas, elle se mérite.** Il faut des **jours de bon soin** : une journée compte quand ta créature la termine avec tous ses besoins au-dessus de la moitié. Nourrir ne suffit pas — il faut aussi laver, jouer et câliner.',
+      'Cinq jours pour la deuxième place, quatorze pour la troisième, trente pour la quatrième. On n’en gagne qu’un par jour, et aucun bouton ne raccourcit l’attente.',
+      'Chaque compagnon apporte autre chose : le gourmand trouve à manger pour tout le monde, le calme aide les autres à dormir, le grognon garde la maison propre. Un foyer varié est un foyer plus facile à tenir.'
     ]
   },
   {

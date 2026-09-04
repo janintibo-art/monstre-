@@ -2445,3 +2445,72 @@ select {
   color: #06231c;
   border-color: var(--glow);
 }
+
+/* ---------------------------------- Foyer -------------------------------- */
+
+.foyer {
+  margin: 14px 0 18px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(233, 238, 245, 0.1);
+  background: rgba(9, 14, 29, 0.4);
+}
+
+.foyer__titre {
+  margin: 0 0 6px;
+  font-family: var(--display);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.foyer-places {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.foyer-place {
+  padding: 9px 11px;
+  border-radius: 12px;
+  font-size: 12px;
+  border: 1px dashed rgba(233, 238, 245, 0.16);
+  color: var(--muted);
+}
+
+.foyer-place--occupee {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-style: solid;
+  border-color: rgba(111, 227, 196, 0.4);
+  background: rgba(111, 227, 196, 0.08);
+  color: var(--bone);
+}
+
+.foyer-place--occupee strong {
+  font-family: var(--display);
+  font-size: 15px;
+}
+
+.foyer-place--occupee span {
+  color: var(--glow);
+  font-size: 12px;
+}
+
+.foyer-place--occupee em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.foyer-place--libre {
+  border-color: rgba(255, 183, 74, 0.45);
+  color: var(--amber);
+}
+
+.foyer-place--fermee {
+  opacity: 0.6;
+}

@@ -48,6 +48,12 @@ import { createChifoumi } from './ui/chifoumi.js';
 import { createBoutique } from './ui/boutique.js';
 import { gagner, visiter, recompenseDePartie, GAINS } from './state/points.js';
 import { prochaineEspece } from './state/boutique.js';
+import {
+  noterJournee,
+  enregistrerCreature,
+  effetsDuFoyer,
+  creaturesDuFoyer
+} from './state/compagnons.js';
 import { createAgendaUi, createRecall } from './ui/agenda.js';
 import { parseReminder } from './agenda/parse.js';
 import { dueReminders, listReminders } from './agenda/store.js';
@@ -61,7 +67,8 @@ import {
   migrateLegacy,
   listProfiles,
   canSkipPicker,
-  seedFacts
+  seedFacts,
+  saveKeyFor
 } from './state/profiles.js';
 import { createProfilePicker } from './ui/profiles.js';
 import { createHud } from './ui/hud.js';
@@ -888,11 +895,48 @@ async function boot() {
 
   const recall = createRecall({ getPet: () => pet, voice, voiceProfile });
 
-  const boutique = createBoutique({ voice });
+  // Le foyer lit les créatures dans les sauvegardes plutôt que d'en garder une
+  // copie : deux sources pour la même chose finissent toujours par diverger.
+  function lireSauvegarde(id) {
+    try {
+      return JSON.parse(localStorage.getItem(saveKeyFor(id)));
+    } catch {
+      return null;
+    }
+  }
+
+  const boutique = createBoutique({
+    voice,
+    getCreatures: () => creaturesDuFoyer(getActiveId(), lireSauvegarde)
+  });
   boutique.setToggleHandler((open) => setScreenOpen('boutique', open));
 
   // Une visite rapporte, au plus une fois toutes les quatre heures : c'est la
   // régularité qu'on récompense, jamais le temps passé devant l'écran.
+  // Les apports sont recalculés au changement de foyer, pas à chaque image.
+  let foyerActuel = null;
+  function majFoyer() {
+    const creatures = creaturesDuFoyer(getActiveId(), lireSauvegarde);
+    foyerActuel = effetsDuFoyer(
+      creatures.map((c) => speciesById(c.species).temperament).filter(Boolean)
+    );
+  }
+
+  // La créature en cours fait partie du foyer : sans cet enregistrement, elle
+  // n'y figurerait pas et son apport ne compterait pour personne.
+  enregistrerCreature(getActiveId(), saveKeyFor(getActiveId()));
+  majFoyer();
+
+  // La journée écoulée est notée au démarrage : c'est le seul moment où l'on
+  // sait que la date a pu changer depuis la dernière ouverture.
+  const bilanJour = noterJournee(getActiveId(), pet.needs);
+  if (bilanJour.compte) {
+    setTimeout(
+      () => say(`Tu t’occupes bien de moi. ${bilanJour.joursDeSoin} jours déjà !`, 4200),
+      5200
+    );
+  }
+
   const rente = visiter(getActiveId());
   if (rente.gagne > 0) {
     setTimeout(() => say(`Content de te revoir ! Tiens, ${rente.gagne} points.`, 4200), 2600);
@@ -1167,7 +1211,9 @@ async function boot() {
     pointerActive = Math.max(0, pointerActive - dt);
 
     const sleeping = asleep || decision.action === 'sleep';
-    advance(pet, dt, { asleep: sleeping });
+    // Les compagnons du foyer ralentissent l'usure des besoins, chacun selon
+    // son tempérament. C'est le seul endroit où leur présence se fait sentir.
+    advance(pet, dt, { asleep: sleeping, foyer: foyerActuel });
 
     if (!pet.hatched && egg) {
       egg.setProgress(pet.hatchProgress);

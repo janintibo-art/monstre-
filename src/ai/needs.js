@@ -43,14 +43,23 @@ function decayRate(key, personality) {
 }
 
 // dt en secondes. asleep : le sommeil recharge l'energie au lieu de la vider.
-export function decayNeeds(needs, dtSeconds, personality, { asleep = false } = {}) {
+// `foyer` porte les apports des compagnons : un multiplicateur par besoin,
+// toujours inférieur ou égal à 1. Un gourmand ralentit la faim de tout le
+// monde, un calme accélère le sommeil. C'est le seul endroit où la présence
+// des autres créatures se fait sentir dans la simulation.
+export function decayNeeds(needs, dtSeconds, personality, { asleep = false, foyer = null } = {}) {
   const minutes = dtSeconds / 60;
   NEEDS.forEach((key) => {
+    const facteur = foyer && foyer[key] > 0 ? foyer[key] : 1;
+
     if (key === 'energy' && asleep) {
-      needs.energy = clamp(needs.energy + minutes * 9, 0, 100);
+      // Un facteur bas ralentit l'usure, donc ACCÉLÈRE la récupération : on
+      // divise ici au lieu de multiplier, sans quoi un foyer apaisant ferait
+      // dormir moins bien.
+      needs.energy = clamp(needs.energy + (minutes * 9) / facteur, 0, 100);
       return;
     }
-    needs[key] = clamp(needs[key] - decayRate(key, personality) * minutes, 0, 100);
+    needs[key] = clamp(needs[key] - decayRate(key, personality) * minutes * facteur, 0, 100);
   });
   return needs;
 }
